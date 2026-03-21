@@ -16,8 +16,11 @@ export default tseslint.config(
       'react-hooks/exhaustive-deps': 'warn',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/immutability': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
+      'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
   {
