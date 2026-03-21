@@ -4,6 +4,8 @@ A self-hosted chord sheet web app for musicians. Store, transpose, and perform y
 
 ![Node.js](https://img.shields.io/badge/Node.js-20-green) ![SQLite](https://img.shields.io/badge/Database-SQLite-blue) ![Docker](https://img.shields.io/badge/Docker-Ready-blue) ![License](https://img.shields.io/badge/License-AGPL--3.0-blue)
 
+**[Try the live demo](https://demochordvault.rudysam.com)** — login as `demo` / `demopass123` (resets every 6 hours)
+
 ## Why ChordVault?
 
 **For self-hosters.** Ridiculously lightweight.
