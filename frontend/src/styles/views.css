@@ -114,6 +114,30 @@
 }
 .auth-tab.active { background: var(--surface); color: var(--text); }
 
+/* ── Setlist Tabs ────────────────────────── */
+.setlist-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 16px;
+}
+.setlist-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.setlist-tab.active { background: var(--surface); color: var(--text); }
+
 /* ── Settings ────────────────────────────── */
 .settings-section { margin-bottom: 32px; }
 

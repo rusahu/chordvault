@@ -57,8 +57,8 @@ A self-hosted chord sheet web app for musicians. Store, transpose, and perform y
 - **Build setlists:** ordered song lists with per-song key, number notation, and display overrides
 - **Local browser setlists:** no account needed, stored in your browser
 - **Swipe playback:** swipe, tap side buttons, or use keyboard to navigate between songs
-- **Settings panel:** global defaults (number notation, hide YouTube, 2-column, font size) with per-song overrides
-- **2-column layout:** split long chord sheets into two columns for landscape or wide screens
+- **Settings panel:** global defaults (number notation, hide YouTube, multi-column, font size) with per-song overrides
+- **Multi-column layout:** split long chord sheets into columns for landscape or wide screens
 - **Font size A-/A+:** adjustable font scale with reset — great for tablets on a music stand
 - **Inline editing:** fix chords mid-session, save to the entry or as a new version
 
@@ -142,7 +142,8 @@ node server.js
 npm run dev   # Starts backend + Vite dev server with hot reload
 ```
 
-Run checks:
+**Run checks:**
+
 ```bash
 npm run lint              # Lint backend
 cd frontend && npm run lint  # Lint frontend
@@ -199,14 +200,14 @@ docs/           Contributor guide, screenshots
 
 ### Viewing Songs
 1. Open any song to see rendered chords. Tap the key (e.g. "G") to expand a picker with all 12 keys — tap any to transpose instantly.
-2. Toggle **Num** to convert chords to numbers (1, 4, 5). Toggle **☷** for 2-column layout. Use **A-/A+** to adjust font size.
+2. Toggle **123** to convert chords to numbers (1, 4, 5). Toggle **||** for multi-column layout. Use **A-/A+** to adjust font size. **Fit** auto-sizes font and columns for your screen.
 3. Add a YouTube URL when editing a song. A link appears in the song view metadata row.
 
 ### Setlists
 1. Go to **Setlists** tab, create a setlist, and add songs from your library.
 2. Click a song entry to jump to it in playback. Reorder with up/down arrows.
 3. Hit **Open** and swipe left/right (or use arrow keys) to navigate between songs.
-4. The **settings panel** (⚙) sets global defaults: number notation, hide YouTube, 2-column, font size.
+4. The **settings panel** (⚙) sets global defaults: number notation, hide YouTube, multi-column, font size.
 5. The **per-song toolbar** lets you override key, number, columns, and font for individual songs (dot indicator shows overrides).
 
 </details>
