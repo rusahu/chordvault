@@ -33,6 +33,10 @@ export function LocalSetlistsView({ navigate }: LocalSetlistsViewProps) {
         <h2 className="view-title">{t('nav.mySetlists')}</h2>
         <button className="btn btn-sm" onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</button>
       </div>
+      <div className="setlist-tabs">
+        <button className="setlist-tab active">My Setlists</button>
+        <button className="setlist-tab" onClick={() => navigate('public-setlists')}>Public Setlists</button>
+      </div>
       <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 16 }}>
         These setlists are saved in your browser. Sign in to create server-synced setlists.
       </p>

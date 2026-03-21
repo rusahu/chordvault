@@ -44,7 +44,14 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
     <>
       <div className="view-header">
         <h2 className="view-title">{t('setlist.browseSetlists')}</h2>
-        {user && <button className="btn btn-ghost btn-sm" onClick={() => navigate('setlists')}>&#8592; {t('setlist.title')}</button>}
+      </div>
+      <div className="setlist-tabs">
+        {user ? (
+          <button className="setlist-tab" onClick={() => navigate('setlists')}>My Setlists</button>
+        ) : (
+          <button className="setlist-tab" onClick={() => navigate('local-setlists')}>My Setlists</button>
+        )}
+        <button className="setlist-tab active">Public Setlists</button>
       </div>
       {showSearch && (
         <>

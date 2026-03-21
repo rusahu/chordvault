@@ -56,6 +56,10 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
         <h2 className="view-title">{t('setlist.title')}</h2>
         <button className="btn btn-sm" onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</button>
       </div>
+      <div className="setlist-tabs">
+        <button className="setlist-tab active">My Setlists</button>
+        <button className="setlist-tab" onClick={() => navigate('public-setlists')}>Public Setlists</button>
+      </div>
       {showNew && (
         <div className="search-row" style={{ marginBottom: 16 }}>
           <input
