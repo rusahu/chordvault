@@ -4,8 +4,10 @@
  * Usage: node scripts/seed-data.mjs [base_url]
  * Default base URL: http://localhost:3100
  *
- * Expects a fresh DB (first user becomes owner).
+ * Creates a hidden _system owner, then a demo admin user with sample data.
  */
+
+import crypto from 'crypto';
 
 const BASE = process.argv[2] || 'http://localhost:3100';
 
@@ -21,26 +23,58 @@ async function api(method, path, body) {
   return res.json();
 }
 
-// Register first user (owner)
-console.log('Registering owner: demo / demopass123');
-const reg = await api('POST', '/api/auth/register', {
+// Step 1: Register hidden owner (_system) — first user becomes owner
+const systemPassword = crypto.randomBytes(32).toString('hex');
+console.log('Registering hidden owner: _system');
+const sysReg = await api('POST', '/api/auth/register', {
+  username: '_system',
+  password: systemPassword,
+});
+if (sysReg.error) {
+  console.error('Cannot register _system owner:', sysReg.error);
+  process.exit(1);
+}
+TOKEN = sysReg.token;
+console.log(`  Registered as ${sysReg.username} (${sysReg.role})`);
+
+// Step 2: Create invite code as owner
+console.log('Creating invite code for demo user...');
+const inviteRes = await api('POST', '/api/admin/invites');
+if (inviteRes.error) {
+  console.error('Cannot create invite:', inviteRes.error);
+  process.exit(1);
+}
+const inviteCode = inviteRes.code;
+console.log(`  Invite code: ${inviteCode}`);
+
+// Step 3: Redeem invite as demo user
+console.log('Redeeming invite as demo / demopass123...');
+TOKEN = null; // clear owner token
+const demoReg = await api('POST', '/api/auth/redeem-invite', {
+  code: inviteCode,
   username: 'demo',
   password: 'demopass123',
 });
-if (reg.error) {
-  // Maybe already registered — try login
-  console.log(`  Register returned: ${reg.error} — trying login...`);
-  const login = await api('POST', '/api/auth/login', {
-    username: 'demo',
-    password: 'demopass123',
-  });
-  if (login.error) { console.error('Cannot authenticate:', login.error); process.exit(1); }
-  TOKEN = login.token;
-  console.log(`  Logged in as ${login.username} (${login.role})`);
-} else {
-  TOKEN = reg.token;
-  console.log(`  Registered as ${reg.username} (${reg.role})`);
+if (demoReg.error) {
+  console.error('Cannot register demo user:', demoReg.error);
+  process.exit(1);
 }
+const demoToken = demoReg.token;
+const demoId = demoReg.id;
+console.log(`  Registered as ${demoReg.username} (${demoReg.role}), id: ${demoId}`);
+
+// Step 4: Promote demo to admin using owner token
+TOKEN = sysReg.token;
+console.log('Promoting demo to admin...');
+const promoteRes = await api('PUT', `/api/admin/users/${demoId}/role`, { role: 'admin' });
+if (promoteRes.error) {
+  console.error('Cannot promote demo:', promoteRes.error);
+  process.exit(1);
+}
+console.log('  Promoted to admin');
+
+// Step 5: Switch to demo token for content creation
+TOKEN = demoToken;
 
 // Songs
 const songs = [

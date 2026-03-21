@@ -6,6 +6,7 @@ const { requireAuth, requireAdmin } = require('../lib/auth');
 const { parseId, validateUserCredentials } = require('../lib/validation');
 const { handleDbError } = require('../lib/errors');
 const { ROLES, STATUS } = require('../lib/constants');
+const { blockInDemo } = require('../lib/demo');
 
 function resolveAdminTarget(req, res) {
   const targetId = parseId(req.params.id);
@@ -52,7 +53,7 @@ function createAdminRouter() {
     res.json(users);
   });
 
-  router.put('/admin/users/:id/role', requireAuth, requireAdmin, (req, res) => {
+  router.put('/admin/users/:id/role', requireAuth, requireAdmin, blockInDemo, (req, res) => {
     const { role } = req.body;
     const resolved = resolveAdminTarget(req, res);
     if (!resolved) return;
@@ -68,7 +69,7 @@ function createAdminRouter() {
     res.json({ success: true });
   });
 
-  router.put('/admin/users/:id/disabled', requireAuth, requireAdmin, (req, res) => {
+  router.put('/admin/users/:id/disabled', requireAuth, requireAdmin, blockInDemo, (req, res) => {
     const { disabled } = req.body;
     const resolved = resolveAdminTarget(req, res);
     if (!resolved) return;
@@ -77,7 +78,7 @@ function createAdminRouter() {
     res.json({ success: true });
   });
 
-  router.post('/admin/users', requireAuth, requireAdmin, async (req, res) => {
+  router.post('/admin/users', requireAuth, requireAdmin, blockInDemo, async (req, res) => {
     const { username, password } = req.body;
     const credentialsErr = validateUserCredentials(username, password);
     if (credentialsErr) return res.status(400).json({ error: credentialsErr });
@@ -91,7 +92,7 @@ function createAdminRouter() {
     }
   });
 
-  router.delete('/admin/users/:id', requireAuth, requireAdmin, (req, res) => {
+  router.delete('/admin/users/:id', requireAuth, requireAdmin, blockInDemo, (req, res) => {
     const resolved = resolveAdminTarget(req, res);
     if (!resolved) return;
 
@@ -107,7 +108,7 @@ function createAdminRouter() {
     res.json({ success: true });
   });
 
-  router.post('/admin/invites', requireAuth, requireAdmin, (req, res) => {
+  router.post('/admin/invites', requireAuth, requireAdmin, blockInDemo, (req, res) => {
     const code = crypto.randomBytes(8).toString('hex');
     db.prepare('INSERT INTO invites (code, created_by) VALUES (?, ?)').run(code, req.user.id);
     res.json({ code });
@@ -125,7 +126,7 @@ function createAdminRouter() {
     res.json(invites);
   });
 
-  router.delete('/admin/invites/:id', requireAuth, requireAdmin, (req, res) => {
+  router.delete('/admin/invites/:id', requireAuth, requireAdmin, blockInDemo, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid invite ID' });
     const result = db.prepare('DELETE FROM invites WHERE id = ? AND used_at IS NULL').run(id);
@@ -147,7 +148,7 @@ function createAdminRouter() {
     res.json({ allowRegistration: isRegistrationAllowed() });
   });
 
-  router.put('/admin/config', requireAuth, requireAdmin, (req, res) => {
+  router.put('/admin/config', requireAuth, requireAdmin, blockInDemo, (req, res) => {
     const { allowRegistration } = req.body;
     if (typeof allowRegistration !== 'boolean') return res.status(400).json({ error: 'allowRegistration must be a boolean' });
     setSetting('allow_registration', allowRegistration ? '1' : '0');

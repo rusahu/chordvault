@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
+import { useDemo } from '../context/DemoContext';
 import { api } from '../lib/api';
 import type { AuthConfig, AuthResponse } from '../types';
 
@@ -11,6 +12,7 @@ interface AuthViewProps {
 
 export function AuthView({ navigate }: AuthViewProps) {
   const { login } = useAuth();
+  const { demoMode } = useDemo();
   const { t } = useI18n();
   const toast = useToast();
   const [tab, setTab] = useState<'login' | 'register' | 'invite'>('login');
@@ -18,14 +20,20 @@ export function AuthView({ navigate }: AuthViewProps) {
   const [password, setPassword] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [error, setError] = useState('');
-  const [config, setConfig] = useState<AuthConfig>({ allowRegistration: true, invitesEnabled: false, turnstileSiteKey: null });
+  const [config, setConfig] = useState<AuthConfig>({ allowRegistration: true, invitesEnabled: false, turnstileSiteKey: null, demoMode: false });
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const userRef = useRef<HTMLInputElement>(null);
   const inviteRef = useRef<HTMLInputElement>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    api<AuthConfig>('GET', '/api/auth/config').then(setConfig).catch(() => {});
+    api<AuthConfig>('GET', '/api/auth/config').then((cfg) => {
+      setConfig(cfg);
+      if (cfg.demoMode) {
+        setUsername('demo');
+        setPassword('demopass123');
+      }
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {

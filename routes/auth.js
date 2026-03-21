@@ -6,6 +6,7 @@ const { requireAuth } = require('../lib/auth');
 const { validateUserCredentials } = require('../lib/validation');
 const { ROLES, LIMITS } = require('../lib/constants');
 const { handleDbError } = require('../lib/errors');
+const { DEMO_MODE, blockInDemo } = require('../lib/demo');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -28,11 +29,14 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
   router.get('/config', (req, res) => {
     const userCount = stmts.countUsers.get().count;
     const hasInvites = db.prepare("SELECT COUNT(*) as count FROM invites WHERE used_at IS NULL").get().count > 0;
-    res.json({ allowRegistration: isRegistrationAllowed() || userCount === 0, invitesEnabled: hasInvites, turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || null });
+    res.json({ allowRegistration: isRegistrationAllowed() || userCount === 0, invitesEnabled: hasInvites, turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || null, demoMode: DEMO_MODE });
   });
 
   router.post('/register', withSkipGlobal(registerLimiter), async (req, res) => {
     const userCount = stmts.countUsers.get().count;
+    if (DEMO_MODE && userCount > 0) {
+      return res.status(403).json({ error: 'Disabled in demo mode' });
+    }
     if (!isRegistrationAllowed() && userCount > 0) {
       return res.status(403).json({ error: 'Registration is currently disabled' });
     }
@@ -70,7 +74,7 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     res.json({ token, id: user.id, username: user.username, role: user.role });
   });
 
-  router.post('/redeem-invite', withSkipGlobal(registerLimiter), async (req, res) => {
+  router.post('/redeem-invite', blockInDemo, withSkipGlobal(registerLimiter), async (req, res) => {
     const { code, username, password, turnstile_token } = req.body;
     if (!(await verifyTurnstile(turnstile_token))) {
       return res.status(400).json({ error: 'Bot verification failed. Please try again.' });
@@ -94,7 +98,7 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     }
   });
 
-  router.put('/password', requireAuth, async (req, res) => {
+  router.put('/password', blockInDemo, requireAuth, async (req, res) => {
     const { current_password, new_password } = req.body;
     if (!current_password || !new_password) return res.status(400).json({ error: 'Current password and new password are required' });
     if (new_password.length < LIMITS.PASSWORD_MIN) return res.status(400).json({ error: `New password must be at least ${LIMITS.PASSWORD_MIN} characters` });

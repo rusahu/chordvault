@@ -5,6 +5,7 @@ import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
 import { Loading } from '../components/Loading';
 import type { AdminStats, AdminUser, InviteCode, AdminConfig, Correction } from '../types';
+import { useDemo } from '../context/DemoContext';
 import { languageName } from '../lib/languages';
 
 interface AdminViewProps {
@@ -14,6 +15,7 @@ interface AdminViewProps {
 export function AdminView({ navigate }: AdminViewProps) {
   const apiCall = useApi();
   const { user, isAdmin } = useAuth();
+  const { demoMode } = useDemo();
   const { t, tReplace } = useI18n();
   const toast = useToast();
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -134,15 +136,16 @@ export function AdminView({ navigate }: AdminViewProps) {
         <label className="sl-option">
           <span>Open Registration</span>
           <span className="toggle">
-            <input type="checkbox" checked={config.allowRegistration} onChange={(e) => toggleReg(e.target.checked)} />
+            <input type="checkbox" checked={config.allowRegistration} onChange={(e) => toggleReg(e.target.checked)} disabled={demoMode} />
             <span className="toggle-slider" />
           </span>
         </label>
+        {demoMode && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>Disabled in demo mode</div>}
       </div>
 
       <h3 className="admin-section-title">{t('admin.users')}</h3>
       <div className="search-row" style={{ marginBottom: 16 }}>
-        <button className="btn btn-sm" onClick={generateInvite}>{t('admin.generateInvite')}</button>
+        <button className="btn btn-sm" onClick={generateInvite} disabled={demoMode} title={demoMode ? 'Disabled in demo mode' : ''}>{t('admin.generateInvite')}</button>
         {inviteCode && (
           <span>
             <code style={{ fontSize: 16, padding: '4px 10px', background: 'var(--surface)', borderRadius: 6, userSelect: 'all' as const }}>{inviteCode}</code>
@@ -157,7 +160,7 @@ export function AdminView({ navigate }: AdminViewProps) {
             <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <code style={{ fontSize: 13 }}>{inv.code}</code>
               <span style={{ fontSize: 12, color: 'var(--muted)' }}>{new Date(inv.created_at).toLocaleDateString()}</span>
-              <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '2px 6px' }} onClick={() => deleteInvite(inv.id)}>&#10005;</button>
+              <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '2px 6px' }} onClick={() => deleteInvite(inv.id)} disabled={demoMode}>&#10005;</button>
             </div>
           ))}
         </div>
@@ -180,7 +183,7 @@ export function AdminView({ navigate }: AdminViewProps) {
                 {u.role === 'owner' && <span className="badge badge-owner">owner</span>}
                 {u.role === 'admin' && <span className="badge badge-admin">admin</span>}
                 {u.disabled && <span className="badge badge-disabled">disabled</span>}
-                {canManage && (
+                {canManage && !demoMode && (
                   <div className="user-card-actions">
                     {isOwner && (isTargetAdmin
                       ? <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setRole(u.id, 'user'); }}>{t('admin.demote')}</button>

@@ -3,10 +3,12 @@ import { useApi } from '../hooks/useApi';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
 import { LANGUAGES, languageName } from '../lib/languages';
+import { useDemo } from '../context/DemoContext';
 import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT } from '../lib/constants';
 
 export function SettingsView() {
   const apiCall = useApi();
+  const { demoMode } = useDemo();
   const { theme, toggleTheme } = useTheme();
   const toast = useToast();
   const [currentPw, setCurrentPw] = useState('');
@@ -141,13 +143,17 @@ export function SettingsView() {
 
       <div className="settings-section">
         <h3 className="admin-section-title">Change Password</h3>
-        <div className="auth-card" style={{ maxWidth: 400 }}>
-          <div className="field"><label>Current Password</label><input type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} autoComplete="current-password" /></div>
-          <div className="field"><label>New Password</label><input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" /></div>
-          <div className="field"><label>Confirm New Password</label><input type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} autoComplete="new-password" /></div>
-          <button className="btn" onClick={changePassword}>Change Password</button>
-          {pwMsg && <div style={{ fontSize: 13, marginTop: 12, color: pwMsg.color }}>{pwMsg.text}</div>}
-        </div>
+        {demoMode ? (
+          <div style={{ color: 'var(--muted)', fontSize: 13 }}>Disabled in demo mode</div>
+        ) : (
+          <div className="auth-card" style={{ maxWidth: 400 }}>
+            <div className="field"><label>Current Password</label><input type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} autoComplete="current-password" /></div>
+            <div className="field"><label>New Password</label><input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" /></div>
+            <div className="field"><label>Confirm New Password</label><input type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} autoComplete="new-password" /></div>
+            <button className="btn" onClick={changePassword}>Change Password</button>
+            {pwMsg && <div style={{ fontSize: 13, marginTop: 12, color: pwMsg.color }}>{pwMsg.text}</div>}
+          </div>
+        )}
       </div>
 
       <div className="settings-section">

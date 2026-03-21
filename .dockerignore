@@ -6,6 +6,7 @@ data/
 *.md
 test/
 scripts/
+!scripts/seed-data.mjs
 docs/
 .github/
 public/assets/

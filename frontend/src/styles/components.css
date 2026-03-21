@@ -1,3 +1,13 @@
+/* ── Demo Banner ────────────────────────── */
+.demo-banner {
+  background: var(--accent);
+  color: #fff;
+  text-align: center;
+  padding: 6px 16px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 /* ── Nav ────────────────────────────────── */
 #nav {
   position: sticky;

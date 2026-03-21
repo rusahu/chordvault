@@ -23,9 +23,11 @@ COPY lib/ ./lib/
 COPY routes/ ./routes/
 COPY --from=frontend /app/public ./public
 COPY public/locales ./public/locales
+COPY scripts/seed-data.mjs ./scripts/seed-data.mjs
+COPY entrypoint.sh ./
 RUN mkdir -p data && chown appuser:appuser data
 USER appuser
 EXPOSE 3100
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3100',r=>{if(r.statusCode!==200)throw r.statusCode})"
-CMD ["node", "server.js"]
+CMD ["sh", "entrypoint.sh"]

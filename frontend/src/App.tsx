@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './context/AuthContext';
+import { useDemo } from './context/DemoContext';
 import { Nav } from './components/Nav';
+import { DemoBanner } from './components/DemoBanner';
 import { Toast } from './components/Toast';
 import { Loading } from './components/Loading';
 import { BrowseView } from './views/BrowseView';
@@ -18,7 +20,8 @@ import { LocalSetlistEditView } from './views/LocalSetlistEditView';
 import { AdminView } from './views/AdminView';
 import { SettingsView } from './views/SettingsView';
 import { AboutView } from './views/AboutView';
-import type { Setlist } from './types';
+import { api } from './lib/api';
+import type { AuthConfig, Setlist } from './types';
 
 interface Route {
   view: string;
@@ -46,8 +49,15 @@ function parseHash(): Route {
 
 export function App() {
   const { user } = useAuth();
+  const { setDemoMode } = useDemo();
   const [route, setRoute] = useState<Route>(() => parseHash());
   const [animClass, setAnimClass] = useState('');
+
+  useEffect(() => {
+    api<AuthConfig>('GET', '/api/auth/config').then((cfg) => {
+      if (cfg.demoMode) setDemoMode(true);
+    }).catch(() => {});
+  }, []);
 
   // Listen for hash changes
   useEffect(() => {
@@ -142,6 +152,7 @@ export function App() {
 
   return (
     <>
+      <DemoBanner />
       <Nav view={route.view} navigate={navigate} />
       <main id="app" className={animClass}>
         {renderView()}

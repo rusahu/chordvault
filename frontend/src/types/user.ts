@@ -9,6 +9,7 @@ export interface AuthConfig {
   allowRegistration: boolean;
   invitesEnabled: boolean;
   turnstileSiteKey: string | null;
+  demoMode: boolean;
 }
 
 export interface AuthResponse {
