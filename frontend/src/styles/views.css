@@ -1,0 +1,596 @@
+/* ── Hero ──────────────────────────────── */
+.hero {
+  text-align: center;
+  padding: 48px 20px 36px;
+  margin-bottom: 8px;
+}
+.hero-title {
+  font-family: 'Crimson Pro', serif;
+  font-size: 42px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.01em;
+  margin-bottom: 8px;
+}
+.hero-tagline {
+  font-size: 18px;
+  color: var(--text);
+  font-weight: 400;
+  margin-bottom: 6px;
+}
+.hero-cta {
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 360px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* ── About Page ────────────────────────── */
+.about-page { max-width: 600px; margin: 0 auto; }
+.about-title {
+  font-family: 'Crimson Pro', serif;
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: center;
+}
+.about-subtitle {
+  text-align: center;
+  color: var(--muted);
+  font-size: 16px;
+  margin-bottom: 32px;
+}
+.about-section {
+  margin-bottom: 24px;
+}
+.about-section h3 {
+  font-family: 'Crimson Pro', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent-alt);
+  margin-bottom: 6px;
+}
+.about-section p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── Auth ───────────────────────────────── */
+.auth-wrap {
+  min-height: calc(100vh - 56px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 44px 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg), var(--glow-accent);
+}
+
+.auth-logo {
+  font-family: 'Crimson Pro', serif;
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.auth-tagline {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 28px;
+}
+
+.auth-tabs {
+  display: flex;
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 24px;
+}
+
+.auth-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.auth-tab.active { background: var(--surface); color: var(--text); }
+
+/* ── Settings ────────────────────────────── */
+.settings-section { margin-bottom: 32px; }
+
+/* ── Corrections ────────────────────────── */
+.corrections-section { margin-top: 32px; border-top: 1px solid var(--border); padding-top: 16px; }
+.correction-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
+.correction-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: var(--muted); font-size: 13px; }
+.correction-actions { display: flex; gap: 8px; }
+.correction-preview { max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--bg); }
+.badge-pending { background: rgba(240,160,48,0.15); color: #f0a030; }
+
+/* ── Song View ──────────────────────────── */
+.song-view-header {
+  margin-bottom: 24px;
+}
+
+.song-view-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.song-view-title {
+  font-family: 'Crimson Pro', serif;
+  font-size: 38px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.song-view-artist {
+  font-size: 17px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 6px;
+  font-family: 'Crimson Pro', serif;
+}
+
+.song-view-by {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.song-view-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.song-view-meta-bottom {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── YouTube Link ─────────────────────── */
+.yt-link {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #ff4444;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  vertical-align: middle;
+}
+.yt-link:hover { background: var(--border); }
+
+/* ── Edit Form ──────────────────────────── */
+.edit-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.edit-header h2 {
+  font-family: 'Crimson Pro', serif;
+  font-size: 24px;
+  flex: 1;
+}
+
+.edit-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.chordpro-hint-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.chordpro-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-family: 'Outfit', sans-serif;
+}
+.chordpro-hint code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--surface2);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--accent);
+}
+
+/* ── Admin ──────────────────────────────── */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.stat-card.stat-warn {
+  border-color: rgba(255, 152, 0, 0.4);
+  background: rgba(255, 152, 0, 0.08);
+}
+.stat-card.stat-warn .stat-value { color: #ff9800; }
+
+.stat-value {
+  font-family: 'Crimson Pro', serif;
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+.admin-section-title {
+  font-family: 'Crimson Pro', serif;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.user-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Setlist ────────────────────────────── */
+.setlist-card .badge { background: rgba(240,160,48,0.15); color: var(--accent); }
+
+.setlist-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.setlist-name-row { margin-top: 8px; }
+
+.setlist-name-input {
+  font-family: 'Crimson Pro', serif;
+  font-size: 28px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 4px 8px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.setlist-name-input:focus { border-color: var(--accent); background: var(--surface); }
+
+.setlist-song-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.setlist-song-pos {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--muted);
+  min-width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.setlist-entry-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.setlist-reorder {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.setlist-arrow-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 20px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 9px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.setlist-arrow-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-bg); }
+.setlist-arrow-btn.disabled { visibility: hidden; }
+.setlist-remove-btn {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.setlist-remove-btn:hover { color: var(--danger); border-color: var(--danger); background: rgba(239,68,68,0.08); }
+
+.setlist-entry-controls {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.badge-edited { background: rgba(240,160,48,0.15); color: var(--accent); font-size: 10px; }
+.badge-nashville { background: rgba(34,197,94,0.15); color: var(--success); font-size: 10px; }
+
+/* Setlist playback */
+.setlist-play-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 8px 0;
+  position: sticky;
+  top: 56px;
+  z-index: 50;
+  background: var(--nav-bg);
+  backdrop-filter: blur(12px);
+}
+
+.setlist-play-indicator {
+  font-family: 'Crimson Pro', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Setlist sheet row — chord sheet flanked by prev/next buttons */
+.setlist-sheet-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.setlist-sheet-row .chord-sheet-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.setlist-side-btn {
+  width: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 30px;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.setlist-side-prev { border-radius: var(--radius) 0 0 var(--radius); border-right: none; }
+.setlist-side-next { border-radius: 0 var(--radius) var(--radius) 0; border-left: none; }
+.setlist-side-btn:hover { background: var(--accent-bg); color: var(--accent); }
+.setlist-side-btn:active { background: var(--accent); color: #000; }
+.setlist-side-spacer { width: 0; }
+
+.setlist-play-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.setlist-play-nav .btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.setlist-play-pos {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.setlist-save-btn {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(240,160,48,0.3); }
+  50% { box-shadow: 0 0 8px 2px rgba(240,160,48,0.3); }
+}
+
+/* Inline editor */
+.setlist-editor {
+  margin: 16px 0;
+}
+
+.setlist-edit-textarea {
+  width: 100%;
+  min-height: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 16px;
+  resize: vertical;
+}
+.setlist-edit-textarea:focus { border-color: var(--accent); outline: none; }
+
+.setlist-editor-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+/* Song versions */
+.song-versions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.song-versions .btn.active {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+/* Setlist date and visibility */
+.setlist-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.setlist-meta-row input[type="date"] {
+  width: auto;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  padding: 6px 10px;
+}
+
+/* ── Performance Mode ───────────────────── */
+body.perf-mode #nav { display: none; }
+body.perf-mode #app { max-width: 100%; padding: 40px 60px; }
+body.perf-mode .song-view-header { display: none; }
+body.perf-mode .transpose-bar { display: none; }
+
+body.perf-mode .chord-sheet-wrap {
+  background: transparent;
+  border: none;
+  border-left: none;
+  padding: 0;
+  box-shadow: none;
+}
+
+body.perf-mode .chord-sheet .chord {
+  font-size: 18px;
+}
+
+body.perf-mode .chord-sheet .lyrics {
+  font-size: 22px;
+}
+
+body.perf-mode .song-view-title { font-size: 48px; }
+
+.perf-controls {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 200;
+}
+
+.perf-btn {
+  width: 44px;
+  height: 44px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.perf-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+.perf-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+/* ── Responsive ─────────────────────────── */
+@media (max-width: 600px) {
+  #app { padding: 20px 16px; }
+  #nav { padding: 0 12px; height: 48px; }
+  .nav-brand { font-size: 18px; }
+  .nav-btn { padding: 5px 10px; font-size: 13px; }
+  .song-grid { grid-template-columns: 1fr; }
+  .edit-cols { grid-template-columns: 1fr; }
+  .song-view-title { font-size: 28px; }
+  .chord-sheet-wrap { padding: 24px 20px; }
+  body.perf-mode #app { padding: 24px 20px; }
+  .admin-stats { grid-template-columns: 1fr; }
+  .setlist-entry-actions { flex-direction: column; align-items: flex-end; gap: 4px; }
+  .setlist-play-header { top: 0; }
+  .setlist-meta-row { flex-direction: column; align-items: flex-start; }
+  .transpose-bar { flex-wrap: wrap; width: 100%; }
+  .setlist-side-btn { width: 36px; font-size: 22px; }
+}

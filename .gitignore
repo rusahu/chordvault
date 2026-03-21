@@ -1,0 +1,9 @@
+node_modules/
+data/
+.env
+.DS_Store
+frontend/node_modules/
+frontend/dist/
+test-results/
+public/assets/
+public/index.html
