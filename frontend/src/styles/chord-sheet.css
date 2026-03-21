@@ -197,26 +197,16 @@
   box-shadow: var(--shadow-md);
 }
 
-/* 2-column layout (inside chord-sheet-wrap) */
-.two-col-inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 32px;
+/* Multi-column layout — browser picks column count based on available width */
+.chord-sheet-wrap.two-col > #chord-output {
+  column-width: 280px;
+  column-gap: 32px;
+  column-rule: 1px solid var(--border);
 }
-.two-col-col {
-  border-right: 1px solid var(--border);
-  padding-right: 16px;
-}
-.two-col-col:last-child {
-  border-right: none;
-  padding-right: 0;
-  padding-left: 16px;
+.chord-sheet-wrap.two-col .paragraph {
+  break-inside: avoid;
 }
 
-@media (max-width: 600px) {
-  .two-col-inner { grid-template-columns: 1fr; }
-  .two-col-col { border-right: none; padding-right: 0; padding-left: 0; }
-}
 
 /* ChordSheetJS output styles */
 .chord-sheet .paragraph {

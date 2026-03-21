@@ -35,7 +35,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal, initialSetlist, 
   // Global setlist settings
   const [slNashville, setSlNashville] = useState(false);
   const [slHideYt, setSlHideYt] = useState(false);
-  const [slOptionsOpen, setSlOptionsOpen] = useState(true);
+  const [slOptionsOpen, setSlOptionsOpen] = useState(false);
   const [fontSize, setFontSize] = useState(() => getStoredFontSize());
   const [twoCol, setTwoCol] = useState(() => getStoredTwoCol());
 

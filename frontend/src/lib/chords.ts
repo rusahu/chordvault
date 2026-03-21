@@ -162,52 +162,34 @@ export function fontScaleValue(offset: number): string | undefined {
   return offset ? String(1 + offset * 0.12) : undefined;
 }
 
-/**
- * Calculate best font offset and 2-col setting for the current viewport.
- * Returns { fontSize: number, twoCol: boolean }.
- */
 export function autoFit(): { fontSize: number; twoCol: boolean } {
   const wrap = document.querySelector('.chord-sheet-wrap');
   if (!wrap) return { fontSize: 0, twoCol: false };
-  const wrapWidth = wrap.clientWidth;
-  // 2-col only makes sense if the container is wide enough
-  const twoCol = wrapWidth >= 700;
-  // Target: on mobile (<500px), scale down; on wide screens, stay at 0 or go up
-  // Each step is 0.12, base lyrics size is 18px
-  // We want lyrics to fit comfortably — aim for ~16px on small screens
-  let offset = 0;
-  if (wrapWidth < 400) offset = -2;
-  else if (wrapWidth < 500) offset = -1;
-  else if (wrapWidth >= 1000) offset = 1;
-  return { fontSize: clampFontSize(offset), twoCol };
+
+  const output = wrap.querySelector('#chord-output');
+  if (!output) return { fontSize: 0, twoCol: false };
+
+  const available = window.innerHeight - wrap.getBoundingClientRect().top;
+  const currentScale = parseFloat(getComputedStyle(wrap).getPropertyValue('--font-scale') || '1');
+  const contentH = output.scrollHeight;
+  const cols = Math.max(1, Math.floor(wrap.clientWidth / 280));
+
+  const fits = (ratio: number, numCols: number) =>
+    contentH * ratio / numCols <= available;
+
+  for (let offset = 0; offset >= -1; offset--) {
+    const ratio = (1 + offset * 0.12) / currentScale;
+    if (fits(ratio, 1)) return { fontSize: clampFontSize(offset), twoCol: false };
+  }
+
+  for (let offset = 0; offset >= -3; offset--) {
+    const ratio = (1 + offset * 0.12) / currentScale;
+    if (fits(ratio, cols)) return { fontSize: clampFontSize(offset), twoCol: true };
+  }
+
+  return { fontSize: clampFontSize(-3), twoCol: true };
 }
 
-export function applyTwoCol(): void {
-  const wrap = document.querySelector('.chord-sheet-wrap');
-  if (!wrap) return;
-  const output = wrap.querySelector('#chord-output');
-  if (!output) return;
-  const sheet = output.querySelector('.chord-sheet');
-  if (!sheet) return;
-  const inner = sheet.querySelector('.chord-sheet');
-  const paragraphs = Array.from((inner || sheet).querySelectorAll(':scope > .paragraph'));
-  if (paragraphs.length < 2) return;
-  const mid = Math.ceil(paragraphs.length / 2);
-  const grid = document.createElement('div');
-  grid.className = 'two-col-inner';
-  const col1 = document.createElement('div');
-  col1.className = 'two-col-col chord-sheet';
-  const col2 = document.createElement('div');
-  col2.className = 'two-col-col chord-sheet';
-  paragraphs.forEach((p, i) => {
-    if (i < mid) col1.appendChild(p);
-    else col2.appendChild(p);
-  });
-  grid.appendChild(col1);
-  grid.appendChild(col2);
-  output.innerHTML = '';
-  output.appendChild(grid);
-}
 
 export function slEffective<T>(
   entry: SetlistEntry,

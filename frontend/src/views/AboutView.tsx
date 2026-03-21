@@ -26,12 +26,12 @@ export function AboutView({ navigate }: AboutViewProps) {
 
       <div className="about-section">
         <h3>Setlists</h3>
-        <p>Build setlists for worship sessions or gigs. Swipe or tap through songs, with per-song key and global settings for font size, 2-column layout, and more.</p>
+        <p>Build setlists for worship sessions or gigs. Swipe or tap through songs, with per-song key and global settings for font size, multi-column layout, and more.</p>
       </div>
 
       <div className="about-section">
-        <h3>2-Column &amp; Font Size</h3>
-        <p>Toggle 2-column layout for landscape or wide screens. Adjust font size for readability — great for tablets on a music stand.</p>
+        <h3>Multi-Column &amp; Font Size</h3>
+        <p>Toggle multi-column layout to fit more on screen. Use the Fit button to automatically adjust columns and font size for your device. Great for tablets on a music stand.</p>
       </div>
 
       <div className="about-section">

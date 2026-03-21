@@ -39,7 +39,7 @@ export function SettingsPanel({
         </span>
       </label>
       <label className="sl-option">
-        <span>2-column layout</span>
+        <span>Multi-column layout</span>
         <span className="toggle">
           <input type="checkbox" checked={twoCol} onChange={(e) => onTwoColChange(e.target.checked)} />
           <span className="toggle-slider" />

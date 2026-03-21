@@ -55,7 +55,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const content = song?.content || '';
   const chord = useChordRenderer(content);
   const fontScale = useFontScale();
-  const twoColState = useTwoCol(false);
+  const twoColState = useTwoCol();
 
   // Re-render when content changes (reset transpose)
   useEffect(() => {

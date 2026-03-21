@@ -55,9 +55,9 @@ export function Toolbar({
         <button
           className={`transpose-btn col-toggle${twoCol ? ' active' : ''}${ov.twoCol ? ' overridden' : ''}`}
           onClick={onTwoColToggle}
-          title={twoCol ? 'Switch to 1 column' : 'Switch to 2 columns'}
+          title={twoCol ? 'Single column' : 'Multi-column'}
         >
-          {twoCol ? '2col' : '1col'}
+          Col
         </button>
         <span className="toolbar-divider" />
         <button
