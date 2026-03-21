@@ -42,7 +42,7 @@ export function Toolbar({
           id="key-display"
           onClick={() => setPickerOpen((v) => !v)}
         >
-          {currentKey || '?'}
+          Key {currentKey || '?'}
         </button>
         <label className={`number-toggle${ov.num ? ' overridden' : ''}`} id="nashville-toggle">
           <input
@@ -51,14 +51,14 @@ export function Toolbar({
             disabled={nashvilleDisabled}
             onChange={(e) => onNashvilleChange(e.target.checked)}
           />
-          <span>Num</span>
+          <span>123</span>
         </label>
         <button
           className={`transpose-btn col-toggle${twoCol ? ' active' : ''}${ov.twoCol ? ' overridden' : ''}`}
           onClick={onTwoColToggle}
           title={twoCol ? 'Single column' : 'Multi-column'}
         >
-          Col
+          &#124;&#124;
         </button>
         <button
           className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`}

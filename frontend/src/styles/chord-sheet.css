@@ -197,9 +197,8 @@
   box-shadow: var(--shadow-md);
 }
 
-/* Multi-column layout — browser picks column count based on available width */
 .chord-sheet-wrap.two-col > #chord-output {
-  column-width: 280px;
+  column-count: 2;
   column-gap: 32px;
   column-rule: 1px solid var(--border);
 }

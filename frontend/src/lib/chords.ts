@@ -163,28 +163,36 @@ export function fontScaleValue(offset: number): string | undefined {
 }
 
 export function autoFit(): { fontSize: number; twoCol: boolean } {
-  const wrap = document.querySelector('.chord-sheet-wrap');
+  const wrap = document.querySelector('.chord-sheet-wrap') as HTMLElement | null;
   if (!wrap) return { fontSize: 0, twoCol: false };
 
-  const output = wrap.querySelector('#chord-output');
+  const output = wrap.querySelector('#chord-output') as HTMLElement | null;
   if (!output) return { fontSize: 0, twoCol: false };
 
-  const available = window.innerHeight - wrap.getBoundingClientRect().top;
-  const currentScale = parseFloat(getComputedStyle(wrap).getPropertyValue('--font-scale') || '1');
-  const contentH = output.scrollHeight;
-  const cols = Math.max(1, Math.floor(wrap.clientWidth / 280));
+  const wasTwoCol = wrap.classList.contains('two-col');
+  const prevScale = wrap.style.getPropertyValue('--font-scale');
+  wrap.classList.remove('two-col');
+  wrap.style.removeProperty('--font-scale');
 
-  const fits = (ratio: number, numCols: number) =>
-    contentH * ratio / numCols <= available;
+  // Force layout so we measure baseline (1-col, default font)
+  const baselineH = output.scrollHeight;
+  const available = window.innerHeight - wrap.getBoundingClientRect().top;
+
+  // Restore previous state
+  if (wasTwoCol) wrap.classList.add('two-col');
+  if (prevScale) wrap.style.setProperty('--font-scale', prevScale);
+
+  const fits = (scale: number, numCols: number) =>
+    baselineH * scale / numCols <= available;
 
   for (let offset = 0; offset >= -1; offset--) {
-    const ratio = (1 + offset * 0.12) / currentScale;
-    if (fits(ratio, 1)) return { fontSize: clampFontSize(offset), twoCol: false };
+    const scale = 1 + offset * 0.12;
+    if (fits(scale, 1)) return { fontSize: clampFontSize(offset), twoCol: false };
   }
 
   for (let offset = 0; offset >= -3; offset--) {
-    const ratio = (1 + offset * 0.12) / currentScale;
-    if (fits(ratio, cols)) return { fontSize: clampFontSize(offset), twoCol: true };
+    const scale = 1 + offset * 0.12;
+    if (fits(scale, 2)) return { fontSize: clampFontSize(offset), twoCol: true };
   }
 
   return { fontSize: clampFontSize(-3), twoCol: true };
