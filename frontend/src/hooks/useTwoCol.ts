@@ -21,5 +21,10 @@ export function useTwoCol(shouldApply = true) {
     });
   }, []);
 
-  return { twoCol, toggleTwoCol, setTwoCol };
+  const setTwoColTo = useCallback((val: boolean) => {
+    setTwoCol(val);
+    setStoredTwoCol(val);
+  }, []);
+
+  return { twoCol, toggleTwoCol, setTwoCol, setTwoColTo };
 }

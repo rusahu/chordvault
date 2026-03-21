@@ -18,5 +18,11 @@ export function useFontScale() {
     setStoredFontSize(0);
   }, []);
 
-  return { fontSize, changeFontSize, resetFontSize, setFontSize };
+  const setFontSizeTo = useCallback((val: number) => {
+    const clamped = clampFontSize(val);
+    setFontSize(clamped);
+    setStoredFontSize(clamped);
+  }, []);
+
+  return { fontSize, changeFontSize, resetFontSize, setFontSize, setFontSizeTo };
 }

@@ -172,7 +172,8 @@
 .number-toggle:has(input:disabled) { opacity: 0.35; cursor: not-allowed; }
 .transpose-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .transpose-btn:disabled:hover { background: var(--surface2); color: var(--text); border-color: var(--border); }
-.col-toggle { font-size: 14px; }
+.col-toggle { font-size: 11px; font-family: 'Outfit', sans-serif; font-weight: 600; padding: 0 6px; white-space: nowrap; width: auto; }
+.autofit-btn { font-size: 11px; font-family: 'Outfit', sans-serif; font-weight: 600; padding: 0 6px; width: auto; }
 .toolbar-divider {
   width: 1px;
   height: 20px;
@@ -210,6 +211,11 @@
   border-right: none;
   padding-right: 0;
   padding-left: 16px;
+}
+
+@media (max-width: 600px) {
+  .two-col-inner { grid-template-columns: 1fr; }
+  .two-col-col { border-right: none; padding-right: 0; padding-left: 0; }
 }
 
 /* ChordSheetJS output styles */

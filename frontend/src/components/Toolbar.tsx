@@ -12,6 +12,7 @@ interface ToolbarProps {
   onFontChange: (delta: number) => void;
   onFontReset: () => void;
   onPickKey: (key: string) => void;
+  onAutoFit?: () => void;
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
 }
 
@@ -26,6 +27,7 @@ export function Toolbar({
   onFontChange,
   onFontReset,
   onPickKey,
+  onAutoFit,
   overrides,
 }: ToolbarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -53,9 +55,9 @@ export function Toolbar({
         <button
           className={`transpose-btn col-toggle${twoCol ? ' active' : ''}${ov.twoCol ? ' overridden' : ''}`}
           onClick={onTwoColToggle}
-          title="2-column"
+          title={twoCol ? 'Switch to 1 column' : 'Switch to 2 columns'}
         >
-          &#9783;
+          {twoCol ? '2col' : '1col'}
         </button>
         <span className="toolbar-divider" />
         <button
@@ -77,6 +79,18 @@ export function Toolbar({
         >
           &#8634;
         </button>
+        {onAutoFit && (
+          <>
+            <span className="toolbar-divider" />
+            <button
+              className="transpose-btn font-btn autofit-btn"
+              onClick={onAutoFit}
+              title="Auto-fit: adjust font and columns for this screen"
+            >
+              Fit
+            </button>
+          </>
+        )}
       </div>
       <KeyPicker
         currentKey={currentKey}
