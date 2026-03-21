@@ -22,17 +22,17 @@ async function api(method, path, body) {
 }
 
 // Register first user (owner)
-console.log('Registering owner: demo / demopass123');
+console.log('Registering owner: demo / demo123');
 const reg = await api('POST', '/api/auth/register', {
   username: 'demo',
-  password: 'demopass123',
+  password: 'demo123',
 });
 if (reg.error) {
   // Maybe already registered — try login
   console.log(`  Register returned: ${reg.error} — trying login...`);
   const login = await api('POST', '/api/auth/login', {
     username: 'demo',
-    password: 'demopass123',
+    password: 'demo123',
   });
   if (login.error) { console.error('Cannot authenticate:', login.error); process.exit(1); }
   TOKEN = login.token;
