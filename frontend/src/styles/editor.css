@@ -1,0 +1,110 @@
+/* Split Pane Layout */
+.editor-split {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.editor-split > .cm-editor-wrap {
+  flex: 0 0 55%;
+  border-right: 1px solid var(--border);
+  overflow: auto;
+  max-height: 70vh;
+}
+
+.editor-split > .editor-preview-wrap {
+  flex: 0 0 45%;
+  overflow: auto;
+  max-height: 70vh;
+  background: var(--bg);
+}
+
+/* Mobile Tabs */
+.editor-tabs {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .editor-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+  .editor-tab {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .editor-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .editor-split {
+    flex-direction: column;
+    min-height: 350px;
+  }
+  .editor-split > .cm-editor-wrap {
+    flex: 1 1 auto;
+    border-right: none;
+    max-height: none;
+  }
+  .editor-split > .editor-preview-wrap {
+    flex: 1 1 auto;
+    max-height: none;
+  }
+  .editor-hidden {
+    display: none;
+  }
+}
+
+/* Preview */
+.editor-preview {
+  padding: 12px;
+}
+
+.editor-preview-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.editor-preview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--muted);
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* CodeMirror Overrides */
+.cm-editor-container .cm-editor {
+  height: 100%;
+}
+
+.cm-editor-container .cm-scroller {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', ui-monospace, monospace;
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 8px 12px;
+}
+
+.cm-editor-container .cm-placeholder {
+  color: var(--muted);
+  font-style: italic;
+}

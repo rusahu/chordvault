@@ -1,0 +1,11 @@
+node_modules/
+data/
+.env
+.git/
+.DS_Store
+*.md
+test/
+scripts/
+docs/
+.github/
+public/assets/
