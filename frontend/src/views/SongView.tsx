@@ -201,12 +201,21 @@ export function SongView({ songId, navigate }: SongViewProps) {
         onTwoColToggle={twoColState.toggleTwoCol}
         fontSize={fontScale.fontSize}
         onFontChange={fontScale.changeFontSize}
-        onFontReset={fontScale.resetFontSize}
+        onReset={() => { fontScale.resetFontSize(); twoColState.setTwoColTo(false); }}
         onPickKey={chord.pickKey}
         onAutoFit={() => {
+          const before = { fontSize: fontScale.fontSize, twoCol: twoColState.twoCol };
           const fit = autoFit();
           fontScale.setFontSizeTo(fit.fontSize);
           twoColState.setTwoColTo(fit.twoCol);
+          if (fit.fontSize === before.fontSize && fit.twoCol === before.twoCol) {
+            toast('Already fitted', 'info');
+          } else {
+            const parts = [];
+            if (fit.twoCol) parts.push('multi-column');
+            if (fit.fontSize !== 0) parts.push(`font ${fit.fontSize > 0 ? '+' : ''}${fit.fontSize}`);
+            toast(parts.length ? `Fitted: ${parts.join(', ')}` : 'Fitted to default', 'success');
+          }
         }}
       />
 
