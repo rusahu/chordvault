@@ -29,6 +29,6 @@ module.exports = [
     },
   },
   {
-    ignores: ['public/', 'frontend/', 'node_modules/', 'data/'],
+    ignores: ['public/', 'frontend/', 'node_modules/', 'data/', 'scripts/'],
   },
 ];
