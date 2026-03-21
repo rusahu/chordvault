@@ -33,14 +33,27 @@ function createSetlistsRouter() {
   const router = express.Router();
 
   router.get('/setlists', requireAuth, (req, res) => {
-    const setlists = db.prepare(`
+    const { q, date_from, date_to } = req.query;
+    let query = `
       SELECT s.*, COUNT(ss.id) as song_count
       FROM setlists s LEFT JOIN setlist_songs ss ON s.id = ss.setlist_id
       WHERE s.user_id = ?
-      GROUP BY s.id
-      ORDER BY s.updated_at DESC
-    `).all(req.user.id);
-    res.json(setlists);
+    `;
+    const params = [req.user.id];
+    if (q?.trim()) {
+      query += ' AND s.name LIKE ?';
+      params.push(`%${q.trim()}%`);
+    }
+    if (date_from?.trim() && isValidDate(date_from.trim())) {
+      query += ' AND COALESCE(s.event_date, DATE(s.created_at)) >= ?';
+      params.push(date_from.trim());
+    }
+    if (date_to?.trim() && isValidDate(date_to.trim())) {
+      query += ' AND COALESCE(s.event_date, DATE(s.created_at)) <= ?';
+      params.push(date_to.trim());
+    }
+    query += ' GROUP BY s.id ORDER BY s.event_date DESC, s.updated_at DESC';
+    res.json(db.prepare(query).all(...params));
   });
 
   router.post('/setlists', requireAuth, (req, res) => {
