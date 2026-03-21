@@ -1,82 +1,113 @@
 /**
- * seed-data.mjs — Seeds ChordVault with demo data via API.
+ * seed-data.mjs — Seeds ChordVault with demo data via direct DB access.
  *
- * Usage: node scripts/seed-data.mjs [base_url]
- * Default base URL: http://localhost:3100
+ * Usage: node scripts/seed-data.mjs
  *
- * Creates a hidden _system owner, then a demo admin user with sample data.
+ * Creates a hidden _system owner and a demo admin user with sample data.
+ * Uses CommonJS require for better-sqlite3 and bcryptjs (bundled in node_modules).
  */
 
+import { createRequire } from 'module';
 import crypto from 'crypto';
+const require = createRequire(import.meta.url);
+const Database = require('better-sqlite3');
+const bcrypt = require('bcryptjs');
 
-const BASE = process.argv[2] || 'http://localhost:3100';
+const DB_PATH = './data/chordvault.db';
 
-let TOKEN = null;
-async function api(method, path, body) {
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
-  if (TOKEN) opts.headers['Authorization'] = `Bearer ${TOKEN}`;
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(`${BASE}${path}`, opts);
-  return res.json();
-}
+// Open DB — server.js hasn't started yet, so we init tables ourselves
+const db = new Database(DB_PATH);
+db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
 
-// Step 1: Register hidden owner (_system) — first user becomes owner
+// Create tables (same schema as lib/db.js)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    username      TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role          TEXT DEFAULT 'user',
+    disabled      INTEGER DEFAULT 0,
+    gemini_api_key TEXT DEFAULT NULL,
+    gemini_prompt  TEXT DEFAULT NULL,
+    preferred_languages TEXT DEFAULT NULL,
+    created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS songs (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id         INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title           TEXT NOT NULL,
+    artist          TEXT DEFAULT '',
+    key             TEXT DEFAULT '',
+    content         TEXT NOT NULL,
+    visibility      TEXT DEFAULT 'public',
+    parent_id       INTEGER REFERENCES songs(id) ON DELETE SET NULL,
+    youtube_url     TEXT DEFAULT NULL,
+    format_detected TEXT DEFAULT NULL,
+    bpm             INTEGER DEFAULT NULL,
+    tags            TEXT DEFAULT NULL,
+    language        TEXT NOT NULL DEFAULT '',
+    status          TEXT DEFAULT 'active',
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS setlists (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name       TEXT NOT NULL,
+    visibility TEXT DEFAULT 'private',
+    event_date TEXT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS setlist_songs (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    setlist_id       INTEGER REFERENCES setlists(id) ON DELETE CASCADE,
+    song_id          INTEGER REFERENCES songs(id) ON DELETE CASCADE,
+    position         INTEGER NOT NULL,
+    transpose        INTEGER DEFAULT 0,
+    nashville        INTEGER DEFAULT 0,
+    content_override TEXT DEFAULT NULL
+  );
+  CREATE TABLE IF NOT EXISTS invites (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    code       TEXT UNIQUE NOT NULL,
+    created_by INTEGER REFERENCES users(id),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    used_by    INTEGER REFERENCES users(id) DEFAULT NULL,
+    used_at    DATETIME DEFAULT NULL
+  );
+  CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_songs_user_status ON songs(user_id, status);
+  CREATE INDEX IF NOT EXISTS idx_songs_visibility_status ON songs(visibility, status);
+  CREATE INDEX IF NOT EXISTS idx_songs_parent_id ON songs(parent_id);
+  CREATE INDEX IF NOT EXISTS idx_setlists_user ON setlists(user_id);
+  CREATE INDEX IF NOT EXISTS idx_setlist_songs_setlist ON setlist_songs(setlist_id, position);
+  CREATE INDEX IF NOT EXISTS idx_songs_language ON songs(language);
+`);
+
+// Settings
+db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('allow_registration', '0')").run();
+
+// Step 1: Create hidden _system owner
 const systemPassword = crypto.randomBytes(32).toString('hex');
-console.log('Registering hidden owner: _system');
-const sysReg = await api('POST', '/api/auth/register', {
-  username: '_system',
-  password: systemPassword,
-});
-if (sysReg.error) {
-  console.error('Cannot register _system owner:', sysReg.error);
-  process.exit(1);
-}
-TOKEN = sysReg.token;
-console.log(`  Registered as ${sysReg.username} (${sysReg.role})`);
+const systemHash = bcrypt.hashSync(systemPassword, 10);
+console.log('Creating hidden owner: _system');
+db.prepare("INSERT INTO users (username, password_hash, role) VALUES ('_system', ?, 'owner')").run(systemHash);
+const systemUser = db.prepare("SELECT id FROM users WHERE username = '_system'").get();
+console.log(`  Created _system (id: ${systemUser.id}, role: owner)`);
 
-// Step 2: Create invite code as owner
-console.log('Creating invite code for demo user...');
-const inviteRes = await api('POST', '/api/admin/invites');
-if (inviteRes.error) {
-  console.error('Cannot create invite:', inviteRes.error);
-  process.exit(1);
-}
-const inviteCode = inviteRes.code;
-console.log(`  Invite code: ${inviteCode}`);
+// Step 2: Create demo admin user
+const demoHash = bcrypt.hashSync('demopass123', 10);
+console.log('Creating demo admin user...');
+db.prepare("INSERT INTO users (username, password_hash, role) VALUES ('demo', ?, 'admin')").run(demoHash);
+const demoUser = db.prepare("SELECT id FROM users WHERE username = 'demo'").get();
+console.log(`  Created demo (id: ${demoUser.id}, role: admin)`);
 
-// Step 3: Redeem invite as demo user
-console.log('Redeeming invite as demo / demopass123...');
-TOKEN = null; // clear owner token
-const demoReg = await api('POST', '/api/auth/redeem-invite', {
-  code: inviteCode,
-  username: 'demo',
-  password: 'demopass123',
-});
-if (demoReg.error) {
-  console.error('Cannot register demo user:', demoReg.error);
-  process.exit(1);
-}
-const demoToken = demoReg.token;
-const demoId = demoReg.id;
-console.log(`  Registered as ${demoReg.username} (${demoReg.role}), id: ${demoId}`);
-
-// Step 4: Promote demo to admin using owner token
-TOKEN = sysReg.token;
-console.log('Promoting demo to admin...');
-const promoteRes = await api('PUT', `/api/admin/users/${demoId}/role`, { role: 'admin' });
-if (promoteRes.error) {
-  console.error('Cannot promote demo:', promoteRes.error);
-  process.exit(1);
-}
-console.log('  Promoted to admin');
-
-// Step 5: Switch to demo token for content creation
-TOKEN = demoToken;
-
-// Songs
+// Step 3: Create songs owned by demo user
 const songs = [
   {
     title: 'Amazing Grace',
@@ -119,59 +150,50 @@ const songs = [
   },
 ];
 
+const insertSong = db.prepare(`
+  INSERT INTO songs (user_id, title, artist, key, content, language, tags, bpm, format_detected, youtube_url)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+
 console.log('\nCreating songs...');
 const songIds = [];
 for (const s of songs) {
-  const res = await api('POST', '/api/songs', s);
-  if (res.error) { console.error(`  FAILED: ${s.title} — ${res.error}`); continue; }
-  songIds.push(res.id);
-  console.log(`  ✓ ${s.title} (id: ${res.id})`);
+  const result = insertSong.run(
+    demoUser.id, s.title, s.artist, s.key, s.content,
+    s.language, s.tags, s.bpm, s.format_detected, s.youtube_url || null
+  );
+  songIds.push(result.lastInsertRowid);
+  console.log(`  ✓ ${s.title} (id: ${result.lastInsertRowid})`);
 }
 
-// Setlists
+// Step 4: Create setlists
+const insertSetlist = db.prepare(`
+  INSERT INTO setlists (user_id, name, visibility, event_date)
+  VALUES (?, ?, ?, ?)
+`);
+const insertSetlistSong = db.prepare(`
+  INSERT INTO setlist_songs (setlist_id, song_id, position, transpose)
+  VALUES (?, ?, ?, 0)
+`);
+
 console.log('\nCreating setlists...');
 
-const sl1 = await api('POST', '/api/setlists', {
-  name: 'Sunday Morning Worship — March 23',
-  event_date: '2026-03-23',
-  visibility: 'public',
-});
-console.log(`  ✓ ${sl1.name} (id: ${sl1.id}, public)`);
+const sl1 = insertSetlist.run(demoUser.id, 'Sunday Morning Worship — March 23', 'public', '2026-03-23');
+console.log(`  ✓ Sunday Morning Worship (id: ${sl1.lastInsertRowid}, public)`);
 for (let i = 0; i < 4 && i < songIds.length; i++) {
-  await api('POST', `/api/setlists/${sl1.id}/songs`, {
-    song_id: songIds[i], position: i, transpose: 0,
-  });
+  insertSetlistSong.run(sl1.lastInsertRowid, songIds[i], i);
 }
 console.log('    Added 4 songs');
 
-const sl2 = await api('POST', '/api/setlists', {
-  name: 'Christmas Eve Service',
-  event_date: '2025-12-24',
-  visibility: 'public',
-});
-console.log(`  ✓ ${sl2.name} (id: ${sl2.id}, public)`);
-if (songIds[5]) {
-  await api('POST', `/api/setlists/${sl2.id}/songs`, {
-    song_id: songIds[5], position: 0, transpose: 0,
-  });
-}
-if (songIds[0]) {
-  await api('POST', `/api/setlists/${sl2.id}/songs`, {
-    song_id: songIds[0], position: 1, transpose: 0,
-  });
-}
+const sl2 = insertSetlist.run(demoUser.id, 'Christmas Eve Service', 'public', '2025-12-24');
+console.log(`  ✓ Christmas Eve Service (id: ${sl2.lastInsertRowid}, public)`);
+if (songIds[5]) insertSetlistSong.run(sl2.lastInsertRowid, songIds[5], 0);
+if (songIds[0]) insertSetlistSong.run(sl2.lastInsertRowid, songIds[0], 1);
 console.log('    Added 2 songs');
 
-const sl3 = await api('POST', '/api/setlists', {
-  name: 'Personal Practice',
-  event_date: '2026-03-19',
-  visibility: 'private',
-});
-console.log(`  ✓ ${sl3.name} (id: ${sl3.id}, private)`);
-if (songIds[4]) {
-  await api('POST', `/api/setlists/${sl3.id}/songs`, {
-    song_id: songIds[4], position: 0, transpose: 0,
-  });
-}
+const sl3 = insertSetlist.run(demoUser.id, 'Personal Practice', 'private', '2026-03-19');
+console.log(`  ✓ Personal Practice (id: ${sl3.lastInsertRowid}, private)`);
+if (songIds[4]) insertSetlistSong.run(sl3.lastInsertRowid, songIds[4], 0);
 
+db.close();
 console.log('\n✅ Seed complete!');
