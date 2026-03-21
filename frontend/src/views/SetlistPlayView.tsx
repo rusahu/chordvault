@@ -9,7 +9,7 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
-import { renderChordPro, getSongKey, clampFontSize, songHasKey, slEffective } from '../lib/chords';
+import { renderChordPro, getSongKey, clampFontSize, songHasKey, slEffective, autoFit } from '../lib/chords';
 import { normalizeKey, ALL_KEYS, ALL_KEYS_MINOR } from '../lib/keys';
 import { getStoredFontSize, setStoredFontSize, getStoredTwoCol, setStoredTwoCol } from '../lib/storage';
 import type { Setlist } from '../types';
@@ -211,6 +211,11 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal, initialSetlist, 
         onFontChange={changeEntryFont}
         onFontReset={() => { if (entry) entry._font = null; setRenderKey((k) => k + 1); }}
         onPickKey={pickKey}
+        onAutoFit={() => {
+          const fit = autoFit();
+          changeFont(fit.fontSize - fontSize);
+          changeTwoCol(fit.twoCol);
+        }}
         overrides={{
           num: entry._num != null,
           twoCol: entry._twoCol != null,

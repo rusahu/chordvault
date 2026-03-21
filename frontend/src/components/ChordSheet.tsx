@@ -12,7 +12,7 @@ export function ChordSheet({ html, twoCol, fontSize }: ChordSheetProps) {
 
   useEffect(() => {
     if (twoCol) applyTwoCol();
-  }, [html, twoCol]);
+  }, [html, twoCol, fontSize]);
 
   const scale = fontScaleValue(fontSize || 0);
 

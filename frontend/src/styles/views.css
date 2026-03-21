@@ -593,4 +593,6 @@ body.perf-mode .song-view-title { font-size: 48px; }
   .setlist-meta-row { flex-direction: column; align-items: flex-start; }
   .transpose-bar { flex-wrap: wrap; width: 100%; }
   .setlist-side-btn { width: 36px; font-size: 22px; }
+  .setlist-play-header { flex-wrap: wrap; gap: 4px 8px; }
+  .setlist-play-indicator { white-space: normal; font-size: 15px; min-width: 0; }
 }

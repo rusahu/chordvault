@@ -10,7 +10,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
-import { renderChordPro, songHasKey } from '../lib/chords';
+import { renderChordPro, songHasKey, autoFit } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction, SongListItem, SetlistListItem } from '../types';
 
@@ -203,6 +203,11 @@ export function SongView({ songId, navigate }: SongViewProps) {
         onFontChange={fontScale.changeFontSize}
         onFontReset={fontScale.resetFontSize}
         onPickKey={chord.pickKey}
+        onAutoFit={() => {
+          const fit = autoFit();
+          fontScale.setFontSizeTo(fit.fontSize);
+          twoColState.setTwoColTo(fit.twoCol);
+        }}
       />
 
       <ChordSheet html={renderedHtml} twoCol={twoColState.twoCol} fontSize={fontScale.fontSize} />

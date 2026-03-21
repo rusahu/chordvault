@@ -162,6 +162,26 @@ export function fontScaleValue(offset: number): string | undefined {
   return offset ? String(1 + offset * 0.12) : undefined;
 }
 
+/**
+ * Calculate best font offset and 2-col setting for the current viewport.
+ * Returns { fontSize: number, twoCol: boolean }.
+ */
+export function autoFit(): { fontSize: number; twoCol: boolean } {
+  const wrap = document.querySelector('.chord-sheet-wrap');
+  if (!wrap) return { fontSize: 0, twoCol: false };
+  const wrapWidth = wrap.clientWidth;
+  // 2-col only makes sense if the container is wide enough
+  const twoCol = wrapWidth >= 700;
+  // Target: on mobile (<500px), scale down; on wide screens, stay at 0 or go up
+  // Each step is 0.12, base lyrics size is 18px
+  // We want lyrics to fit comfortably — aim for ~16px on small screens
+  let offset = 0;
+  if (wrapWidth < 400) offset = -2;
+  else if (wrapWidth < 500) offset = -1;
+  else if (wrapWidth >= 1000) offset = 1;
+  return { fontSize: clampFontSize(offset), twoCol };
+}
+
 export function applyTwoCol(): void {
   const wrap = document.querySelector('.chord-sheet-wrap');
   if (!wrap) return;
