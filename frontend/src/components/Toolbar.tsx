@@ -10,7 +10,7 @@ interface ToolbarProps {
   onTwoColToggle: () => void;
   fontSize: number;
   onFontChange: (delta: number) => void;
-  onFontReset: () => void;
+  onReset: () => void;
   onPickKey: (key: string) => void;
   onAutoFit?: () => void;
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
@@ -25,13 +25,14 @@ export function Toolbar({
   onTwoColToggle,
   fontSize,
   onFontChange,
-  onFontReset,
+  onReset,
   onPickKey,
   onAutoFit,
   overrides,
 }: ToolbarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const ov = overrides || {};
+  const isDefault = fontSize === 0 && !twoCol;
 
   return (
     <>
@@ -59,7 +60,6 @@ export function Toolbar({
         >
           Col
         </button>
-        <span className="toolbar-divider" />
         <button
           className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`}
           onClick={() => onFontChange(-1)}
@@ -72,25 +72,24 @@ export function Toolbar({
         >
           A+
         </button>
+        <span className="toolbar-divider" />
+        {onAutoFit && (
+          <button
+            className="transpose-btn font-btn autofit-btn"
+            onClick={onAutoFit}
+            title="Auto-fit: adjust font and columns for this screen"
+          >
+            Fit
+          </button>
+        )}
         <button
           className="transpose-btn font-btn font-reset"
-          onClick={onFontReset}
-          disabled={fontSize === 0}
+          onClick={onReset}
+          disabled={isDefault}
+          title="Reset font and columns"
         >
           &#8634;
         </button>
-        {onAutoFit && (
-          <>
-            <span className="toolbar-divider" />
-            <button
-              className="transpose-btn font-btn autofit-btn"
-              onClick={onAutoFit}
-              title="Auto-fit: adjust font and columns for this screen"
-            >
-              Fit
-            </button>
-          </>
-        )}
       </div>
       <KeyPicker
         currentKey={currentKey}

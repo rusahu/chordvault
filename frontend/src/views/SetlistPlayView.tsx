@@ -166,6 +166,23 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal, initialSetlist, 
   };
   const resetFont = () => { setFontSize(0); setStoredFontSize(0); if (entry) entry._font = null; setRenderKey((k) => k + 1); };
 
+  const doFit = (perSong: boolean) => {
+    const before = { fontSize, twoCol };
+    const fit = autoFit();
+    if (perSong && entry) { entry._font = null; entry._twoCol = null; }
+    setFontSize(fit.fontSize); setStoredFontSize(fit.fontSize);
+    setTwoCol(fit.twoCol); setStoredTwoCol(fit.twoCol);
+    setRenderKey((k) => k + 1);
+    if (fit.fontSize === before.fontSize && fit.twoCol === before.twoCol) {
+      toast('Already fitted', 'info');
+    } else {
+      const parts: string[] = [];
+      if (fit.twoCol) parts.push('multi-column');
+      if (fit.fontSize !== 0) parts.push(`font ${fit.fontSize > 0 ? '+' : ''}${fit.fontSize}`);
+      toast(parts.length ? `Fitted: ${parts.join(', ')}` : 'Fitted to default', 'success');
+    }
+  };
+
   if (!setlist) return <Loading />;
   if (!entry) return <div className="empty"><div className="empty-text">{t('setlist.noSongsYet')}</div></div>;
 
@@ -197,6 +214,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal, initialSetlist, 
           fontSize={fontSize}
           onFontChange={changeFont}
           onFontReset={resetFont}
+          onAutoFit={() => doFit(false)}
         />
       )}
 
@@ -209,13 +227,14 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal, initialSetlist, 
         onTwoColToggle={toggleEntryTwoCol}
         fontSize={effFont || 0}
         onFontChange={changeEntryFont}
-        onFontReset={() => { if (entry) entry._font = null; setRenderKey((k) => k + 1); }}
-        onPickKey={pickKey}
-        onAutoFit={() => {
-          const fit = autoFit();
-          changeFont(fit.fontSize - fontSize);
-          changeTwoCol(fit.twoCol);
+        onReset={() => {
+          if (entry) { entry._font = null; entry._twoCol = null; }
+          setFontSize(0); setStoredFontSize(0);
+          setTwoCol(false); setStoredTwoCol(false);
+          setRenderKey((k) => k + 1);
         }}
+        onPickKey={pickKey}
+        onAutoFit={() => doFit(true)}
         overrides={{
           num: entry._num != null,
           twoCol: entry._twoCol != null,
