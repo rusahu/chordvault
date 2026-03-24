@@ -125,9 +125,7 @@ export function AuthView({ navigate }: AuthViewProps) {
           {tab === 'invite' ? t('auth.createAccount') : (tab === 'login' || !showTabs ? t('auth.signIn') : t('auth.createAccount'))}
         </button>
         {showInviteLink && (
-          <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <a href="#" onClick={(e) => { e.preventDefault(); setTab('invite'); }} style={{ fontSize: 13, color: 'var(--muted)' }}>{t('auth.haveInvite')}</a>
-          </div>
+          <button className="btn btn-ghost btn-full" style={{ marginTop: 10 }} onClick={() => setTab('invite')}>{t('auth.haveInvite')}</button>
         )}
         {tab === 'invite' && (
           <div style={{ textAlign: 'center', marginTop: 12 }}>
