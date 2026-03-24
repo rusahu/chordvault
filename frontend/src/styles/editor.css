@@ -8,6 +8,17 @@
   min-height: 400px;
 }
 
+/* Break out of #app max-width on desktop for more editor room */
+@media (min-width: 768px) {
+  .editor-split {
+    width: calc(100vw - 48px);
+    max-width: 1200px;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
 .editor-split > .cm-editor-wrap {
   flex: 0 0 55%;
   border-right: 1px solid var(--border);
@@ -20,6 +31,22 @@
   overflow: auto;
   max-height: 70vh;
   background: var(--bg);
+}
+
+/* Compact chord sheet inside editor preview */
+.editor-preview-wrap .chord-sheet-wrap {
+  padding: 20px 24px;
+  border-left-width: 2px;
+  box-shadow: none;
+}
+
+.editor-preview-wrap .chord-sheet h1 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.editor-preview-wrap .chord-sheet h2 {
+  font-size: 16px;
 }
 
 /* Mobile Tabs */
