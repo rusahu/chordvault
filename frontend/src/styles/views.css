@@ -602,7 +602,7 @@ body.perf-mode .song-view-title { font-size: 48px; }
 
 /* ── Responsive ─────────────────────────── */
 @media (max-width: 600px) {
-  #app { padding: 20px 16px; }
+  #app { padding: 20px 16px; overflow-x: hidden; }
   #nav { padding: 0 12px; height: 48px; }
   .nav-brand { font-size: 18px; }
   .nav-btn { padding: 5px 10px; font-size: 13px; }
@@ -619,4 +619,22 @@ body.perf-mode .song-view-title { font-size: 48px; }
   .setlist-side-btn { width: 36px; font-size: 22px; }
   .setlist-play-header { flex-wrap: wrap; gap: 4px 8px; }
   .setlist-play-indicator { white-space: normal; font-size: 15px; min-width: 0; }
+
+  /* Song card: stack info and badges vertically */
+  .song-card {
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    gap: 8px;
+  }
+  .song-card-actions {
+    margin-left: 0;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Search row: wrap buttons below input */
+  .search-row {
+    flex-wrap: wrap;
+  }
+  .search-row input { flex: 1 1 100%; }
 }
