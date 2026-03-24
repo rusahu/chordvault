@@ -299,10 +299,36 @@
   margin-bottom: 12px;
 }
 
+.user-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.user-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.user-card-info { min-width: 0; }
+
+.user-card-badges {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .user-card-actions {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
 }
 
 /* ── Setlist ────────────────────────────── */

@@ -143,7 +143,7 @@ export function AdminView({ navigate }: AdminViewProps) {
             </span>
           </label>
           <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
-            {config.allowRegistration ? 'Anyone can create an account from the sign-in page. Not recommended — use invite codes instead.' : 'Registration is closed. Use invite codes to add new users.'}
+            {config.allowRegistration ? 'Anyone can create an account — no email verification, so open to spam. Use invite codes instead.' : 'Registration is closed. Use invite codes to add new users.'}
           </div>
           {demoMode && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>Disabled in demo mode</div>}
         </div>
@@ -183,26 +183,28 @@ export function AdminView({ navigate }: AdminViewProps) {
           const canManage = !isSelf && !isTargetOwner && (isOwner || !isTargetAdmin);
 
           return (
-            <div key={u.id} className="song-card" style={{ cursor: 'default' }}>
-              <div className="song-card-info">
-                <div className="song-card-title">@{u.username}{isSelf && <span style={{ color: 'var(--muted)', fontSize: 13 }}> {t('admin.you')}</span>}</div>
-                <div className="song-card-meta">{u.song_count} {u.song_count !== 1 ? t('admin.songPlural') : t('admin.song')} &middot; {t('admin.joined')} {new Date(u.created_at).toLocaleDateString()}</div>
+            <div key={u.id} className="user-card">
+              <div className="user-card-top">
+                <div className="user-card-info">
+                  <div className="song-card-title">@{u.username}{isSelf && <span style={{ color: 'var(--muted)', fontSize: 13 }}> {t('admin.you')}</span>}</div>
+                  <div className="song-card-meta">{u.song_count} {u.song_count !== 1 ? t('admin.songPlural') : t('admin.song')} &middot; {t('admin.joined')} {new Date(u.created_at).toLocaleDateString()}</div>
+                </div>
+                <div className="user-card-badges">
+                  {u.role === 'owner' && <span className="badge badge-owner">owner</span>}
+                  {u.role === 'admin' && <span className="badge badge-admin">admin</span>}
+                  {u.disabled && <span className="badge badge-disabled">disabled</span>}
+                </div>
               </div>
-              <div className="song-card-actions">
-                {u.role === 'owner' && <span className="badge badge-owner">owner</span>}
-                {u.role === 'admin' && <span className="badge badge-admin">admin</span>}
-                {u.disabled && <span className="badge badge-disabled">disabled</span>}
-                {canManage && !demoMode && (
-                  <div className="user-card-actions">
-                    {isOwner && (isTargetAdmin
-                      ? <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setRole(u.id, 'user'); }}>{t('admin.demote')}</button>
-                      : <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setRole(u.id, 'admin'); }}>{t('admin.promote')}</button>
-                    )}
-                    <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setDisabled(u.id, !u.disabled); }}>{u.disabled ? t('admin.enable') : t('admin.disable')}</button>
-                    <button className="btn btn-danger btn-sm" onClick={(e) => { e.stopPropagation(); deleteUser(u.id, u.username); }}>{t('admin.delete')}</button>
-                  </div>
-                )}
-              </div>
+              {canManage && !demoMode && (
+                <div className="user-card-actions">
+                  {isOwner && (isTargetAdmin
+                    ? <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setRole(u.id, 'user'); }}>{t('admin.demote')}</button>
+                    : <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setRole(u.id, 'admin'); }}>{t('admin.promote')}</button>
+                  )}
+                  <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setDisabled(u.id, !u.disabled); }}>{u.disabled ? t('admin.enable') : t('admin.disable')}</button>
+                  <button className="btn btn-danger btn-sm" onClick={(e) => { e.stopPropagation(); deleteUser(u.id, u.username); }}>{t('admin.delete')}</button>
+                </div>
+              )}
             </div>
           );
         })}

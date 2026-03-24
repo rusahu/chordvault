@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
-import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
 import { LANGUAGES, languageName } from '../lib/languages';
 import { useDemo } from '../context/DemoContext';
@@ -9,7 +8,6 @@ import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT } from '../lib/constants';
 export function SettingsView() {
   const apiCall = useApi();
   const { demoMode } = useDemo();
-  const { theme, toggleTheme } = useTheme();
   const toast = useToast();
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -128,19 +126,6 @@ export function SettingsView() {
   return (
     <>
       <div className="view-header"><h2 className="view-title">Settings</h2></div>
-      <div className="settings-section">
-        <h3 className="admin-section-title">Appearance</h3>
-        <div className="sl-options-panel" style={{ maxWidth: 400 }}>
-          <label className="sl-option">
-            <span>Dark mode</span>
-            <span className="toggle">
-              <input type="checkbox" checked={theme === 'dark'} onChange={toggleTheme} />
-              <span className="toggle-slider" />
-            </span>
-          </label>
-        </div>
-      </div>
-
       <div className="settings-section">
         <h3 className="admin-section-title">Change Password</h3>
         {demoMode ? (
