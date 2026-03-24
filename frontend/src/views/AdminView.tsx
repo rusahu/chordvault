@@ -132,39 +132,48 @@ export function AdminView({ navigate }: AdminViewProps) {
         </div>
       )}
 
-      <div className="sl-options-panel" style={{ maxWidth: 400, marginBottom: 24 }}>
-        <label className="sl-option">
-          <span>Open Registration</span>
-          <span className="toggle">
-            <input type="checkbox" checked={config.allowRegistration} onChange={(e) => toggleReg(e.target.checked)} disabled={demoMode} />
-            <span className="toggle-slider" />
-          </span>
-        </label>
-        {demoMode && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>Disabled in demo mode</div>}
+      <h3 className="admin-section-title">{t('admin.inviteUsers')}</h3>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px 20px', marginBottom: 20 }}>
+        <div style={{ marginBottom: 14 }}>
+          <label className="sl-option">
+            <span>Open Registration</span>
+            <span className="toggle">
+              <input type="checkbox" checked={config.allowRegistration} onChange={(e) => toggleReg(e.target.checked)} disabled={demoMode} />
+              <span className="toggle-slider" />
+            </span>
+          </label>
+          <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
+            {config.allowRegistration ? 'Anyone can create an account from the sign-in page. Not recommended — use invite codes instead.' : 'Registration is closed. Use invite codes to add new users.'}
+          </div>
+          {demoMode && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>Disabled in demo mode</div>}
+        </div>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <button className="btn" onClick={generateInvite} disabled={demoMode} title={demoMode ? 'Disabled in demo mode' : ''}>{t('admin.generateInvite')}</button>
+            {inviteCode && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <code style={{ fontSize: 18, fontWeight: 600, padding: '6px 14px', background: 'var(--accent-bg)', borderRadius: 8, userSelect: 'all' as const, letterSpacing: '0.08em' }}>{inviteCode}</code>
+                <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(inviteCode); toast(t('admin.codeCopied'), 'success'); }}>{t('admin.copy')}</button>
+              </div>
+            )}
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 8 }}>Generate a single-use code and share it. The person enters it on the sign-in page to create their account.</div>
+          {pending.length > 0 && (
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>{t('admin.pendingInvites')}</div>
+              {pending.map((inv) => (
+                <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <code style={{ fontSize: 13 }}>{inv.code}</code>
+                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>{new Date(inv.created_at).toLocaleDateString()}</span>
+                  <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '2px 6px' }} onClick={() => deleteInvite(inv.id)} disabled={demoMode}>&#10005;</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <h3 className="admin-section-title">{t('admin.users')}</h3>
-      <div className="search-row" style={{ marginBottom: 16 }}>
-        <button className="btn btn-sm" onClick={generateInvite} disabled={demoMode} title={demoMode ? 'Disabled in demo mode' : ''}>{t('admin.generateInvite')}</button>
-        {inviteCode && (
-          <span>
-            <code style={{ fontSize: 16, padding: '4px 10px', background: 'var(--surface)', borderRadius: 6, userSelect: 'all' as const }}>{inviteCode}</code>
-            <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(inviteCode); toast(t('admin.codeCopied'), 'success'); }}>{t('admin.copy')}</button>
-          </span>
-        )}
-      </div>
-      {pending.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>{t('admin.pendingInvites')}:</div>
-          {pending.map((inv) => (
-            <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <code style={{ fontSize: 13 }}>{inv.code}</code>
-              <span style={{ fontSize: 12, color: 'var(--muted)' }}>{new Date(inv.created_at).toLocaleDateString()}</span>
-              <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '2px 6px' }} onClick={() => deleteInvite(inv.id)} disabled={demoMode}>&#10005;</button>
-            </div>
-          ))}
-        </div>
-      )}
 
       <div className="song-grid" style={{ marginBottom: 28 }}>
         {users.map((u) => {
