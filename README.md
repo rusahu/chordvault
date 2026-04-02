@@ -145,11 +145,11 @@ npm run dev   # Starts backend + Vite dev server with hot reload
 **Run checks:**
 
 ```bash
-npm run lint              # Lint backend
+npm run lint                 # Lint backend
 cd frontend && npm run lint  # Lint frontend
-npm run format            # Format backend with Prettier
+npm run format               # Format backend with Prettier
 cd frontend && npm run build # Build frontend
-node test/smoke.js             # Playwright smoke test (requires running server)
+node test/smoke.js           # Playwright smoke test (requires running server)
 ```
 
 ## Configuration
