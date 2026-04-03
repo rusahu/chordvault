@@ -149,7 +149,7 @@ export function SettingsView() {
         </p>
         <div className="auth-card" style={{ maxWidth: 400 }}>
           <div style={{ fontSize: 13, marginBottom: 12, color: 'var(--muted)' }}>{geminiStatus}</div>
-          <div className="field"><label>Gemini API Key</label><input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="AIza..." autoComplete="off" /></div>
+          <div className="field"><label>Gemini API Key</label><input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="Paste your Gemini API key here" autoComplete="off" /></div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-sm" onClick={saveGeminiKey}>Save Key</button>
             <button className="btn btn-danger btn-sm" onClick={removeGeminiKey}>Remove Key</button>
