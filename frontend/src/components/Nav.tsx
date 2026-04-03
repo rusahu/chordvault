@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import logoSvg from '../assets/logo.svg?raw';
 
 interface NavProps {
   view: string;
@@ -32,7 +33,7 @@ export function Nav({ view, navigate }: NavProps) {
 
   return (
     <nav id="nav">
-      <div className="nav-brand" onClick={() => navigate('browse')}>&#9833; ChordVault</div>
+      <div className="nav-brand" onClick={() => navigate('browse')}><span className="nav-logo" dangerouslySetInnerHTML={{ __html: logoSvg }} /> ChordVault</div>
       <div className="nav-links" id="nav-links">
         <button
           className="nav-btn nav-icon"

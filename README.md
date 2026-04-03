@@ -1,6 +1,10 @@
-# ChordVault
+<p align="center">
+  <img src="docs/logo.svg" alt="ChordVault" width="80" height="80">
+</p>
 
-A self-hosted chord sheet web app for musicians. Store, transpose, and perform your chord sheets from any device on your local network.
+<h1 align="center">ChordVault</h1>
+
+<p align="center">A self-hosted chord sheet web app for musicians.</p> Store, transpose, and perform your chord sheets from any device on your local network.
 
 ![Node.js](https://img.shields.io/badge/Node.js-20-green) ![SQLite](https://img.shields.io/badge/Database-SQLite-blue) ![Docker](https://img.shields.io/badge/Docker-Ready-blue) ![License](https://img.shields.io/badge/License-AGPL--3.0-blue)
 
