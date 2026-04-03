@@ -1,5 +1,5 @@
 export const PRESET_TAGS = [
-  'worship', 'hymn', 'opener', 'closer', 'communion',
+  'worship', 'praise', 'hymn', 'opener', 'closer', 'communion',
   'christmas', 'easter', 'kids', 'instrumental',
 ];
 

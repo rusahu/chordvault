@@ -16,7 +16,7 @@ A self-hosted chord sheet web app for musicians. Store, transpose, and perform y
 
 **For worship leaders & admins.** Keep your team organized.
 - Invite-only registration with one-time codes. No open signups, no strangers.
-- Tag songs (worship, hymn, opener, closer, communion...) and track BPM to build balanced setlists fast.
+- Tag songs (worship, praise, hymn, opener, closer, communion...) and track BPM to build balanced setlists fast.
 - Community corrections let anyone fix wrong chords. You review and approve before anything changes.
 - Admin dashboard to manage users, review corrections, and keep the library clean.
 - Role system (owner/admin/user) gives you control without micromanaging.
@@ -43,12 +43,12 @@ A self-hosted chord sheet web app for musicians. Store, transpose, and perform y
 ### Songs & Chords
 - **Rich chord editor:** CodeMirror 6 with ChordPro syntax highlighting (chords, sections, and directives each colored distinctly) + live preview side-by-side on desktop, tabbed on mobile
 - **Multi-format input:** paste ChordPro, chords-over-lyrics, or Ultimate Guitar. Auto-detected on save.
-- **OCR (photo → chord sheet):** snap a photo or pick an image, extract text with Gemini Flash, review and edit before saving
+- **OCR (image/PDF → chord sheet):** snap a photo, pick an image, or upload a PDF — extract text with Gemini Flash, review the result, then use conversational refinement to fix any mistakes before saving (e.g. "move the G chord to the next word", "verse 2 should be Am not Em")
 - **Key picker:** tap the current key to see all 12 keys, tap any key to transpose instantly
 - **Number notation:** toggle to convert chords to numbers (1, 4, 5) — key-agnostic
 - **Song versioning:** multiple arrangements per song, each optionally linked to a YouTube video
 - **YouTube link:** attach a YouTube URL to any song or version, opens in a new tab
-- **BPM & tags:** track tempo and categorize with preset tags (worship, hymn, opener, closer, etc.)
+- **BPM & tags:** track tempo and categorize with preset tags (worship, praise, hymn, opener, closer, etc.)
 - **Song language:** required on every song, searchable ISO 639-1 dropdown with preferred languages pinned at top. Filter songs by language on the browse page.
 - **Public/private songs:** toggle visibility per song — private songs are only visible to you and admins
 - **Browse without an account:** all public songs and public setlists are readable by anyone
@@ -237,7 +237,7 @@ C                G
 When I find myself in times of trouble
 ```
 
-**Image (via OCR):** Use the "Import from photo" button in the song editor to extract text from a photo of a chord sheet. Requires a Gemini Flash API key (configured in Settings).
+**Image or PDF (via OCR):** Use the "Import from image or PDF" button in the song editor to extract text from a photo or PDF of a chord sheet. After extraction, use the built-in chat to refine the result — describe what's wrong and Gemini will fix it. Requires a Gemini Flash API key (configured in Settings). Max file size: 18MB.
 
 A live format badge in the editor shows which format was detected. The editor itself is CodeMirror 6 with ChordPro syntax highlighting — the right pane shows a live rendered preview that updates as you type.
 
@@ -334,7 +334,8 @@ A live format badge in the editor shows which format was detected. The editor it
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/ocr/gemini` | Yes | Extract text from image via Gemini Flash |
+| POST | `/api/ocr/gemini` | Yes | Extract text from image/PDF via Gemini Flash |
+| POST | `/api/ocr/gemini/refine` | Yes | Refine OCR result via multi-turn conversation |
 
 ### Settings
 
