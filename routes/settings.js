@@ -7,31 +7,23 @@ const { validatePreferredLanguages } = require('../lib/validation');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const DEFAULT_OCR_PROMPT = `You are reading an image or PDF of a song chord sheet. Extract all lyrics and chords.
+const DEFAULT_OCR_PROMPT = `You are a chord sheet OCR tool. Transcribe this image/PDF into ChordPro format.
 
-CRITICAL RULES — follow these exactly:
-- ONLY extract chords that are clearly visible in the image. NEVER invent, add, or guess chords that are not written.
-- If a chord is unclear or hard to read, transcribe your best guess but do NOT add extra chords to "fill in" gaps.
-- Chord placement matters: place each [chord] IMMEDIATELY before the syllable or word it appears above in the image. If a chord sits above a space between words, attach it to the next word.
-- Do NOT reposition chords to where you think they "should" go musically. Match the image exactly.
-- If lyrics have no chord above them, leave them plain with no bracket.
-
-OUTPUT FORMAT — ChordPro:
-- Chords inline in square brackets before the syllable: [G]Amazing [D]grace
-- For chord-only lines (intros/interludes): [G] [D] [Em] [C]
-
-SECTIONS — use ChordPro directives:
-- {start_of_intro}, {start_of_verse}, {start_of_chorus}, {start_of_prechorus}, {start_of_bridge}, {start_of_interlude}, {start_of_ending} with matching {end_of_*} tags.
-- If sections are labeled in the image, use those labels exactly (e.g. {start_of_verse: Verse 2}).
-- If sections are NOT labeled, infer from structure but keep it simple.
-- Preserve repeat markers (e.g. "x2") as {comment: x2}.
-
-METADATA — only include if CLEARLY VISIBLE in the image:
-- {title: Song Title}
-- {artist: Artist Name}
-- {key: G}
-- {capo: 2}
-Do NOT guess metadata that isn't written in the image.
+RULES:
+- Place chords inline with lyrics using square brackets: [G]When I [C]find myself
+- Each bracket must contain exactly ONE chord. Never put multiple chords in one bracket like [Bm Em7]. Instead write [Bm]word [Em7]word.
+- Place each [chord] DIRECTLY before the syllable/word it belongs to.
+- Transcribe chords EXACTLY as shown. Do NOT normalize or simplify chord names (e.g. keep Gsus2 not G2, keep Cmaj7 not Cma7).
+- ONLY transcribe what is visible. NEVER add, invent, or reposition chords.
+- If a chord is hard to read, give your best guess. Do NOT skip it or add extras.
+- Use ChordPro directives for metadata (only if clearly visible on the sheet):
+  {title: Song Title}
+  {artist: Artist Name}
+  {key: G}
+  {capo: 2}
+- Use section directives: {start_of_verse}, {end_of_verse}, {start_of_chorus}, {end_of_chorus}, {start_of_bridge}, {end_of_bridge}, {start_of_intro}, {end_of_intro}, {start_of_outro}, {end_of_outro}
+- For chord-only lines (intros, interludes), write each chord in its own bracket: [G] [D] [Em] [C]
+- Preserve repeat markers (e.g. "x2", "2x") as plain text.
 
 Return ONLY the ChordPro text, no explanations or markdown code fences.
 
@@ -206,7 +198,7 @@ function createSettingsRouter() {
       const { LANGUAGE_CODES } = require('../lib/languages');
       const langMatch = text.match(/^DETECTED_LANGUAGE:\s*([a-z]{2})\s*$/m);
       const detectedLang = langMatch && LANGUAGE_CODES.has(langMatch[1]) ? langMatch[1] : null;
-      const cleanedText = text.replace(/^DETECTED_LANGUAGE:\s*[a-z]{2}\s*$/m, '').trim();
+      const cleanedText = text.replace(/^DETECTED_LANGUAGE:\s*[a-z]{2}\s*$/m, '').replace(/^```(?:\w+)?\n?/m, '').replace(/\n?```\s*$/m, '').trim();
 
       res.json({ text: cleanedText, language: detectedLang });
     } catch (e) {
@@ -251,7 +243,7 @@ function createSettingsRouter() {
     }
     contents.push({
       role: 'user',
-      parts: [{ text: `The user wants to fix the chord sheet. Here is their correction:\n\n${message}\n\nApply the correction to the ChordPro output and return the FULL corrected ChordPro text. Do not include explanations, just the corrected ChordPro.` }]
+      parts: [{ text: `The user wants to fix the chord sheet. Here is their correction:\n\n${message}\n\nApply the correction and return the FULL corrected text in the same chords-over-lyrics format. Do not include explanations, just the corrected text.` }]
     });
 
     try {
