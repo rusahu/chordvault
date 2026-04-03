@@ -67,7 +67,8 @@ export function useSetlistPlayer({
     onNavigate?.();
     const newEntry = setlist.entries[newIdx];
     origRef.current = { transpose: newEntry.transpose, nashville: newEntry.nashville };
-    window.scrollTo(0, 0);
+    // Scroll after React re-renders the new song content
+    requestAnimationFrame(() => window.scrollTo(0, 0));
   }, [setlist, autoSave, onNavigate]);
 
   const prev = useCallback(() => goTo(index - 1), [goTo, index]);

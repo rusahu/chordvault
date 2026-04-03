@@ -92,7 +92,16 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
     }
 
     const FormatterClass = ChordSheetJS.HtmlDivFormatter || (ChordSheetJS as Record<string, unknown>).HtmlFormatter as typeof ChordSheetJS.HtmlDivFormatter;
-    const html = new FormatterClass().format(transposed);
+    const html = new FormatterClass().format(transposed)
+      .replace(/<h1[^>]*>.*?<\/h1>/gi, '')
+      .replace(
+        /<div class="paragraph (chorus|verse|bridge|prechorus|pre-chorus|outro|intro|interlude)">(?!<div class="row"><h3 class="label">)/gi,
+        (match, section: string) => {
+          const LABELS: Record<string, string> = { prechorus: 'Pre-Chorus' };
+          const label = LABELS[section.toLowerCase()] ?? section.charAt(0).toUpperCase() + section.slice(1);
+          return `${match}<div class="row"><h3 class="label">${label}</h3></div>`;
+        }
+      );
     return `<div class="chord-sheet">${html}</div>`;
   } catch {
     return `<pre style="font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre-wrap;color:var(--text)">${escHtml(content)}</pre>`;
@@ -185,11 +194,13 @@ export function autoFit(): { fontSize: number; twoCol: boolean } {
   const fits = (scale: number, numCols: number) =>
     baselineH * scale / numCols <= available;
 
-  for (let offset = 0; offset >= -1; offset--) {
+  // Prefer single-column with smaller font over 2-column layout
+  for (let offset = 0; offset >= -3; offset--) {
     const scale = 1 + offset * 0.12;
     if (fits(scale, 1)) return { fontSize: clampFontSize(offset), twoCol: false };
   }
 
+  // Only fall back to 2-column if single-column can't fit at smallest font
   for (let offset = 0; offset >= -3; offset--) {
     const scale = 1 + offset * 0.12;
     if (fits(scale, 2)) return { fontSize: clampFontSize(offset), twoCol: true };

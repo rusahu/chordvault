@@ -19,7 +19,13 @@ export async function api<T = unknown>(
     headers,
     body: body ? JSON.stringify(body) : undefined,
   });
-  const data = await res.json();
-  if (!res.ok) throw new ApiError(data.error || 'Request failed', res.status);
+  let data: Record<string, unknown>;
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new ApiError(`Server error (${res.status})`, res.status);
+    throw new ApiError('Invalid response from server', res.status);
+  }
+  if (!res.ok) throw new ApiError((data.error as string) || 'Request failed', res.status);
   return data as T;
 }
