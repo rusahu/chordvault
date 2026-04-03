@@ -208,6 +208,10 @@ export function SongView({ songId, navigate }: SongViewProps) {
           const fit = autoFit();
           fontScale.setFontSizeTo(fit.fontSize);
           twoColState.setTwoColTo(fit.twoCol);
+          // Scroll chord sheet to top of viewport
+          requestAnimationFrame(() => {
+            document.querySelector('.chord-sheet-wrap')?.scrollIntoView({ behavior: 'smooth' });
+          });
           if (fit.fontSize === before.fontSize && fit.twoCol === before.twoCol) {
             toast('Already fitted', 'info');
           } else {

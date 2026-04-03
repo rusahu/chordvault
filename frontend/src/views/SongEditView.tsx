@@ -72,7 +72,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const updateBadge = (text: string) => {
     const fmt = detectFormat(text);
     if (fmt) setFormatBadge({ text: fmt, cls: 'format-ok' });
-    else if (text?.trim()) setFormatBadge({ text: 'No chords detected', cls: 'format-warn' });
+    else if (text?.trim()) setFormatBadge({ text: 'No chords detected — add chords in [brackets] e.g. [G]lyrics', cls: 'format-warn' });
     else setFormatBadge(null);
   };
 
@@ -95,7 +95,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
     const bpmNum = bpm ? parseInt(bpm, 10) : null;
     if (bpm && (isNaN(bpmNum!) || bpmNum! < 1 || bpmNum! > 300)) { toast('BPM must be between 1 and 300', 'error'); return; }
     const fmt = detectFormat(content);
-    if (!fmt) { toast('No chords detected. Add chords (e.g. [C], [G]) before saving.', 'error'); return; }
+    if (!fmt) { toast('No chords detected. Add chords in [brackets] before the syllable, e.g. [G]Amazing [C]grace', 'error'); return; }
     if (!language) { toast('Please select a language', 'error'); return; }
 
     let finalContent = toChordPro(content);
@@ -230,9 +230,10 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           hasGeminiKey={hasGeminiKey}
           onResult={(text, lang) => {
             handleContentChange(text);
-            const tm = text.match(/\{title:\s*([^}]+)\}/i);
+            // Extract metadata from ChordPro directives or plain text headers
+            const tm = text.match(/\{title:\s*([^}]+)\}/i) || text.match(/^title[:\s]+(.+)$/im);
             if (tm && !title) setTitle(tm[1].trim());
-            const am = text.match(/\{artist:\s*([^}]+)\}/i);
+            const am = text.match(/\{artist:\s*([^}]+)\}/i) || text.match(/^artist[:\s]+(.+)$/im);
             if (am && !artist) setArtist(am[1].trim());
             if (lang) setLanguage(lang);
             requestAnimationFrame(() => window.scrollTo(0, 0));
