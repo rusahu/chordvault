@@ -186,6 +186,7 @@
 .font-reset.disabled:hover, .font-reset:disabled:hover { background: var(--surface2); color: var(--text); border-color: var(--border); }
 .col-toggle.active { background: var(--accent); color: #000; border-color: var(--accent); }
 
+
 /* ── Chord Sheet ────────────────────────── */
 .chord-sheet-wrap {
   background: var(--surface);
@@ -216,7 +217,7 @@
   display: flex;
   flex-wrap: wrap;
   line-height: 1;
-  margin-bottom: 0.1em;
+  margin-bottom: 0.6em;
 }
 
 .chord-sheet .column {
@@ -232,7 +233,7 @@
   font-size: calc(15px * var(--font-scale));
   font-weight: 600;
   color: var(--chord);
-  min-height: 1.6em;
+  min-height: 1.2em;
   padding-right: 6px;
   white-space: pre;
   letter-spacing: 0.02em;
@@ -283,6 +284,13 @@
 /* Chorus gets a subtle left highlight to stand out from verses */
 .chord-sheet .paragraph.chorus {
   border-left: 2px solid var(--accent-alt);
+  padding-left: 16px;
+  margin-left: -16px;
+}
+
+/* Pre-chorus gets a dotted accent border */
+.chord-sheet .paragraph.prechorus {
+  border-left: 2px dotted var(--accent-alt);
   padding-left: 16px;
   margin-left: -16px;
 }
