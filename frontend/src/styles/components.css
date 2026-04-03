@@ -462,6 +462,50 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   resize: vertical;
 }
 
+/* OCR chat / fix UI */
+.ocr-chat-history {
+  max-height: 120px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ocr-chat-bubble {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  max-width: 85%;
+}
+
+.ocr-chat-user {
+  background: var(--accent-bg);
+  color: var(--accent);
+  align-self: flex-end;
+}
+
+.ocr-fix-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.ocr-fix-input {
+  flex: 1;
+  padding: 7px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.ocr-fix-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 /* Language picker */
 .language-picker { position: relative; }
 .language-picker-trigger {

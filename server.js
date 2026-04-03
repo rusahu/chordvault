@@ -9,6 +9,7 @@ const { createSetlistsRouter } = require('./routes/setlists');
 const { createAdminRouter } = require('./routes/admin');
 const { createSettingsRouter } = require('./routes/settings');
 const { errorHandler } = require('./lib/errors');
+const { LIMITS } = require('./lib/constants');
 
 const app = express();
 
@@ -89,7 +90,7 @@ function withSkipGlobal(limiter) {
   };
 }
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: LIMITS.MAX_BODY_JSON }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/', (req, res, next) => {
