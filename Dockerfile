@@ -2,6 +2,7 @@
 FROM node:20-alpine AS frontend
 WORKDIR /app/frontend
 COPY frontend/package*.json frontend/.npmrc ./
+COPY patches/ ../patches/
 RUN npm ci
 COPY frontend/ ./
 RUN npm run build
@@ -11,6 +12,7 @@ FROM node:20-alpine AS backend
 RUN apk add --no-cache python3 make g++
 WORKDIR /app
 COPY package*.json ./
+COPY patches/ ./patches/
 RUN npm ci --production
 
 # Stage 3: Final
