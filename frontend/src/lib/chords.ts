@@ -10,6 +10,47 @@ const PARSER_NAMES = [
 
 type ParserCls = 'ChordProParser' | 'UltimateGuitarParser' | 'ChordsOverWordsParser';
 
+const DIRECTIVE_RE = /^\{([a-z_]+):\s*([^}]*)\}$/i;
+const DIRECTIVE_LINE_RE = /^\{[a-z_]+:.*\}$/i;
+const DIRECTIVE_ORDER = ['title', 'artist', 'key', 'tempo', 'capo', 'x_youtube', 'x_tags', 'x_language'];
+
+export function extractDirective(content: string, name: string): string | null {
+  const re = new RegExp(`^\\{${name}:\\s*([^}]*)\\}`, 'im');
+  const m = content.match(re);
+  return m ? m[1].trim() : null;
+}
+
+export function updateDirective(content: string, name: string, value: string | null): string {
+  const re = new RegExp(`^\\{${name}:.*\\}[ \\t]*$`, 'im');
+  if (!value || !value.trim()) {
+    // Remove directive line (and trailing newline if present)
+    return content.replace(new RegExp(`^\\{${name}:.*\\}[ \\t]*\\n?`, 'im'), '');
+  }
+  const newLine = `{${name}: ${value.trim()}}`;
+  if (re.test(content)) {
+    return content.replace(re, newLine);
+  }
+  // Insert at correct position among directives at top of file
+  const lines = content.split('\n');
+  const targetIdx = DIRECTIVE_ORDER.indexOf(name);
+  let insertAt = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const dm = lines[i].match(DIRECTIVE_RE);
+    if (dm) {
+      const existingIdx = DIRECTIVE_ORDER.indexOf(dm[1].toLowerCase());
+      if (existingIdx < targetIdx || (existingIdx === -1 && targetIdx === -1)) {
+        insertAt = i + 1;
+      }
+    } else if (DIRECTIVE_LINE_RE.test(lines[i])) {
+      insertAt = i + 1;
+    } else {
+      break;
+    }
+  }
+  lines.splice(insertAt, 0, newLine);
+  return lines.join('\n');
+}
+
 export function parseSongAutoWithFormat(content: string): { song: ChordSheetJS.Song; format: string | null } | null {
   // Detect true ChordPro bracket chords — exclude section labels like [Chorus], [Bridge]
   const SECTION_LABEL = /^(?:Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*$/i;
@@ -59,10 +100,39 @@ export function detectFormat(content: string): string | null {
 }
 
 export function toChordPro(content: string): string {
-  const song = parseSongAuto(content);
+  // Separate directive lines from body so x_ directives survive UG parser conversion
+  const lines = content.split('\n');
+  const directiveLines: string[] = [];
+  let bodyStart = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (DIRECTIVE_LINE_RE.test(lines[i].trim())) {
+      directiveLines.push(lines[i]);
+      bodyStart = i + 1;
+    } else if (lines[i].trim() === '') {
+      bodyStart = i + 1;
+    } else {
+      break;
+    }
+  }
+  const body = lines.slice(bodyStart).join('\n');
+  const song = parseSongAuto(body || content);
   if (!song) return content;
   try {
-    return new ChordSheetJS.ChordProFormatter({ normalizeChords: false } as Record<string, unknown>).format(song);
+    let result = new ChordSheetJS.ChordProFormatter({ normalizeChords: false } as Record<string, unknown>).format(song);
+    // Remove any directives the formatter produced that we already have in directiveLines
+    if (directiveLines.length > 0) {
+      const existingNames = new Set(directiveLines.map(l => {
+        const m = l.match(DIRECTIVE_RE);
+        return m ? m[1].toLowerCase() : '';
+      }).filter(Boolean));
+      const resultLines = result.split('\n');
+      const filtered = resultLines.filter(l => {
+        const m = l.match(DIRECTIVE_RE);
+        return !(m && existingNames.has(m[1].toLowerCase()));
+      });
+      result = [...directiveLines, ...filtered].join('\n');
+    }
+    return result;
   } catch { return content; }
 }
 

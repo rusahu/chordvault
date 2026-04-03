@@ -5,13 +5,26 @@ const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
 const { parseId, validateSongInput, validateVisibility, validateLanguage } = require('../lib/validation');
 const { LANGUAGE_CODES } = require('../lib/languages');
 
-function extractKey(content) {
-  const m = content.match(/\{key:\s*([^}]+)\}/i);
-  return m ? m[1].trim() : '';
+function extractDirective(content, name) {
+  const re = new RegExp(`\\{${name}:\\s*([^}]*)\\}`, 'i');
+  const m = content.match(re);
+  return m ? m[1].trim() : null;
 }
 
-function cleanTags(tags) {
-  return tags ? String(tags).split(',').map(t => t.trim().toLowerCase()).filter(Boolean).join(',') : null;
+function extractMetadata(content) {
+  const tags = extractDirective(content, 'x_tags');
+  const cleanedTags = tags ? String(tags).split(',').map(t => t.trim().toLowerCase()).filter(Boolean).join(',') : null;
+  const bpmStr = extractDirective(content, 'tempo');
+  const bpm = bpmStr ? parseInt(bpmStr, 10) : null;
+  return {
+    title: extractDirective(content, 'title') || '',
+    artist: extractDirective(content, 'artist') || '',
+    key: extractDirective(content, 'key') || '',
+    bpm: (bpm && bpm >= 1 && bpm <= 300) ? bpm : null,
+    youtube_url: extractDirective(content, 'x_youtube') || null,
+    tags: cleanedTags,
+    language: extractDirective(content, 'x_language') || '',
+  };
 }
 
 function resolveCorrectionWithAuth(req, res) {
@@ -99,21 +112,24 @@ function createSongsRouter() {
   });
 
   router.post('/songs', requireAuth, (req, res) => {
-    const { title, artist, content, youtube_url, format_detected, bpm, tags, language, visibility } = req.body;
-    const validationError = validateSongInput({ title, content, youtube_url, bpm, requireTitle: true, requireContent: true, requireChord: true });
-    if (validationError) return res.status(400).json({ error: validationError });
-    const langError = validateLanguage(language);
-    if (langError) return res.status(400).json({ error: langError });
+    const { content, format_detected, visibility } = req.body;
+    if (!content?.trim()) return res.status(400).json({ error: 'Content is required' });
+    if (content.length > LIMITS.MAX_CONTENT) return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
+    if (!/\[[A-G][^\]]*\]/.test(content)) return res.status(400).json({ error: 'No chords detected. Add chords (e.g. [C], [G]) before saving.' });
+    const meta = extractMetadata(content);
+    if (!meta.title) return res.status(400).json({ error: 'Title is required. Add {title: Song Name} to your content.' });
+    if (meta.language) {
+      const langError = validateLanguage(meta.language);
+      if (langError) return res.status(400).json({ error: langError });
+    }
     const visError = validateVisibility(visibility);
     if (visError) return res.status(400).json({ error: visError });
 
     const fmt = format_detected?.trim() || null;
-    const cleanBpm = bpm ? parseInt(bpm, 10) : null;
-    const songKey = extractKey(content);
     const finalVisibility = visibility === VISIBILITY.PRIVATE ? VISIBILITY.PRIVATE : VISIBILITY.PUBLIC;
     const result = db.prepare(
       'INSERT INTO songs (user_id, title, artist, key, content, visibility, youtube_url, format_detected, bpm, tags, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(req.user.id, title.trim(), artist?.trim() || '', songKey, content.trim(), finalVisibility, youtube_url?.trim() || null, fmt, cleanBpm, cleanTags(tags), language);
+    ).run(req.user.id, meta.title, meta.artist, meta.key, content.trim(), finalVisibility, meta.youtube_url, fmt, meta.bpm, meta.tags, meta.language);
     res.json({ id: result.lastInsertRowid });
   });
 
@@ -126,29 +142,26 @@ function createSongsRouter() {
     const valid = [];
 
     songs.forEach((s, i) => {
-      if (!s.title?.trim()) { errors.push({ index: i, error: 'Title is required' }); return; }
       if (!s.content?.trim()) { errors.push({ index: i, error: 'Content is required' }); return; }
-      if (s.title.trim().length > LIMITS.MAX_TITLE) { errors.push({ index: i, error: `Title too long (max ${LIMITS.MAX_TITLE} characters)` }); return; }
       if (s.content.length > LIMITS.MAX_CONTENT) { errors.push({ index: i, error: `Content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` }); return; }
-      if (!s.language || !LANGUAGE_CODES.has(s.language)) { errors.push({ index: i, error: 'Valid language code is required' }); return; }
+      const meta = extractMetadata(s.content);
+      if (!meta.title) { errors.push({ index: i, error: 'Title is required. Add {title: Song Name} to content.' }); return; }
+      if (meta.language && !LANGUAGE_CODES.has(meta.language)) { errors.push({ index: i, error: `Invalid language code: ${meta.language}` }); return; }
       const visError = validateVisibility(s.visibility);
       if (visError) { errors.push({ index: i, error: visError }); return; }
       valid.push({
-        title: s.title.trim(),
-        artist: s.artist?.trim() || '',
-        key: s.key?.trim() || '',
+        ...meta,
         content: s.content.trim(),
-        language: s.language,
         visibility: s.visibility === VISIBILITY.PRIVATE ? VISIBILITY.PRIVATE : VISIBILITY.PUBLIC,
       });
     });
 
     const insertSong = db.prepare(
-      'INSERT INTO songs (user_id, title, artist, key, content, visibility, language) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO songs (user_id, title, artist, key, content, visibility, youtube_url, bpm, tags, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     const importAll = db.transaction((rows) => {
       for (const r of rows) {
-        insertSong.run(req.user.id, r.title, r.artist, r.key, r.content, r.visibility, r.language);
+        insertSong.run(req.user.id, r.title, r.artist, r.key, r.content, r.visibility, r.youtube_url, r.bpm, r.tags, r.language);
       }
     });
 
@@ -166,37 +179,24 @@ function createSongsRouter() {
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
     const existing = db.prepare('SELECT * FROM songs WHERE id = ? AND user_id = ?').get(id, req.user.id);
     if (!existing) return res.status(404).json({ error: 'Song not found or not yours' });
-    const { title, artist, content, youtube_url, format_detected, bpm, tags, language, visibility } = req.body;
-    const validationError = validateSongInput({ title, content, youtube_url, bpm, requireChord: !!content });
-    if (validationError) return res.status(400).json({ error: validationError });
-    if (language !== undefined) {
-      const langError = validateLanguage(language);
+    const { content, format_detected, visibility } = req.body;
+    const finalContent = content?.trim() || existing.content;
+    if (content && content.length > LIMITS.MAX_CONTENT) return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
+    if (content && !/\[[A-G][^\]]*\]/.test(content)) return res.status(400).json({ error: 'No chords detected. Add chords (e.g. [C], [G]) before saving.' });
+    const meta = extractMetadata(finalContent);
+    if (!meta.title) return res.status(400).json({ error: 'Title is required. Add {title: Song Name} to your content.' });
+    if (meta.language) {
+      const langError = validateLanguage(meta.language);
       if (langError) return res.status(400).json({ error: langError });
     }
     const visError = validateVisibility(visibility);
     if (visError) return res.status(400).json({ error: visError });
 
     const fmt = format_detected !== undefined ? (format_detected?.trim() || null) : existing.format_detected;
-    const cleanBpm = bpm !== undefined ? (bpm ? parseInt(bpm, 10) : null) : existing.bpm;
-    const cleanTagsValue = tags !== undefined ? cleanTags(tags) : existing.tags;
-    const finalContent = content?.trim() || existing.content;
-    const songKey = extractKey(finalContent);
     const finalVisibility = visibility !== undefined ? (visibility === VISIBILITY.PRIVATE ? VISIBILITY.PRIVATE : VISIBILITY.PUBLIC) : existing.visibility;
     db.prepare(
       'UPDATE songs SET title=?, artist=?, key=?, content=?, visibility=?, youtube_url=?, format_detected=?, bpm=?, tags=?, language=?, updated_at=CURRENT_TIMESTAMP WHERE id=?'
-    ).run(
-      title?.trim() || existing.title,
-      artist?.trim() ?? existing.artist,
-      songKey,
-      finalContent,
-      finalVisibility,
-      youtube_url !== undefined ? (youtube_url?.trim() || null) : existing.youtube_url,
-      fmt,
-      cleanBpm,
-      cleanTagsValue,
-      language !== undefined ? language : existing.language,
-      id
-    );
+    ).run(meta.title, meta.artist, meta.key, finalContent, finalVisibility, meta.youtube_url, fmt, meta.bpm, meta.tags, meta.language, id);
     res.json({ success: true });
   });
 
@@ -224,9 +224,10 @@ function createSongsRouter() {
     if (validationError) return res.status(400).json({ error: validationError });
 
     const parentId = original.parent_id || original.id;
+    const meta = extractMetadata(content);
     const result = db.prepare(
       'INSERT INTO songs (user_id, title, artist, key, content, visibility, parent_id, youtube_url, bpm, tags, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(req.user.id, original.title, original.artist, original.key, content.trim(), original.visibility, parentId, youtube_url?.trim() || null, original.bpm, original.tags, original.language);
+    ).run(req.user.id, meta.title || original.title, meta.artist || original.artist, meta.key || original.key, content.trim(), original.visibility, parentId, meta.youtube_url || original.youtube_url, meta.bpm || original.bpm, meta.tags || original.tags, meta.language || original.language);
     res.json({ id: result.lastInsertRowid });
   });
 
@@ -267,9 +268,10 @@ function createSongsRouter() {
     if (validationError) return res.status(400).json({ error: validationError.replace('before saving', 'before submitting') });
 
     const parentId = original.parent_id || original.id;
+    const meta = extractMetadata(content);
     const result = db.prepare(
       'INSERT INTO songs (user_id, title, artist, key, content, visibility, parent_id, youtube_url, bpm, tags, status, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(req.user.id, original.title, original.artist, original.key, content.trim(), VISIBILITY.PUBLIC, parentId, youtube_url?.trim() || null, original.bpm, original.tags, STATUS.PENDING, original.language);
+    ).run(req.user.id, meta.title || original.title, meta.artist || original.artist, meta.key || original.key, content.trim(), VISIBILITY.PUBLIC, parentId, meta.youtube_url || original.youtube_url, meta.bpm || original.bpm, meta.tags || original.tags, STATUS.PENDING, meta.language || original.language);
     res.json({ id: result.lastInsertRowid });
   });
 

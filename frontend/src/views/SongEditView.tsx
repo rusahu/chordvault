@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -9,7 +9,7 @@ import { LanguagePicker } from '../components/LanguagePicker';
 import { OcrModal } from '../components/OcrModal';
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
 import { EditorPreview } from '../components/EditorPreview';
-import { detectFormat, toChordPro, ensureKeyDirective } from '../lib/chords';
+import { detectFormat, toChordPro, ensureKeyDirective, extractDirective, updateDirective } from '../lib/chords';
 import type { Song } from '../types';
 
 interface SongEditViewProps {
@@ -38,21 +38,38 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const { theme } = useTheme();
   const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
   const [forceRender, setForceRender] = useState(0);
+  const syncSource = useRef<'editor' | 'field' | null>(null);
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Extract all directives from content → update form fields (debounced for editor typing)
+  const syncContentToFields = useCallback((text: string) => {
+    setTitle(extractDirective(text, 'title') || '');
+    setArtist(extractDirective(text, 'artist') || '');
+    const tempo = extractDirective(text, 'tempo');
+    setBpm(tempo && /^\d+$/.test(tempo) ? tempo : '');
+    setYoutubeUrl(extractDirective(text, 'x_youtube') || '');
+    const tagStr = extractDirective(text, 'x_tags');
+    setTags(tagStr ? tagStr.split(',').map(t => t.trim()).filter(Boolean) : []);
+    setLanguage(extractDirective(text, 'x_language') || '');
+  }, []);
 
   useEffect(() => {
     if (songId) {
       apiCall<Song>('GET', `/api/songs/${songId}`)
         .then((s) => {
           setSong(s);
-          setTitle(s.title);
-          setArtist(s.artist || '');
-          setContent(s.content);
-          setYoutubeUrl(s.youtube_url || '');
-          setBpm(s.bpm ? String(s.bpm) : '');
-          setTags(s.tags ? s.tags.split(',') : []);
-          setLanguage(s.language || '');
           setVisibility(s.visibility === 'private' ? 'private' : 'public');
           updateBadge(s.content);
+          // Inject missing directives from DB columns into content for old songs
+          let c = s.content;
+          if (s.title && !extractDirective(c, 'title')) c = updateDirective(c, 'title', s.title);
+          if (s.artist && !extractDirective(c, 'artist')) c = updateDirective(c, 'artist', s.artist);
+          if (s.bpm && !extractDirective(c, 'tempo')) c = updateDirective(c, 'tempo', String(s.bpm));
+          if (s.youtube_url && !extractDirective(c, 'x_youtube')) c = updateDirective(c, 'x_youtube', s.youtube_url);
+          if (s.tags && !extractDirective(c, 'x_tags')) c = updateDirective(c, 'x_tags', s.tags);
+          if (s.language && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', s.language);
+          setContent(c);
+          syncContentToFields(c);
         })
         .catch((e) => { toast(e.message, 'error'); navigate('my-songs'); });
     }
@@ -76,44 +93,70 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
     else setFormatBadge(null);
   };
 
+  // Editor content changed → sync to form fields (debounced 150ms)
   const handleContentChange = (text: string) => {
     setContent(text);
     updateBadge(text);
-    // Auto-fill title/artist from ChordPro directives
-    if (!title) {
-      const tm = text.match(/\{title:\s*([^}]+)\}/i);
-      if (tm) setTitle(tm[1].trim());
-      const am = text.match(/\{artist:\s*([^}]+)\}/i);
-      if (am && !artist) setArtist(am[1].trim());
-    }
+    if (syncSource.current === 'field') return;
+    if (syncTimer.current) clearTimeout(syncTimer.current);
+    syncTimer.current = setTimeout(() => {
+      syncSource.current = 'editor';
+      syncContentToFields(text);
+      syncSource.current = null;
+    }, 150);
+  };
+
+  // Form field changed → update directive in content (instant)
+  const handleFieldChange = (directive: string, value: string, setter: (v: string) => void) => {
+    setter(value);
+    if (syncSource.current === 'editor') return;
+    syncSource.current = 'field';
+    setContent(prev => updateDirective(prev, directive, value || null));
+    syncSource.current = null;
+  };
+
+  const handleTagsChange = (newTags: string[]) => {
+    setTags(newTags);
+    if (syncSource.current === 'editor') return;
+    syncSource.current = 'field';
+    const val = newTags.length > 0 ? newTags.join(',') : null;
+    setContent(prev => updateDirective(prev, 'x_tags', val));
+    syncSource.current = null;
+  };
+
+  const handleLanguageChange = (lang: string) => {
+    setLanguage(lang);
+    if (syncSource.current === 'editor') return;
+    syncSource.current = 'field';
+    setContent(prev => updateDirective(prev, 'x_language', lang || null));
+    syncSource.current = null;
   };
 
   const save = async () => {
-    if (!title.trim()) { toast(t('songEdit.titleRequired'), 'error'); return; }
+    if (!extractDirective(content, 'title')?.trim()) { toast(t('songEdit.titleRequired'), 'error'); return; }
     if (!content.trim()) { toast(t('songEdit.contentRequired'), 'error'); return; }
     if (content.length > 100000) { toast(t('songEdit.contentTooLarge'), 'error'); return; }
-    const bpmNum = bpm ? parseInt(bpm, 10) : null;
-    if (bpm && (isNaN(bpmNum!) || bpmNum! < 1 || bpmNum! > 300)) { toast('BPM must be between 1 and 300', 'error'); return; }
+    const bpmVal = extractDirective(content, 'tempo');
+    if (bpmVal && (isNaN(parseInt(bpmVal, 10)) || parseInt(bpmVal, 10) < 1 || parseInt(bpmVal, 10) > 300)) {
+      toast('BPM must be between 1 and 300', 'error'); return;
+    }
     const fmt = detectFormat(content);
     if (!fmt) { toast('No chords detected. Add chords in [brackets] before the syllable, e.g. [G]Amazing [C]grace', 'error'); return; }
-    if (!language) { toast('Please select a language', 'error'); return; }
+    if (!extractDirective(content, 'x_language')) { toast('Please select a language', 'error'); return; }
 
     let finalContent = toChordPro(content);
     finalContent = ensureKeyDirective(finalContent);
-    const tagsStr = tags.length > 0 ? tags.join(',') : null;
 
     try {
       if (song) {
         await apiCall('PUT', `/api/songs/${song.id}`, {
-          title: title.trim(), artist: artist.trim(), content: finalContent,
-          youtube_url: youtubeUrl.trim(), format_detected: fmt, bpm: bpmNum, tags: tagsStr, language, visibility
+          content: finalContent, format_detected: fmt, visibility
         });
         toast(t('songEdit.saved'), 'success');
         navigate('song-view', { id: String(song.id) });
       } else {
         const result = await apiCall<{ id: number }>('POST', '/api/songs', {
-          title: title.trim(), artist: artist.trim(), content: finalContent,
-          youtube_url: youtubeUrl.trim(), format_detected: fmt, bpm: bpmNum, tags: tagsStr, language, visibility
+          content: finalContent, format_detected: fmt, visibility
         });
         toast(t('songEdit.created'), 'success');
         navigate('song-view', { id: String(result.id) });
@@ -145,28 +188,28 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       <div className="edit-cols">
         <div className="field">
           <label>{t('songEdit.titleLabel')}</label>
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('songEdit.titlePlaceholder')} />
+          <input type="text" value={title} onChange={(e) => handleFieldChange('title', e.target.value, setTitle)} placeholder={t('songEdit.titlePlaceholder')} />
         </div>
         <div className="field">
           <label>{t('songEdit.artistLabel')}</label>
-          <input type="text" value={artist} onChange={(e) => setArtist(e.target.value)} placeholder={t('songEdit.artistPlaceholder')} />
+          <input type="text" value={artist} onChange={(e) => handleFieldChange('artist', e.target.value, setArtist)} placeholder={t('songEdit.artistPlaceholder')} />
         </div>
         <div className="field">
           <label>Language</label>
-          <LanguagePicker value={language} onChange={setLanguage} preferredLanguages={preferredLanguages} />
+          <LanguagePicker value={language} onChange={handleLanguageChange} preferredLanguages={preferredLanguages} />
         </div>
         <div className="field">
           <label>BPM</label>
-          <input type="number" value={bpm} onChange={(e) => setBpm(e.target.value)} placeholder="e.g. 120" min="1" max="300" />
+          <input type="number" value={bpm} onChange={(e) => handleFieldChange('tempo', e.target.value, setBpm)} placeholder="e.g. 120" min="1" max="300" />
         </div>
       </div>
       <div className="field">
         <label>YouTube URL</label>
-        <input type="url" value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." />
+        <input type="url" value={youtubeUrl} onChange={(e) => handleFieldChange('x_youtube', e.target.value, setYoutubeUrl)} placeholder="https://youtube.com/watch?v=..." />
       </div>
       <div className="field">
         <label>Tags</label>
-        <TagPicker selected={tags} onChange={setTags} />
+        <TagPicker selected={tags} onChange={handleTagsChange} />
       </div>
       <div className="field">
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
@@ -229,13 +272,11 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         <OcrModal
           hasGeminiKey={hasGeminiKey}
           onResult={(text, lang) => {
-            handleContentChange(text);
-            // Extract metadata from ChordPro directives or plain text headers
-            const tm = text.match(/\{title:\s*([^}]+)\}/i) || text.match(/^title[:\s]+(.+)$/im);
-            if (tm && !title) setTitle(tm[1].trim());
-            const am = text.match(/\{artist:\s*([^}]+)\}/i) || text.match(/^artist[:\s]+(.+)$/im);
-            if (am && !artist) setArtist(am[1].trim());
-            if (lang) setLanguage(lang);
+            let c = text;
+            if (lang && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', lang);
+            setContent(c);
+            updateBadge(c);
+            syncContentToFields(c);
             requestAnimationFrame(() => window.scrollTo(0, 0));
           }}
           onClose={() => setOcrOpen(false)}

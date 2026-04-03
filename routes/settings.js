@@ -21,13 +21,15 @@ RULES:
   {artist: Artist Name}
   {key: G}
   {capo: 2}
+  {tempo: 120}
+- Always add a language directive based on the lyrics language: {x_language: <ISO 639-1 code>}
 - Use section directives: {start_of_verse}, {end_of_verse}, {start_of_chorus}, {end_of_chorus}, {start_of_bridge}, {end_of_bridge}, {start_of_intro}, {end_of_intro}, {start_of_outro}, {end_of_outro}
 - For chord-only lines (intros, interludes), write each chord in its own bracket: [G] [D] [Em] [C]
 - Preserve repeat markers (e.g. "x2", "2x") as plain text.
 
 Return ONLY the ChordPro text, no explanations or markdown code fences.
 
-On the very last line, identify the language:
+On the very last line, identify the language (for backward compatibility):
 DETECTED_LANGUAGE: <ISO 639-1 code>
 For example: DETECTED_LANGUAGE: en, DETECTED_LANGUAGE: ko.
 If the language is unclear, omit this line.`;
