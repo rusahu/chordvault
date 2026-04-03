@@ -14,6 +14,7 @@ export function SongPicker({ onPick, onClose }: SongPickerProps) {
   const [songs, setSongs] = useState<SongListItem[]>([]);
   const [search, setSearch] = useState('');
 
+
   const load = async (q = '') => {
     try {
       const data = await api<SongListItem[]>('GET', '/api/songs/public' + (q ? `?q=${encodeURIComponent(q)}` : ''));
@@ -24,7 +25,7 @@ export function SongPicker({ onPick, onClose }: SongPickerProps) {
   useEffect(() => { load(); }, []);
 
   return (
-    <div className="setlist-add-overlay" style={{ display: 'flex' }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="setlist-add-overlay" data-overlay style={{ display: 'flex' }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="setlist-add-content">
         <div className="view-header">
           <h3 className="view-title">{t('setlist.pickSong')}</h3>

@@ -253,7 +253,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
       {/* Add to setlist overlay */}
       {addToSetlistOpen && (
-        <div className="setlist-add-overlay" style={{ display: 'flex' }} onClick={(e) => { if (e.target === e.currentTarget) setAddToSetlistOpen(false); }}>
+        <div className="setlist-add-overlay" data-overlay style={{ display: 'flex' }} onClick={(e) => { if (e.target === e.currentTarget) setAddToSetlistOpen(false); }}>
           <div className="setlist-add-content">
             <div className="view-header">
               <h3 className="view-title">{t('setlist.addToSetlist')}</h3>
