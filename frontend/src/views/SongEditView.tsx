@@ -231,7 +231,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         </div>
         {user && (
           <div className="ocr-row">
-            <button className="btn btn-sm btn-ghost" onClick={() => { setOcrOpen(true); window.scrollTo(0, 0); }}>&#128247; Import from image or PDF</button>
+            <button className="btn btn-sm btn-ghost" onClick={() => setOcrOpen(true)}>&#128247; Import from image or PDF</button>
           </div>
         )}
         <div className="editor-tabs" role="tablist">
@@ -277,7 +277,6 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
             setContent(c);
             updateBadge(c);
             syncContentToFields(c);
-            requestAnimationFrame(() => window.scrollTo(0, 0));
           }}
           onClose={() => setOcrOpen(false)}
         />

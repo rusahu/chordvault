@@ -59,6 +59,22 @@ export function App() {
     }).catch(() => {});
   }, []);
 
+  // Auto-scroll to top when any overlay appears
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node instanceof HTMLElement && node.hasAttribute('data-overlay')) {
+            window.scrollTo(0, 0);
+            return;
+          }
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
   // Listen for hash changes
   useEffect(() => {
     const onHashChange = () => setRoute(parseHash());
