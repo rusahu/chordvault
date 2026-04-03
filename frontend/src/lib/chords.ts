@@ -11,8 +11,18 @@ const PARSER_NAMES = [
 type ParserCls = 'ChordProParser' | 'UltimateGuitarParser' | 'ChordsOverWordsParser';
 
 export function parseSongAutoWithFormat(content: string): { song: ChordSheetJS.Song; format: string | null } | null {
-  const hasChordPro = /\{[a-z_]+[:}]|\[[A-G][^\]]*\]/.test(content);
-  const order = hasChordPro ? [0, 1, 2] : [1, 2, 0];
+  // Detect true ChordPro bracket chords — exclude section labels like [Chorus], [Bridge]
+  const SECTION_LABEL = /^(?:Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*$/i;
+  const bracketContents = (content.match(/\[([A-G][^\]]*)\]/g) || []).map(b => b.slice(1, -1));
+  const hasBracketChords = bracketContents.some(c => !SECTION_LABEL.test(c));
+
+  // ChordPro directives like {start_of_verse} or {key: C}
+  const hasDirectives = /\{[a-z_]+[:}]/.test(content);
+
+  // Use ChordPro parser when content has real inline [chord] markers or {directives} without chords-over-lyrics
+  const hasChordsOverLyrics = /^\s*[A-G][b#]?\S*(?:\s+[A-G][b#]?\S*)+\s*$/m.test(content);
+  const isChordPro = hasBracketChords || (hasDirectives && !hasChordsOverLyrics);
+  const order = isChordPro ? [0, 1, 2] : [1, 2, 0];
 
   for (const idx of order) {
     const p = PARSER_NAMES[idx];
@@ -52,7 +62,7 @@ export function toChordPro(content: string): string {
   const song = parseSongAuto(content);
   if (!song) return content;
   try {
-    return new ChordSheetJS.ChordProFormatter().format(song);
+    return new ChordSheetJS.ChordProFormatter({ normalizeChords: false } as Record<string, unknown>).format(song);
   } catch { return content; }
 }
 
@@ -92,7 +102,7 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
     }
 
     const FormatterClass = ChordSheetJS.HtmlDivFormatter || (ChordSheetJS as Record<string, unknown>).HtmlFormatter as typeof ChordSheetJS.HtmlDivFormatter;
-    const html = new FormatterClass().format(transposed)
+    const html = new FormatterClass({ normalizeChords: false } as Record<string, unknown>).format(transposed)
       .replace(/<h1[^>]*>.*?<\/h1>/gi, '')
       .replace(
         /<div class="paragraph (chorus|verse|bridge|prechorus|pre-chorus|outro|intro|interlude)">(?!<div class="row"><h3 class="label">)/gi,
@@ -180,31 +190,37 @@ export function autoFit(): { fontSize: number; twoCol: boolean } {
 
   const wasTwoCol = wrap.classList.contains('two-col');
   const prevScale = wrap.style.getPropertyValue('--font-scale');
-  wrap.classList.remove('two-col');
-  wrap.style.removeProperty('--font-scale');
 
-  // Force layout so we measure baseline (1-col, default font)
-  const baselineH = output.scrollHeight;
-  const available = window.innerHeight - wrap.getBoundingClientRect().top;
+  const tryFit = (offset: number, twoCol: boolean): boolean => {
+    // Apply settings and measure actual layout
+    if (twoCol) wrap.classList.add('two-col');
+    else wrap.classList.remove('two-col');
+    if (offset) wrap.style.setProperty('--font-scale', String(1 + offset * 0.12));
+    else wrap.style.removeProperty('--font-scale');
 
-  // Restore previous state
+    const available = window.innerHeight - wrap.getBoundingClientRect().top;
+    return output.scrollHeight <= available;
+  };
+
+  // Try single-column first, shrinking font
+  for (let offset = 0; offset >= -3; offset--) {
+    if (tryFit(offset, false)) {
+      return { fontSize: clampFontSize(offset), twoCol: false };
+    }
+  }
+
+  // Fall back to 2-column
+  for (let offset = 0; offset >= -3; offset--) {
+    if (tryFit(offset, true)) {
+      return { fontSize: clampFontSize(offset), twoCol: true };
+    }
+  }
+
+  // Restore original state before returning fallback
   if (wasTwoCol) wrap.classList.add('two-col');
+  else wrap.classList.remove('two-col');
   if (prevScale) wrap.style.setProperty('--font-scale', prevScale);
-
-  const fits = (scale: number, numCols: number) =>
-    baselineH * scale / numCols <= available;
-
-  // Prefer single-column with smaller font over 2-column layout
-  for (let offset = 0; offset >= -3; offset--) {
-    const scale = 1 + offset * 0.12;
-    if (fits(scale, 1)) return { fontSize: clampFontSize(offset), twoCol: false };
-  }
-
-  // Only fall back to 2-column if single-column can't fit at smallest font
-  for (let offset = 0; offset >= -3; offset--) {
-    const scale = 1 + offset * 0.12;
-    if (fits(scale, 2)) return { fontSize: clampFontSize(offset), twoCol: true };
-  }
+  else wrap.style.removeProperty('--font-scale');
 
   return { fontSize: clampFontSize(-3), twoCol: true };
 }

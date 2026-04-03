@@ -41,14 +41,12 @@ export function CodeMirrorEditor({ value, onChange, darkMode, placeholder }: Cod
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
-  const internalUpdate = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const updateListener = EditorView.updateListener.of((update) => {
       if (update.docChanged) {
-        internalUpdate.current = true;
         onChangeRef.current(update.state.doc.toString());
       }
     });
@@ -77,11 +75,10 @@ export function CodeMirrorEditor({ value, onChange, darkMode, placeholder }: Cod
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
-    if (internalUpdate.current) { internalUpdate.current = false; return; }
     const currentDoc = view.state.doc.toString();
-    if (value !== currentDoc) {
-      view.dispatch({ changes: { from: 0, to: currentDoc.length, insert: value } });
-    }
+    // Skip if value matches what's already in the editor (avoids cursor jump on typing)
+    if (value === currentDoc) return;
+    view.dispatch({ changes: { from: 0, to: currentDoc.length, insert: value } });
   }, [value]);
 
   return <div ref={containerRef} className="cm-editor-container" />;

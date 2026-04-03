@@ -196,6 +196,7 @@
   border-radius: var(--radius);
   padding: 36px 40px;
   box-shadow: var(--shadow-md);
+  overflow-x: auto;
 }
 
 .chord-sheet-wrap.two-col > #chord-output {

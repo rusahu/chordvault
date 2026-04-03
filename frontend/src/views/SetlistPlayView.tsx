@@ -173,6 +173,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal, initialSetlist, 
     setFontSize(fit.fontSize); setStoredFontSize(fit.fontSize);
     setTwoCol(fit.twoCol); setStoredTwoCol(fit.twoCol);
     setRenderKey((k) => k + 1);
+    requestAnimationFrame(() => {
+      document.querySelector('.chord-sheet-wrap')?.scrollIntoView({ behavior: 'smooth' });
+    });
     if (fit.fontSize === before.fontSize && fit.twoCol === before.twoCol) {
       toast('Already fitted', 'info');
     } else {

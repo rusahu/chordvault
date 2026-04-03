@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 
@@ -117,7 +118,7 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
 
   const hasCorrections = chatHistory.filter(m => m.role === 'user').length > 0;
 
-  return (
+  return createPortal(
     <div className="ocr-modal" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="ocr-card">
         <div className="view-header" style={{ marginBottom: 16 }}>
@@ -218,6 +219,7 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
