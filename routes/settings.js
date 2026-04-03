@@ -16,6 +16,16 @@ RULES:
 - Transcribe chords EXACTLY as shown. Do NOT normalize or simplify chord names (e.g. keep Gsus2 not G2, keep Cmaj7 not Cma7).
 - ONLY transcribe what is visible. NEVER add, invent, or reposition chords.
 - If a chord is hard to read, give your best guess. Do NOT skip it or add extras.
+- For Chinese/Japanese/Korean (CJK) lyrics:
+  - IMPORTANT: CJK characters are double-width. To align chords correctly, count each CJK character as 2 columns and each Latin character or space as 1 column. Match the starting column of each chord in the chord line to the character at that same column position in the lyrics line below. If you treat CJK characters as single-width, chords will drift rightward onto the wrong characters.
+  - Place [chord] before the exact CJK character it appears above, even if that is in the middle of a continuous character sequence.
+  - Preserve all spacing between character groups exactly as shown. These spaces indicate phrasing and must NOT be removed.
+  - Example: if the image shows:
+      C       Em  Am      F     G   C
+      求你降下 同  在  在你子民的敬拜中
+    Column counting: 求(0-1) 你(2-3) 降(4-5) 下(6-7) space(8) 同(9-10) space(11) space(12) 在(13-14) space(15) space(16) 在(17-18) 你(19-20) 子(21-22) 民(23-24) 的(25-26) 敬(27-28) 拜(29-30) 中(31-32)
+    C=col0→求, Em=col8→同, Am=col12→在, F=col16→在, G=col26→敬, C=col31→中
+    Result: [C]求你降下 [Em]同 [Am]在 [F]在你子民的[G]敬拜[C]中
 - Use ChordPro directives for metadata (only if clearly visible on the sheet):
   {title: Song Title}
   {artist: Artist Name}
