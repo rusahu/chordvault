@@ -1,0 +1,52 @@
+diff --git a/node_modules/chordsheetjs/lib/index.js b/node_modules/chordsheetjs/lib/index.js
+index d37b723..e67790e 100644
+--- a/node_modules/chordsheetjs/lib/index.js
++++ b/node_modules/chordsheetjs/lib/index.js
+@@ -36981,23 +36981,44 @@ const $a5a21ced491ea51f$var$endSectionTags = {
+         this.applyRepeatNotation();
+     }
+     parseLyricsWithChords(chordsLine, lyricsLine) {
+-        this.processCharacters(chordsLine, lyricsLine);
++        const consumedLyrics = this.processCharacters(chordsLine, lyricsLine);
+         if (!this.chordLyricsPair) throw new Error('Expected this.chordLyricsPair to be present');
+-        this.chordLyricsPair.lyrics += lyricsLine.substring(chordsLine.length);
++        this.chordLyricsPair.lyrics += lyricsLine.substring(consumedLyrics);
+         this.chordLyricsPair.chords = this.chordLyricsPair.chords.trim();
+         if (this.chordLyricsPair.lyrics) this.chordLyricsPair.lyrics = this.chordLyricsPair.lyrics.trim();
+         this.applyRepeatNotation();
+     }
+     processCharacters(chordsLine, lyricsLine) {
++        function charWidth(ch) {
++            if (!ch) return 1;
++            const code = ch.charCodeAt(0);
++            if ((code >= 0x1100 && code <= 0x11FF) || (code >= 0x2E80 && code <= 0x9FFF) || (code >= 0xAC00 && code <= 0xD7AF) || (code >= 0xF900 && code <= 0xFAFF) || (code >= 0xFE30 && code <= 0xFE4F) || (code >= 0xFF01 && code <= 0xFFEF) || (code >= 0x3000 && code <= 0x303F) || (code >= 0x3040 && code <= 0x309F) || (code >= 0x30A0 && code <= 0x30FF) || (code >= 0x4E00 && code <= 0x9FFF) || (code >= 0x20000 && code <= 0x2FA1F)) return 2;
++            return 1;
++        }
++        // Map each visual column to a lyrics character index
++        const lyricsMap = [];
++        let vi = 0;
++        for (let li = 0; li < lyricsLine.length; li++) {
++            const w = charWidth(lyricsLine[li]);
++            for (let k = 0; k < w; k++) lyricsMap[vi++] = li;
++        }
++
++        let maxLi = -1;
+         for(let c = 0, charCount = chordsLine.length; c < charCount; c += 1){
+             const chr = chordsLine[c];
+             const nextChar = chordsLine[c + 1];
+             const isWhiteSpace = /\s/.test(chr);
+             this.addCharacter(chr, nextChar);
+             if (!this.chordLyricsPair) throw new Error('Expected this.chordLyricsPair to be present');
+-            this.chordLyricsPair.lyrics += lyricsLine[c] || '';
++            const li = lyricsMap[c];
++            if (li !== undefined && li !== maxLi) {
++                this.chordLyricsPair.lyrics += lyricsLine[li];
++                maxLi = li;
++            }
+             this.processingText = !isWhiteSpace;
+         }
++        // Return number of lyrics characters consumed so caller can append remainder
++        return maxLi >= 0 ? maxLi + 1 : 0;
+     }
+     addCharacter(chr, nextChar) {
+         const isWhiteSpace = /\s/.test(chr);
