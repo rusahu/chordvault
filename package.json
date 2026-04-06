@@ -19,7 +19,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"*.js\" \"lib/**/*.js\" \"routes/**/*.js\"",
     "format:check": "prettier --check \"*.js\" \"lib/**/*.js\" \"routes/**/*.js\"",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "prepare": "husky"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -35,7 +36,15 @@
     "@eslint/js": "^10.0.1",
     "concurrently": "^9.2.1",
     "eslint": "^10.0.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "playwright": "^1.59.1",
     "prettier": "^3.8.1"
+  },
+  "lint-staged": {
+    "*.js": "eslint",
+    "lib/**/*.js": "eslint",
+    "routes/**/*.js": "eslint",
+    "frontend/src/**/*.{ts,tsx}": "cd frontend && npx eslint"
   }
 }

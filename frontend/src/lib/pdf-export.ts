@@ -243,7 +243,7 @@ function addCanvasToPages(
   const pxPerPage = (CONTENT_H / imgHeight) * canvas.height;
 
   // Find smart break points at paragraph boundaries
-  let breakYs = findBreakPoints(container, scale, pxPerPage);
+  const breakYs = findBreakPoints(container, scale, pxPerPage);
 
   // Fallback: if no smart breaks found but content overflows, use fixed-height slicing
   if (breakYs.length === 0) {

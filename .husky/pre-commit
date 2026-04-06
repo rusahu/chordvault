@@ -1,0 +1,5 @@
+# Run lint-staged (backend + frontend lint on staged files)
+npx lint-staged
+
+# Run frontend unit tests
+cd frontend && npm test
