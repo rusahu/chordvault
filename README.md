@@ -158,7 +158,7 @@ cd frontend && npm run build # Build frontend
 node test/smoke.js           # Playwright smoke test (requires running server)
 ```
 
-A pre-commit hook (via Husky) automatically runs lint on staged files and frontend unit tests before every commit.
+A pre-commit hook (via Husky) automatically runs lint on staged files, TypeScript typecheck, and frontend unit tests before every commit.
 
 ## Configuration
 
