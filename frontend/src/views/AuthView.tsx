@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { useToast } from '../context/ToastContext';
-import { useDemo } from '../context/DemoContext';
 import { api } from '../lib/api';
 import type { AuthConfig, AuthResponse } from '../types';
 
@@ -12,9 +10,7 @@ interface AuthViewProps {
 
 export function AuthView({ navigate }: AuthViewProps) {
   const { login } = useAuth();
-  const { demoMode } = useDemo();
   const { t } = useI18n();
-  const toast = useToast();
   const [tab, setTab] = useState<'login' | 'register' | 'invite'>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -48,9 +44,10 @@ export function AuthView({ navigate }: AuthViewProps) {
 
     const scriptId = 'cf-turnstile-script';
     const renderWidget = () => {
-      if (turnstileRef.current && (window as any).turnstile) {
+      const w = window as unknown as { turnstile?: { render: (el: HTMLElement, opts: { sitekey: string; callback: (token: string) => void }) => void } };
+      if (turnstileRef.current && w.turnstile) {
         while (turnstileRef.current.firstChild) turnstileRef.current.removeChild(turnstileRef.current.firstChild);
-        (window as any).turnstile.render(turnstileRef.current, {
+        w.turnstile.render(turnstileRef.current, {
           sitekey: siteKey,
           callback: (token: string) => setTurnstileToken(token),
         });

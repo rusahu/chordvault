@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -12,7 +12,7 @@ import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
 import { renderChordPro, songHasKey, autoFit } from '../lib/chords';
 import { languageName } from '../lib/languages';
-import type { Song, SongVersion, Correction, SongListItem, SetlistListItem } from '../types';
+import type { Song, SongVersion, Correction, SetlistListItem } from '../types';
 
 interface SongViewProps {
   songId: number;
@@ -39,7 +39,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
         location.hash = `#song/${songId}`;
       })
       .catch((e) => { toast(e.message, 'error'); navigate(user ? 'my-songs' : 'browse'); });
-  }, [songId]);
+  }, [songId, apiCall, navigate, toast, user]);
 
   useEffect(() => {
     if (!song) return;
@@ -51,20 +51,19 @@ export function SongView({ songId, navigate }: SongViewProps) {
         .then(setCorrections)
         .catch(() => {});
     }
-  }, [song, songId]);
+  }, [song, songId, apiCall, user]);
 
   const content = song?.content || '';
   const chord = useChordRenderer(content);
+  const { setTranspose: resetChordTranspose, setNashville: resetChordNashville } = chord;
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
 
-  // Re-render when content changes (reset transpose)
+  // Reset transpose/nashville when navigating to a different song
   useEffect(() => {
-    if (song) {
-      chord.setTranspose(0);
-      chord.setNashville(false);
-    }
-  }, [songId]);
+    resetChordTranspose(0);
+    resetChordNashville(false);
+  }, [songId, resetChordTranspose, resetChordNashville]);
 
   const renderedHtml = useMemo(
     () => renderChordPro(content, chord.transpose, chord.nashville),

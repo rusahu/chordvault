@@ -40,7 +40,7 @@ export function useSetlistPlayer({
         }
       })
       .catch((e) => { toast(e.message, 'error'); navigate(user ? 'setlists' : 'browse'); });
-  }, [setlistId]);
+  }, [setlistId, apiCall, initialSetlist, isPublic, navigate, toast, user]);
 
   const entry: SetlistEntry | null = setlist?.entries[index] || null;
   const total = setlist?.entries.length || 0;
@@ -58,7 +58,7 @@ export function useSetlistPlayer({
         } catch { /* silent */ }
       }
     }
-  }, [setlist, entry, index]);
+  }, [setlist, entry, apiCall]);
 
   const goTo = useCallback((newIdx: number) => {
     if (!setlist || newIdx < 0 || newIdx >= setlist.entries.length) return;

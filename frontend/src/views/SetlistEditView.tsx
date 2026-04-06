@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
@@ -20,15 +20,15 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
   const [setlist, setSetlist] = useState<Setlist | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const sl = await apiCall<Setlist>('GET', `/api/setlists/${setlistId}`);
       setSetlist(sl);
       location.hash = `#setlist/${setlistId}`;
     } catch (e) { toast((e as Error).message, 'error'); navigate('setlists'); }
-  };
+  }, [apiCall, toast, navigate, setlistId]);
 
-  useEffect(() => { load(); }, [setlistId]);
+  useEffect(() => { load(); }, [load]);
 
   const saveMeta = async () => {
     if (!setlist) return;

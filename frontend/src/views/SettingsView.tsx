@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
-import { useToast } from '../context/ToastContext';
 import { LANGUAGES, languageName } from '../lib/languages';
 import { useDemo } from '../context/DemoContext';
 import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT } from '../lib/constants';
@@ -8,7 +7,6 @@ import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT } from '../lib/constants';
 export function SettingsView() {
   const apiCall = useApi();
   const { demoMode } = useDemo();
-  const toast = useToast();
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -24,24 +22,21 @@ export function SettingsView() {
   const [hasCustomPrompt, setHasCustomPrompt] = useState(false);
   const [promptMsg, setPromptMsg] = useState<{ text: string; color: string } | null>(null);
 
-  useEffect(() => { loadGeminiStatus(); loadOcrPrompt(); }, []);
-  useEffect(() => { loadPreferredLangs(); }, []);
-
-  const loadPreferredLangs = async () => {
+  const loadPreferredLangs = useCallback(async () => {
     try {
       const data = await apiCall<{ languages: string[] }>('GET', '/api/settings/languages');
       setPreferredLangs(data.languages);
     } catch {}
-  };
+  }, [apiCall]);
 
-  const loadGeminiStatus = async () => {
+  const loadGeminiStatus = useCallback(async () => {
     try {
       const data = await apiCall<{ hasKey: boolean }>('GET', '/api/settings/gemini-key');
       setGeminiStatus(data.hasKey ? '✓ Key saved' : 'No key set');
     } catch { setGeminiStatus('Could not check status'); }
-  };
+  }, [apiCall]);
 
-  const loadOcrPrompt = async () => {
+  const loadOcrPrompt = useCallback(async () => {
     try {
       const data = await apiCall<{ prompt: string | null; defaultPrompt: string }>('GET', '/api/settings/ocr-prompt');
       setDefaultPrompt(data.defaultPrompt);
@@ -50,7 +45,10 @@ export function SettingsView() {
         setHasCustomPrompt(true);
       }
     } catch {}
-  };
+  }, [apiCall]);
+
+  useEffect(() => { loadGeminiStatus(); loadOcrPrompt(); }, [loadGeminiStatus, loadOcrPrompt]);
+  useEffect(() => { loadPreferredLangs(); }, [loadPreferredLangs]);
 
   const changePassword = async () => {
     setPwMsg(null);

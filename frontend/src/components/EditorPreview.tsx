@@ -17,7 +17,7 @@ export function EditorPreview({ content, debounceMs = 300, forceRender }: Editor
   const [keyPickerVisible, setKeyPickerVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const contentRef = useRef(content);
-  contentRef.current = content;
+  useEffect(() => { contentRef.current = content; }, [content]);
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);

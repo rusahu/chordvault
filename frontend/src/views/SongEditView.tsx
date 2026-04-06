@@ -53,6 +53,13 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
     setLanguage(extractDirective(text, 'x_language') || '');
   }, []);
 
+  const updateBadge = useCallback((text: string) => {
+    const fmt = detectFormat(text);
+    if (fmt) setFormatBadge({ text: fmt, cls: 'format-ok' });
+    else if (text?.trim()) setFormatBadge({ text: 'No chords detected — add chords in [brackets] e.g. [G]lyrics', cls: 'format-warn' });
+    else setFormatBadge(null);
+  }, []);
+
   useEffect(() => {
     if (songId) {
       apiCall<Song>('GET', `/api/songs/${songId}`)
@@ -73,7 +80,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         })
         .catch((e) => { toast(e.message, 'error'); navigate('my-songs'); });
     }
-  }, [songId]);
+  }, [songId, apiCall, navigate, syncContentToFields, toast, updateBadge]);
 
   useEffect(() => {
     if (user) {
@@ -84,14 +91,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         .then((d) => setPreferredLanguages(d.languages))
         .catch(() => {});
     }
-  }, []);
-
-  const updateBadge = (text: string) => {
-    const fmt = detectFormat(text);
-    if (fmt) setFormatBadge({ text: fmt, cls: 'format-ok' });
-    else if (text?.trim()) setFormatBadge({ text: 'No chords detected — add chords in [brackets] e.g. [G]lyrics', cls: 'format-warn' });
-    else setFormatBadge(null);
-  };
+  }, [apiCall, user]);
 
   // Editor content changed → sync to form fields (debounced 150ms)
   const handleContentChange = (text: string) => {

@@ -24,7 +24,6 @@ export function Nav({ view, navigate }: NavProps) {
     return () => document.removeEventListener('click', onClick);
   }, []);
 
-  const themeIcon = theme === 'light' ? '\u262E' : '\u2606';
   // Use the actual HTML entities from original: ☼ (9788) for dark, ☾ (9790) for light
   const themeIconHtml = theme === 'light' ? '&#9790;' : '&#9788;';
 
