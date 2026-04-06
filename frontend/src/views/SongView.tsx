@@ -29,6 +29,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const [corrections, setCorrections] = useState<Correction[]>([]);
   const [addToSetlistOpen, setAddToSetlistOpen] = useState(false);
   const [userSetlists, setUserSetlists] = useState<SetlistListItem[]>([]);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     setSong(null);
@@ -83,6 +84,23 @@ export function SongView({ songId, navigate }: SongViewProps) {
   useKeyboardShortcuts(shortcuts, !!song);
 
   const isOwner = user && song && user.username === song.username;
+
+  const handleExportPdf = async () => {
+    if (!song || exporting) return;
+    setExporting(true);
+    try {
+      const { exportSongPdf } = await import('../lib/pdf-export');
+      await exportSongPdf(song, renderedHtml, {
+        transpose: chord.transpose,
+        fontSize: fontScale.fontSize,
+      });
+      toast('PDF exported', 'success');
+    } catch (e) {
+      toast((e as Error).message || 'PDF export failed', 'error');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const showAddToSetlist = async () => {
     if (user) {
@@ -163,6 +181,9 @@ export function SongView({ songId, navigate }: SongViewProps) {
             )}
             <button className="btn btn-ghost btn-sm" onClick={showAddToSetlist}>
               &#43; {t('songView.addToSetlist')}
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={handleExportPdf} disabled={exporting}>
+              {exporting ? '...' : '\u{1F4C4} PDF'}
             </button>
           </div>
         </div>

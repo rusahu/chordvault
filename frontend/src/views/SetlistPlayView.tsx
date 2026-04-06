@@ -31,6 +31,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal, initialSetlist, 
 
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   // Global setlist settings
   const [slNashville, setSlNashville] = useState(false);
@@ -166,6 +167,20 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal, initialSetlist, 
   };
   const resetFont = () => { setFontSize(0); setStoredFontSize(0); if (entry) entry._font = null; setRenderKey((k) => k + 1); };
 
+  const handleExportAllPdf = async () => {
+    if (!setlist || exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      const { exportSetlistPdf } = await import('../lib/pdf-export');
+      await exportSetlistPdf(setlist, { nashville: slNashville, fontSize });
+      toast('Setlist PDF exported', 'success');
+    } catch (e) {
+      toast((e as Error).message || 'PDF export failed', 'error');
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   const doFit = (perSong: boolean) => {
     const before = { fontSize, twoCol };
     const fit = autoFit();
@@ -203,6 +218,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal, initialSetlist, 
             <a href={entry.youtube_url} target="_blank" rel="noopener" className="yt-link" title="Watch on YouTube">&#9654; YT</a>
           )}
         </span>
+        <button className="btn btn-ghost btn-sm" onClick={handleExportAllPdf} disabled={exportingPdf} title="Export setlist as PDF">
+          {exportingPdf ? '...' : '\u{1F4C4} PDF'}
+        </button>
         <button className={`btn btn-ghost btn-sm${slOptionsOpen ? ' active' : ''}`} onClick={() => setSlOptionsOpen((v) => !v)} title="Settings">&#9881;</button>
       </div>
 

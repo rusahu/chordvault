@@ -23,6 +23,8 @@
     "chordsheetjs": "^14.0.0",
     "codemirror": "^6.0.2",
     "dotenv": "^17.4.0",
+    "html2canvas-pro": "^2.0.2",
+    "jspdf": "^4.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
