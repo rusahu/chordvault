@@ -20,7 +20,7 @@
     "format": "prettier --write \"*.js\" \"lib/**/*.js\" \"routes/**/*.js\"",
     "format:check": "prettier --check \"*.js\" \"lib/**/*.js\" \"routes/**/*.js\"",
     "postinstall": "patch-package",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
