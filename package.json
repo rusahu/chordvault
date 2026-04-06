@@ -19,18 +19,16 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"*.js\" \"lib/**/*.js\" \"routes/**/*.js\"",
     "format:check": "prettier --check \"*.js\" \"lib/**/*.js\" \"routes/**/*.js\"",
-    "postinstall": "patch-package",
     "prepare": "husky || true"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.8.0",
-    "chordsheetjs": "^14.0.0",
+    "chordsheetjs": "^14.4.0",
     "dotenv": "^17.4.0",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "patch-package": "^8.0.1"
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -11,8 +11,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "postinstall": "patch-package --patch-dir ../patches"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",
@@ -20,7 +19,7 @@
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.41.0",
     "@lezer/highlight": "^1.2.3",
-    "chordsheetjs": "^14.0.0",
+    "chordsheetjs": "^14.4.0",
     "codemirror": "^6.0.2",
     "dotenv": "^17.4.0",
     "html2canvas-pro": "^2.0.2",
@@ -40,7 +39,6 @@
     "eslint": "^10.0.3",
     "eslint-plugin-react-hooks": "^7.0.1",
     "jsdom": "^29.0.1",
-    "patch-package": "^8.0.1",
     "playwright": "^1.59.1",
     "prettier": "^3.8.1",
     "typescript": "^6.0.2",
