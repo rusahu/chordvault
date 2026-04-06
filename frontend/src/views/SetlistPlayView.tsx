@@ -23,7 +23,7 @@ interface SetlistPlayViewProps {
   navigate: (view: string, params?: Record<string, string>) => void;
 }
 
-export function SetlistPlayView({ setlistId, isPublic, isLocal, initialSetlist, initialIndex, navigate }: SetlistPlayViewProps) {
+export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initialSetlist, initialIndex, navigate }: SetlistPlayViewProps) {
   const apiCall = useApi();
   const { t } = useI18n();
   const toast = useToast();
@@ -41,9 +41,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal, initialSetlist, 
   const [twoCol, setTwoCol] = useState(() => getStoredTwoCol());
 
   // Render key for forcing re-render
-  const [renderKey, setRenderKey] = useState(0);
+  const [_renderKey, setRenderKey] = useState(0);
 
-  const { setlist, entry, index, total, prev, next, exit, goTo } = useSetlistPlayer({
+  const { setlist, entry, index, total, prev, next, exit } = useSetlistPlayer({
     setlistId,
     isPublic,
     initialSetlist,
@@ -60,10 +60,11 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal, initialSetlist, 
   const effFont = entry ? slEffective(entry, 'font', fontSize) : fontSize;
   const keyDisplay = entry ? getSongKey(content, entry.transpose) : '';
 
+  const entryTranspose = entry?.transpose ?? 0;
   const renderedHtml = useMemo(() => {
     if (!entry) return '';
-    return renderChordPro(content, entry.transpose, !!effNum);
-  }, [content, entry?.transpose, effNum, renderKey]);
+    return renderChordPro(content, entryTranspose, !!effNum);
+  }, [content, effNum, entry, entryTranspose]);
 
   // Transpose
   const transpose = useCallback((delta: number) => {

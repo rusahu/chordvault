@@ -5,7 +5,7 @@ import { useToast } from '../context/ToastContext';
 import { useLocalSetlists } from '../hooks/useLocalSetlists';
 import { SongPicker } from '../components/SongPicker';
 import { EmptyState } from '../components/EmptyState';
-import type { LocalSetlist, SongListItem, Setlist } from '../types';
+import type { LocalSetlist, SongListItem, Setlist, Song, SetlistEntry } from '../types';
 
 interface LocalSetlistEditViewProps {
   setlistId: string;
@@ -24,11 +24,9 @@ export function LocalSetlistEditView({ setlistId, navigate }: LocalSetlistEditVi
     const sl = ls.getOne(setlistId);
     if (!sl) { navigate('local-setlists'); return; }
     setSetlist(sl);
-  }, [setlistId, ls.setlists]);
+  }, [setlistId, ls, navigate]);
 
   if (!setlist) return null;
-
-  const refresh = () => setSetlist(ls.getOne(setlistId));
 
   const renameSetlist = (name: string) => {
     if (!name.trim() || name.length > 200) return;
@@ -52,7 +50,7 @@ export function LocalSetlistEditView({ setlistId, navigate }: LocalSetlistEditVi
     const sl = ls.getOne(setlistId);
     if (!sl || sl.entries.length === 0) return;
     try {
-      const fetches = sl.entries.map((e) => apiCall<any>('GET', `/api/songs/${e.song_id}`).catch(() => null));
+      const fetches = sl.entries.map((e) => apiCall<Song>('GET', `/api/songs/${e.song_id}`).catch(() => null));
       const results = await Promise.all(fetches);
       const entries = results.map((song, i) => {
         if (!song) return null;
@@ -64,7 +62,7 @@ export function LocalSetlistEditView({ setlistId, navigate }: LocalSetlistEditVi
         };
       }).filter(Boolean);
       if (entries.length === 0) { toast('No songs could be loaded', 'error'); return; }
-      const enrichedSetlist: Setlist = { id: setlistId, name: sl.name, entries: entries as any, isLocal: true, visibility: 'private', event_date: null };
+      const enrichedSetlist: Setlist = { id: setlistId, name: sl.name, entries: entries as SetlistEntry[], isLocal: true, visibility: 'private', event_date: null };
       navigate('setlist-play', { id: setlistId, local: '1', _setlist: JSON.stringify(enrichedSetlist) });
     } catch (e) { toast((e as Error).message, 'error'); }
   };

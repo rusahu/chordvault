@@ -29,34 +29,42 @@ vi.mock('../../components/OcrModal', () => ({
   OcrModal: () => null,
 }));
 
-// Mock hooks
+// Mock hooks — stable references to avoid infinite re-renders from effect deps
 const mockApiCall = vi.fn().mockImplementation((_method: string, path: string) => {
   if (path === '/api/settings/gemini-key') return Promise.resolve({ hasKey: false });
   if (path === '/api/settings/languages') return Promise.resolve({ languages: [] });
   return Promise.resolve({});
 });
+const mockUser = { id: 1, username: 'testuser', role: 'owner', token: 'fake' };
+const mockLogin = vi.fn();
+const mockLogout = vi.fn();
+const mockToast = vi.fn();
+const mockToggleTheme = vi.fn();
+const mockT = (key: string) => key;
+const mockTReplace = (key: string) => key;
+
 vi.mock('../../hooks/useApi', () => ({
   useApi: () => mockApiCall,
 }));
 
 vi.mock('../../context/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 1, username: 'testuser', role: 'owner', token: 'fake' }, isAdmin: true, login: vi.fn(), logout: vi.fn() }),
+  useAuth: () => ({ user: mockUser, isAdmin: true, login: mockLogin, logout: mockLogout }),
 }));
 
 vi.mock('../../context/I18nContext', () => ({
   useI18n: () => ({
-    t: (key: string) => key,
-    tReplace: (key: string) => key,
+    t: mockT,
+    tReplace: mockTReplace,
     loaded: true,
   }),
 }));
 
 vi.mock('../../context/ToastContext', () => ({
-  useToast: () => vi.fn(),
+  useToast: () => mockToast,
 }));
 
 vi.mock('../../context/ThemeContext', () => ({
-  useTheme: () => ({ theme: 'dark', toggleTheme: vi.fn() }),
+  useTheme: () => ({ theme: 'dark', toggleTheme: mockToggleTheme }),
 }));
 
 // ─── Tests ──────────────────────────────────────────────────────────

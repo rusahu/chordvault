@@ -65,7 +65,6 @@ That [G]saved a [Em]wretch like [D]me
   it('single chord line is detected', () => {
     // A single chord above lyrics should be enough
     const content = 'G\nAmazing grace';
-    const result = detectFormat(content);
     // This might be detected as chords-over-lyrics or might not — the key thing
     // is it doesn't crash
     expect(() => detectFormat(content)).not.toThrow();

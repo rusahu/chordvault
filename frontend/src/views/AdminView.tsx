@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -25,12 +25,14 @@ export function AdminView({ navigate }: AdminViewProps) {
   const [invites, setInvites] = useState<InviteCode[]>([]);
   const [inviteCode, setInviteCode] = useState('');
 
-  useEffect(() => {
-    if (!isAdmin) { navigate('my-songs'); return; }
-    load();
-  }, []);
+  const loadInvites = useCallback(async () => {
+    try {
+      const inv = await apiCall<InviteCode[]>('GET', '/api/admin/invites');
+      setInvites(inv);
+    } catch { /* ignore */ }
+  }, [apiCall]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const [s, u, c, cfg] = await Promise.all([
         apiCall<AdminStats>('GET', '/api/admin/stats'),
@@ -41,14 +43,12 @@ export function AdminView({ navigate }: AdminViewProps) {
       setStats(s); setUsers(u); setCorrections(c); setConfig(cfg);
       loadInvites();
     } catch (e) { toast((e as Error).message, 'error'); navigate('my-songs'); }
-  };
+  }, [apiCall, toast, navigate, loadInvites]);
 
-  const loadInvites = async () => {
-    try {
-      const inv = await apiCall<InviteCode[]>('GET', '/api/admin/invites');
-      setInvites(inv);
-    } catch { /* ignore */ }
-  };
+  useEffect(() => {
+    if (!isAdmin) { navigate('my-songs'); return; }
+    load();
+  }, [isAdmin, navigate, load]);
 
   const toggleReg = async (val: boolean) => {
     try {

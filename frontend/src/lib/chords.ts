@@ -8,7 +8,6 @@ const PARSER_NAMES = [
   { cls: 'ChordsOverWordsParser', label: 'Chords over lyrics' },
 ] as const;
 
-type ParserCls = 'ChordProParser' | 'UltimateGuitarParser' | 'ChordsOverWordsParser';
 
 const DIRECTIVE_RE = /^\{([a-z_]+):\s*([^}]*)\}$/i;
 const DIRECTIVE_LINE_RE = /^\{[a-z_]+:.*\}$/i;

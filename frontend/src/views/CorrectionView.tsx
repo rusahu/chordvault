@@ -18,7 +18,7 @@ export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
     apiCall<Song>('GET', `/api/songs/${songId}`)
       .then((s) => setContent(s.content))
       .catch((e) => { toast(e.message, 'error'); navigate('browse'); });
-  }, [songId]);
+  }, [songId, apiCall, navigate, toast]);
 
   const submit = async () => {
     const trimmed = content.trim();
