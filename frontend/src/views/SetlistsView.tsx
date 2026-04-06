@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
@@ -24,20 +24,20 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
   const [showDates, setShowDates] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
 
-  const load = async () => {
+  const load = useCallback(async (q = '', from = '', to = '') => {
     const params: string[] = [];
-    if (query) params.push(`q=${encodeURIComponent(query)}`);
-    if (dateFrom) params.push(`date_from=${encodeURIComponent(dateFrom)}`);
-    if (dateTo) params.push(`date_to=${encodeURIComponent(dateTo)}`);
+    if (q) params.push(`q=${encodeURIComponent(q)}`);
+    if (from) params.push(`date_from=${encodeURIComponent(from)}`);
+    if (to) params.push(`date_to=${encodeURIComponent(to)}`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
     try {
       const data = await apiCall<SetlistListItem[]>('GET', `/api/setlists${qs}`);
       setSetlists(data);
       setLoaded(true);
     } catch (e) { toast((e as Error).message, 'error'); }
-  };
+  }, [apiCall, toast]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => { if (showNew && nameRef.current) nameRef.current.focus(); }, [showNew]);
 
@@ -80,10 +80,10 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
           placeholder={t('setlist.searchPlaceholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') load(); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') load(query, dateFrom, dateTo); }}
         />
         <button className="btn btn-ghost btn-sm" onClick={() => setShowDates((v) => !v)}>&#128197; Date</button>
-        <button className="btn btn-ghost btn-sm" onClick={load}>{t('songs.search')}</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => load(query, dateFrom, dateTo)}>{t('songs.search')}</button>
       </div>
       {showDates && (
         <div className="search-row" style={{ marginTop: -10 }}>

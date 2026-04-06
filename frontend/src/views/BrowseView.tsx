@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -23,7 +23,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  const load = async (q = '', lang = '') => {
+  const load = useCallback(async (q = '', lang = '') => {
     try {
       let url = '/api/songs/public';
       const params: string[] = [];
@@ -34,9 +34,9 @@ export function BrowseView({ navigate }: BrowseViewProps) {
       setSongs(data);
       setLoaded(true);
     } catch (e) { toast((e as Error).message, 'error'); }
-  };
+  }, [api, toast]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const doSearch = () => load(query, langFilter);
 

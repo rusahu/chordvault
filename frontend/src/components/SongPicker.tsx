@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
 import type { SongListItem } from '../types';
@@ -14,15 +14,14 @@ export function SongPicker({ onPick, onClose }: SongPickerProps) {
   const [songs, setSongs] = useState<SongListItem[]>([]);
   const [search, setSearch] = useState('');
 
-
-  const load = async (q = '') => {
+  const load = useCallback(async (q = '') => {
     try {
       const data = await api<SongListItem[]>('GET', '/api/songs/public' + (q ? `?q=${encodeURIComponent(q)}` : ''));
       setSongs(data);
     } catch { /* ignore */ }
-  };
+  }, [api]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div className="setlist-add-overlay" data-overlay style={{ display: 'flex' }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>

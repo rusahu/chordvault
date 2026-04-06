@@ -4,7 +4,7 @@ import { useDemo } from './context/DemoContext';
 import { Nav } from './components/Nav';
 import { DemoBanner } from './components/DemoBanner';
 import { Toast } from './components/Toast';
-import { Loading } from './components/Loading';
+
 import { BrowseView } from './views/BrowseView';
 import { MySongsView } from './views/MySongsView';
 import { SongView } from './views/SongView';
@@ -57,7 +57,7 @@ export function App() {
     api<AuthConfig>('GET', '/api/auth/config').then((cfg) => {
       if (cfg.demoMode) setDemoMode(true);
     }).catch(() => {});
-  }, []);
+  }, [setDemoMode]);
 
   // Auto-scroll to top when any overlay appears
   useEffect(() => {
@@ -107,7 +107,7 @@ export function App() {
       // Redirect unauthenticated users trying to edit setlists
       setRoute({ view: 'browse', params: {} });
     }
-  }, []);
+  }, [user]);
 
   const renderView = () => {
     const { view, params } = route;

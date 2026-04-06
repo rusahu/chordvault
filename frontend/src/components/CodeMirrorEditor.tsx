@@ -40,7 +40,12 @@ export function CodeMirrorEditor({ value, onChange, darkMode, placeholder }: Cod
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  const valueRef = useRef(value);
+  const placeholderRef = useRef(placeholder);
+
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+  useEffect(() => { valueRef.current = value; }, [value]);
+  useEffect(() => { placeholderRef.current = placeholder; }, [placeholder]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -62,9 +67,9 @@ export function CodeMirrorEditor({ value, onChange, darkMode, placeholder }: Cod
       updateListener,
       EditorView.lineWrapping,
     ];
-    if (placeholder) extensions.push(cmPlaceholder(placeholder));
+    if (placeholderRef.current) extensions.push(cmPlaceholder(placeholderRef.current));
 
-    const state = EditorState.create({ doc: value, extensions });
+    const state = EditorState.create({ doc: valueRef.current, extensions });
     const view = new EditorView({ state, parent: containerRef.current });
     viewRef.current = view;
 

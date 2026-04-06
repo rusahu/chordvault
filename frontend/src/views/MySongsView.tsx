@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
@@ -17,11 +17,13 @@ export function MySongsView({ navigate }: MySongsViewProps) {
   const [songs, setSongs] = useState<SongListItem[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     api<SongListItem[]>('GET', '/api/songs')
       .then((data) => { setSongs(data); setLoaded(true); })
       .catch((e) => toast(e.message, 'error'));
-  }, []);
+  }, [api, toast]);
+
+  useEffect(() => { load(); }, [load]);
 
   return (
     <>
