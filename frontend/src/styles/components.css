@@ -498,6 +498,12 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   align-self: flex-end;
 }
 
+.ocr-chat-ai {
+  background: var(--surface2);
+  color: var(--muted);
+  align-self: flex-start;
+}
+
 .ocr-fix-row {
   display: flex;
   gap: 6px;
