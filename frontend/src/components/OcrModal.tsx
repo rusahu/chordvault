@@ -149,8 +149,8 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
                 Requires a Gemini API key. Set one up in Settings.
               </div>
             )}
-            <button className="btn" onClick={process} disabled={processing} style={{ width: '100%' }}>
-              {processing ? 'Processing...' : 'Extract text'}
+            <button className="btn" onClick={process} disabled={processing} style={{ width: '100%', padding: '12px 22px', fontSize: 15 }}>
+              {processing ? 'Processing...' : '\u2728 Extract text'}
             </button>
             {(processing || progress > 0) && (
               <div style={{ marginTop: 12 }}>
@@ -168,9 +168,9 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
             {/* Correction history */}
             {hasCorrections && (
               <div className="ocr-chat-history">
-                {chatHistory.filter(m => m.role === 'user').map((m, i) => (
-                  <div key={i} className="ocr-chat-bubble ocr-chat-user">
-                    {m.text}
+                {chatHistory.slice(1).map((m, i) => (
+                  <div key={i} className={`ocr-chat-bubble ${m.role === 'user' ? 'ocr-chat-user' : 'ocr-chat-ai'}`}>
+                    {m.role === 'user' ? m.text : '\u2713 Fix applied'}
                   </div>
                 ))}
                 <div ref={chatEndRef} />
