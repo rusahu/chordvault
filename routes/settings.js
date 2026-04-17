@@ -2,47 +2,94 @@ const express = require('express');
 const crypto = require('crypto');
 const { db, stmts } = require('../lib/db');
 const { requireAuth } = require('../lib/auth');
-const { LIMITS } = require('../lib/constants');
+const { LIMITS, GEMINI_MODELS, DEFAULT_GEMINI_MODEL } = require('../lib/constants');
 const { validatePreferredLanguages } = require('../lib/validation');
+const { jsonToChordPro } = require('../lib/ocr-convert');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const DEFAULT_OCR_PROMPT = `You are a chord sheet OCR tool. Transcribe this image/PDF into ChordPro format.
+// JSON-based prompt for structured OCR output (default mode)
+const DEFAULT_OCR_PROMPT = `You are a chord sheet OCR tool. Extract chord/lyric data from this image into structured JSON.
+
+For each line of lyrics, break it into segments. Each segment is a chord followed by the lyrics that play under that chord, up to the next chord.
+
+RULES:
+- Transcribe chords EXACTLY as shown (keep Gsus2, A/C#, Cmaj7 as-is).
+- ONLY transcribe what is visible. NEVER add, invent, or reposition chords.
+- Preserve all spacing between character groups in lyrics exactly as shown.
+- For chord-only lines (intros, interludes), use segments with empty string lyrics.
+- For lyric-only lines (no chords), use a single segment with null chord.
+- If a chord is hard to read, give your best guess. Do NOT skip anything.
+- Include section labels (Verse, Chorus, Bridge, Intro, Outro, etc.) in the label field.
+- Include repeat markers (e.g. "x2") as part of the lyrics text.
+- For metadata, only include what is clearly visible on the sheet.
+- Set language to the ISO 639-1 code of the lyrics language (e.g. "en", "zh", "ko", "ja").`;
+
+// Schema for Gemini structured output
+const OCR_JSON_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    metadata: {
+      type: 'OBJECT',
+      properties: {
+        title: { type: 'STRING' },
+        artist: { type: 'STRING' },
+        key: { type: 'STRING' },
+        capo: { type: 'STRING' },
+        tempo: { type: 'STRING' },
+        language: { type: 'STRING' },
+      },
+    },
+    sections: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          label: { type: 'STRING' },
+          lines: {
+            type: 'ARRAY',
+            items: {
+              type: 'OBJECT',
+              properties: {
+                segments: {
+                  type: 'ARRAY',
+                  items: {
+                    type: 'OBJECT',
+                    properties: {
+                      chord: { type: 'STRING', nullable: true },
+                      lyrics: { type: 'STRING' },
+                    },
+                    required: ['lyrics'],
+                  },
+                },
+              },
+              required: ['segments'],
+            },
+          },
+        },
+        required: ['lines'],
+      },
+    },
+  },
+  required: ['sections'],
+};
+
+// Text-based prompt for refine endpoint and custom prompt fallback
+const OCR_REFINE_PROMPT = `You are a chord sheet OCR tool. Transcribe this image/PDF into ChordPro format.
 
 RULES:
 - Place chords inline with lyrics using square brackets: [G]When I [C]find myself
-- Each bracket must contain exactly ONE chord. Never put multiple chords in one bracket like [Bm Em7]. Instead write [Bm]word [Em7]word.
+- Each bracket must contain exactly ONE chord.
 - Place each [chord] DIRECTLY before the syllable/word it belongs to.
-- Transcribe chords EXACTLY as shown. Do NOT normalize or simplify chord names (e.g. keep Gsus2 not G2, keep Cmaj7 not Cma7).
+- Transcribe chords EXACTLY as shown. Do NOT normalize or simplify chord names.
 - ONLY transcribe what is visible. NEVER add, invent, or reposition chords.
-- If a chord is hard to read, give your best guess. Do NOT skip it or add extras.
-- For Chinese/Japanese/Korean (CJK) lyrics:
-  - IMPORTANT: CJK characters are double-width. To align chords correctly, count each CJK character as 2 columns and each Latin character or space as 1 column. Match the starting column of each chord in the chord line to the character at that same column position in the lyrics line below. If you treat CJK characters as single-width, chords will drift rightward onto the wrong characters.
-  - Place [chord] before the exact CJK character it appears above, even if that is in the middle of a continuous character sequence.
-  - Preserve all spacing between character groups exactly as shown. These spaces indicate phrasing and must NOT be removed.
-  - Example: if the image shows:
-      C       Em  Am      F     G   C
-      求你降下 同  在  在你子民的敬拜中
-    Column counting: 求(0-1) 你(2-3) 降(4-5) 下(6-7) space(8) 同(9-10) space(11) space(12) 在(13-14) space(15) space(16) 在(17-18) 你(19-20) 子(21-22) 民(23-24) 的(25-26) 敬(27-28) 拜(29-30) 中(31-32)
-    C=col0→求, Em=col8→同, Am=col12→在, F=col16→在, G=col26→敬, C=col31→中
-    Result: [C]求你降下 [Em]同 [Am]在 [F]在你子民的[G]敬拜[C]中
-- Use ChordPro directives for metadata (only if clearly visible on the sheet):
-  {title: Song Title}
-  {artist: Artist Name}
-  {key: G}
-  {capo: 2}
-  {tempo: 120}
-- Always add a language directive based on the lyrics language: {x_language: <ISO 639-1 code>}
-- Use section directives: {start_of_verse}, {end_of_verse}, {start_of_chorus}, {end_of_chorus}, {start_of_bridge}, {end_of_bridge}, {start_of_intro}, {end_of_intro}, {start_of_outro}, {end_of_outro}
-- For chord-only lines (intros, interludes), write each chord in its own bracket: [G] [D] [Em] [C]
-- Preserve repeat markers (e.g. "x2", "2x") as plain text.
+- Preserve all spacing between character groups exactly as shown.
+- Use ChordPro directives for metadata: {title: Song Title}, {artist: Artist Name}, {key: G}, {capo: 2}, {tempo: 120}
+- Always add: {x_language: <ISO 639-1 code>}
+- For chord-only lines: [G] [D] [Em] [C]
+- Preserve repeat markers as plain text.
 
-Return ONLY the ChordPro text, no explanations or markdown code fences.
-
-On the very last line, identify the language (for backward compatibility):
-DETECTED_LANGUAGE: <ISO 639-1 code>
-For example: DETECTED_LANGUAGE: en, DETECTED_LANGUAGE: ko.
-If the language is unclear, omit this line.`;
+Return ONLY the ChordPro text, no explanations or markdown code fences.`;
 
 /** Derives a 256-bit encryption key from JWT_SECRET using PBKDF2. */
 function deriveEncKey() {
@@ -140,8 +187,25 @@ function createSettingsRouter() {
     res.json({ success: true });
   });
 
+  router.get('/settings/ocr-model', requireAuth, (req, res) => {
+    const user = stmts.getFullUserById.get(req.user.id);
+    res.json({
+      model: user?.gemini_model || DEFAULT_GEMINI_MODEL,
+      models: GEMINI_MODELS,
+    });
+  });
+
+  router.put('/settings/ocr-model', requireAuth, (req, res) => {
+    const { model } = req.body;
+    if (!model || !GEMINI_MODELS.some(m => m.id === model)) {
+      return res.status(400).json({ error: 'Invalid model' });
+    }
+    db.prepare('UPDATE users SET gemini_model = ? WHERE id = ?').run(model, req.user.id);
+    res.json({ success: true });
+  });
+
   router.post('/ocr/gemini', requireAuth, express.json({ limit: LIMITS.MAX_BODY_JSON }), async (req, res) => {
-    const { image } = req.body;
+    const { image, model: requestModel } = req.body;
     if (!image || typeof image !== 'string') return res.status(400).json({ error: 'Base64 image is required' });
 
     const sizeEstimate = (image.length * 3) / 4;
@@ -157,6 +221,11 @@ function createSettingsRouter() {
       return res.status(500).json({ error: 'Failed to decrypt API key. Try re-saving it in Settings.' });
     }
 
+    // Resolve model: request body > user preference > default
+    const geminiModel = (requestModel && GEMINI_MODELS.some(m => m.id === requestModel))
+      ? requestModel
+      : (user.gemini_model || DEFAULT_GEMINI_MODEL);
+
     let mimeType = 'image/jpeg';
     const dataUrlMatch = image.match(/^data:((?:image\/(?:jpeg|png|webp|gif))|application\/pdf);base64,/);
     let rawBase64 = image;
@@ -165,22 +234,32 @@ function createSettingsRouter() {
       rawBase64 = image.slice(dataUrlMatch[0].length);
     }
 
+    const isJsonMode = !user.gemini_prompt;
     const prompt = user.gemini_prompt || DEFAULT_OCR_PROMPT;
+
+    const requestBody = {
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: mimeType, data: rawBase64 } },
+        ],
+      }],
+    };
+
+    if (isJsonMode) {
+      requestBody.generationConfig = {
+        response_mime_type: 'application/json',
+        response_schema: OCR_JSON_SCHEMA,
+      };
+    }
 
     try {
       const geminiRes = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: prompt },
-                { inline_data: { mime_type: mimeType, data: rawBase64 } }
-              ]
-            }]
-          })
+          body: JSON.stringify(requestBody),
         }
       );
 
@@ -207,6 +286,15 @@ function createSettingsRouter() {
       const text = candidate?.content?.parts?.[0]?.text || '';
       if (!text) return res.status(502).json({ error: 'Gemini returned no text. Try a clearer image.' });
 
+      if (isJsonMode) {
+        let parsed;
+        try { parsed = JSON.parse(text); }
+        catch { return res.status(502).json({ error: 'Gemini returned invalid JSON. Try again.' }); }
+        const result = jsonToChordPro(parsed);
+        return res.json({ text: result.text, language: result.language });
+      }
+
+      // Legacy text mode (custom prompt users)
       const { LANGUAGE_CODES } = require('../lib/languages');
       const langMatch = text.match(/^DETECTED_LANGUAGE:\s*([a-z]{2})\s*$/m);
       const detectedLang = langMatch && LANGUAGE_CODES.has(langMatch[1]) ? langMatch[1] : null;
@@ -221,7 +309,7 @@ function createSettingsRouter() {
 
   // Refinement endpoint — multi-turn conversation with image context
   router.post('/ocr/gemini/refine', requireAuth, express.json({ limit: LIMITS.MAX_BODY_JSON }), async (req, res) => {
-    const { image, history, message } = req.body;
+    const { image, history, message, model: requestModel } = req.body;
     if (!image || !message || !Array.isArray(history)) {
       return res.status(400).json({ error: 'image, history, and message are required' });
     }
@@ -235,6 +323,10 @@ function createSettingsRouter() {
     try { apiKey = decryptApiKey(user.gemini_api_key); }
     catch { return res.status(500).json({ error: 'Failed to decrypt API key.' }); }
 
+    const geminiModel = (requestModel && GEMINI_MODELS.some(m => m.id === requestModel))
+      ? requestModel
+      : (user.gemini_model || DEFAULT_GEMINI_MODEL);
+
     let mimeType = 'image/jpeg';
     const dataUrlMatch = image.match(/^data:((?:image\/(?:jpeg|png|webp|gif))|application\/pdf);base64,/);
     let rawBase64 = image;
@@ -243,11 +335,12 @@ function createSettingsRouter() {
       rawBase64 = image.slice(dataUrlMatch[0].length);
     }
 
-    const prompt = user.gemini_prompt || DEFAULT_OCR_PROMPT;
+    // Refine always uses text-based prompt for context (even if initial extraction used JSON mode)
+    const refinePrompt = user.gemini_prompt || OCR_REFINE_PROMPT;
 
     // Build multi-turn contents: initial extraction + conversation history + new message
     const contents = [
-      { role: 'user', parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data: rawBase64 } }] },
+      { role: 'user', parts: [{ text: refinePrompt }, { inline_data: { mime_type: mimeType, data: rawBase64 } }] },
     ];
     for (const msg of history) {
       if (msg.role === 'model') contents.push({ role: 'model', parts: [{ text: msg.text }] });
@@ -255,12 +348,12 @@ function createSettingsRouter() {
     }
     contents.push({
       role: 'user',
-      parts: [{ text: `The user wants to fix the chord sheet. Here is their correction:\n\n${message}\n\nApply the correction and return the FULL corrected text in the same chords-over-lyrics format. Do not include explanations, just the corrected text.` }]
+      parts: [{ text: `The user wants to fix the chord sheet. Here is their correction:\n\n${message}\n\nApply the correction and return the FULL corrected ChordPro text. Do not include explanations, just the corrected text.` }]
     });
 
     try {
       const geminiRes = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
@@ -297,4 +390,4 @@ function createSettingsRouter() {
   return router;
 }
 
-module.exports = { createSettingsRouter, DEFAULT_OCR_PROMPT };
+module.exports = { createSettingsRouter, DEFAULT_OCR_PROMPT, OCR_REFINE_PROMPT, OCR_JSON_SCHEMA };

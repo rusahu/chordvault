@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
+import { DEFAULT_GEMINI_MODEL } from '../lib/constants';
 
 interface OcrModalProps {
   hasGeminiKey: boolean;
@@ -35,6 +36,16 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
   const [resultText, setResultText] = useState('');
   const [detectedLang, setDetectedLang] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
+
+  // Model selection
+  const [selectedModel, setSelectedModel] = useState(DEFAULT_GEMINI_MODEL);
+  const [models, setModels] = useState<{ id: string; label: string; hint: string }[]>([]);
+
+  useEffect(() => {
+    api<{ model: string; models: { id: string; label: string; hint: string }[] }>('GET', '/api/settings/ocr-model')
+      .then(data => { setSelectedModel(data.model); setModels(data.models); })
+      .catch(() => {});
+  }, [api]);
 
   // Chat state
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -72,7 +83,7 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
       const base64 = await fileToBase64(file);
       setImageBase64(base64);
       setProgress(30);
-      const result = await api<{ text: string; language: string | null }>('POST', '/api/ocr/gemini', { image: base64 });
+      const result = await api<{ text: string; language: string | null }>('POST', '/api/ocr/gemini', { image: base64, model: selectedModel });
       setProgress(100);
       setResultText(result.text);
       setDetectedLang(result.language);
@@ -98,6 +109,7 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
         image: imageBase64,
         history: chatHistory,
         message: msg,
+        model: selectedModel,
       });
       setResultText(result.text);
       setChatHistory([...newHistory, { role: 'model', text: result.text }]);
@@ -149,6 +161,20 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
                 Requires a Gemini API key. Set one up in Settings.
               </div>
             )}
+            {models.length > 0 && (
+              <div className="field" style={{ marginBottom: 12 }}>
+                <label>Model</label>
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  style={{ fontSize: 14, padding: '8px 12px' }}
+                >
+                  {models.map(m => (
+                    <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <button className="btn" onClick={process} disabled={processing} style={{ width: '100%', padding: '12px 22px', fontSize: 15 }}>
               {processing ? 'Processing...' : '\u2728 Extract text'}
             </button>
@@ -189,6 +215,19 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
             )}
 
             {/* Chat input for corrections */}
+            {models.length > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  style={{ fontSize: 12, padding: '4px 8px', color: 'var(--muted)' }}
+                >
+                  {models.map(m => (
+                    <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="ocr-fix-row">
               <input
                 type="text"

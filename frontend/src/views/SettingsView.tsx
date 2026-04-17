@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { LANGUAGES, languageName } from '../lib/languages';
 import { useDemo } from '../context/DemoContext';
-import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT } from '../lib/constants';
+import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT, DEFAULT_GEMINI_MODEL } from '../lib/constants';
 
 export function SettingsView() {
   const apiCall = useApi();
@@ -21,6 +21,9 @@ export function SettingsView() {
   const [defaultPrompt, setDefaultPrompt] = useState('');
   const [hasCustomPrompt, setHasCustomPrompt] = useState(false);
   const [promptMsg, setPromptMsg] = useState<{ text: string; color: string } | null>(null);
+  const [ocrModel, setOcrModel] = useState(DEFAULT_GEMINI_MODEL);
+  const [modelList, setModelList] = useState<{ id: string; label: string; hint: string }[]>([]);
+  const [modelMsg, setModelMsg] = useState<{ text: string; color: string } | null>(null);
 
   const loadPreferredLangs = useCallback(async () => {
     try {
@@ -47,7 +50,15 @@ export function SettingsView() {
     } catch {}
   }, [apiCall]);
 
-  useEffect(() => { loadGeminiStatus(); loadOcrPrompt(); }, [loadGeminiStatus, loadOcrPrompt]);
+  const loadOcrModel = useCallback(async () => {
+    try {
+      const data = await apiCall<{ model: string; models: { id: string; label: string; hint: string }[] }>('GET', '/api/settings/ocr-model');
+      setOcrModel(data.model);
+      setModelList(data.models);
+    } catch {}
+  }, [apiCall]);
+
+  useEffect(() => { loadGeminiStatus(); loadOcrPrompt(); loadOcrModel(); }, [loadGeminiStatus, loadOcrPrompt, loadOcrModel]);
   useEffect(() => { loadPreferredLangs(); }, [loadPreferredLangs]);
 
   const changePassword = async () => {
@@ -79,6 +90,15 @@ export function SettingsView() {
       setGeminiMsg({ text: 'Key removed', color: 'var(--success)' });
       loadGeminiStatus();
     } catch (e) { setGeminiMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
+  };
+
+  const saveOcrModel = async (model: string) => {
+    setOcrModel(model);
+    setModelMsg(null);
+    try {
+      await apiCall('PUT', '/api/settings/ocr-model', { model });
+      setModelMsg({ text: 'Default model saved', color: 'var(--success)' });
+    } catch (e) { setModelMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
   };
 
   const saveOcrPrompt = async () => {
@@ -153,6 +173,27 @@ export function SettingsView() {
             <button className="btn btn-danger btn-sm" onClick={removeGeminiKey}>Remove Key</button>
           </div>
           {geminiMsg && <div style={{ fontSize: 13, marginTop: 12, color: geminiMsg.color }}>{geminiMsg.text}</div>}
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <h3 className="admin-section-title">OCR Model</h3>
+        <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>
+          Choose which Gemini model to use for OCR. You can also change this per-extraction in the OCR modal.
+        </p>
+        <div className="auth-card" style={{ maxWidth: 400 }}>
+          <div className="field">
+            <select
+              value={ocrModel}
+              onChange={(e) => saveOcrModel(e.target.value)}
+              style={{ fontSize: 14, padding: '8px 12px' }}
+            >
+              {modelList.map(m => (
+                <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
+              ))}
+            </select>
+          </div>
+          {modelMsg && <div style={{ fontSize: 13, marginTop: 4, color: modelMsg.color }}>{modelMsg.text}</div>}
         </div>
       </div>
 
