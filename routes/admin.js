@@ -1,11 +1,10 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { db, stmts, setSetting, isRegistrationAllowed, deleteUserTransaction } = require('../lib/db');
-const { requireAuth, requireAdmin } = require('../lib/auth');
+const { requireAuth, requireAdmin, hashPassword } = require('../lib/auth');
 const { parseId, validateUserCredentials } = require('../lib/validation');
 const { handleDbError } = require('../lib/errors');
-const { ROLES, STATUS } = require('../lib/constants');
+const { ROLES, STATUS, LIMITS } = require('../lib/constants');
 const { blockInDemo } = require('../lib/demo');
 
 function resolveAdminTarget(req, res) {
@@ -78,11 +77,25 @@ function createAdminRouter() {
     res.json({ success: true });
   });
 
+  router.put('/admin/users/:id/password', requireAuth, requireAdmin, blockInDemo, async (req, res) => {
+    const resolved = resolveAdminTarget(req, res);
+    if (!resolved) return;
+
+    const { password } = req.body;
+    if (!password || password.length < LIMITS.PASSWORD_MIN) {
+      return res.status(400).json({ error: `Password must be at least ${LIMITS.PASSWORD_MIN} characters` });
+    }
+
+    const hash = await hashPassword(password);
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, resolved.targetId);
+    res.json({ success: true });
+  });
+
   router.post('/admin/users', requireAuth, requireAdmin, blockInDemo, async (req, res) => {
     const { username, password } = req.body;
     const credentialsErr = validateUserCredentials(username, password);
     if (credentialsErr) return res.status(400).json({ error: credentialsErr });
-    const hash = await bcrypt.hash(password, 10);
+    const hash = await hashPassword(password);
     try {
       const result = db.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)').run(username.trim(), hash, ROLES.USER);
       res.json({ id: result.lastInsertRowid, username: username.trim() });

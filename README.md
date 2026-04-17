@@ -47,7 +47,7 @@
 ### Songs & Chords
 - **Rich chord editor:** CodeMirror 6 with ChordPro syntax highlighting (chords, sections, and directives each colored distinctly) + live preview side-by-side on desktop, tabbed on mobile
 - **Multi-format input:** paste ChordPro, chords-over-lyrics, or Ultimate Guitar. Auto-detected on save.
-- **OCR (image/PDF → chord sheet):** snap a photo, pick an image, or upload a PDF — extract text with Gemini Flash, review the result, then use conversational refinement to fix any mistakes before saving (e.g. "move the G chord to the next word", "verse 2 should be Am not Em"). Works with CJK languages (Chinese, Japanese, Korean) and other non-Latin scripts.
+- **OCR (image/PDF → chord sheet):** snap a photo, pick an image, or upload a PDF — extract text with Gemini Flash, review the result, then use conversational refinement to fix any mistakes before saving (e.g. "move the G chord to the next word", "verse 2 should be Am not Em"). Choose your preferred Gemini model in Settings or per-extraction in the OCR modal. Works with CJK languages (Chinese, Japanese, Korean) and other non-Latin scripts.
 - **Key picker:** tap the current key to see all 12 keys, tap any key to transpose instantly
 - **Number notation:** toggle to convert chords to numbers (1, 4, 5) — key-agnostic
 - **Song versioning:** multiple arrangements per song, each optionally linked to a YouTube video
@@ -171,7 +171,7 @@ A pre-commit hook (via Husky) automatically runs lint on staged files, TypeScrip
 
 > **Registration** is disabled by default on fresh installs. The first user to register becomes the owner. After that, the owner enables registration from the admin panel or generates invite codes.
 
-> **Gemini API key** for Smart OCR is configured per-user in Settings (not an env var). Keys are stored AES-256-GCM encrypted, derived from `JWT_SECRET`. Users can also customize the OCR prompt from Settings.
+> **Gemini API key** for Smart OCR is configured per-user in Settings (not an env var). Keys are stored AES-256-GCM encrypted, derived from `JWT_SECRET`. Users can also customize the OCR prompt and default Gemini model from Settings.
 
 ## Reverse Proxy
 
@@ -355,6 +355,8 @@ A live format badge in the editor shows which format was detected. The editor it
 | GET | `/api/settings/ocr-prompt` | Yes | Get custom OCR prompt (or null) + default |
 | PUT | `/api/settings/ocr-prompt` | Yes | Save custom OCR prompt |
 | DELETE | `/api/settings/ocr-prompt` | Yes | Reset to default OCR prompt |
+| GET | `/api/settings/ocr-model` | Yes | Get preferred model + available models |
+| PUT | `/api/settings/ocr-model` | Yes | Save default OCR model preference |
 
 ### Admin
 
@@ -365,6 +367,7 @@ A live format badge in the editor shows which format was detected. The editor it
 | POST | `/api/admin/users` | Admin | Create user directly |
 | PUT | `/api/admin/users/:id/role` | Admin | Change role |
 | PUT | `/api/admin/users/:id/disabled` | Admin | Enable/disable user |
+| PUT | `/api/admin/users/:id/password` | Admin | Reset user password |
 | DELETE | `/api/admin/users/:id` | Admin | Delete user + cascade |
 | DELETE | `/api/admin/songs/:id` | Admin | Delete any song |
 | GET | `/api/admin/corrections` | Admin | List all pending corrections |

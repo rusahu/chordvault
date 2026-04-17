@@ -96,6 +96,16 @@ export function AdminView({ navigate }: AdminViewProps) {
     catch (e) { toast((e as Error).message, 'error'); }
   };
 
+  const resetPassword = async (userId: number, username: string) => {
+    const newPassword = prompt(tReplace('admin.resetPasswordPrompt', { username }));
+    if (!newPassword) return;
+    if (newPassword.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
+    try {
+      await apiCall('PUT', `/api/admin/users/${userId}/password`, { password: newPassword });
+      toast(t('admin.passwordReset'), 'success');
+    } catch (e) { toast((e as Error).message, 'error'); }
+  };
+
   const deleteSong = async (songId: number, title: string) => {
     if (!confirm(tReplace('admin.confirmDeleteSong', { title }))) return;
     try { await apiCall('DELETE', `/api/admin/songs/${songId}`); toast(t('admin.songDeleted'), 'success'); load(); }
@@ -201,6 +211,7 @@ export function AdminView({ navigate }: AdminViewProps) {
                     ? <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setRole(u.id, 'user'); }}>{t('admin.demote')}</button>
                     : <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setRole(u.id, 'admin'); }}>{t('admin.promote')}</button>
                   )}
+                  <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); resetPassword(u.id, u.username); }}>{t('admin.resetPassword')}</button>
                   <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setDisabled(u.id, !u.disabled); }}>{u.disabled ? t('admin.enable') : t('admin.disable')}</button>
                   <button className="btn btn-danger btn-sm" onClick={(e) => { e.stopPropagation(); deleteUser(u.id, u.username); }}>{t('admin.delete')}</button>
                 </div>
