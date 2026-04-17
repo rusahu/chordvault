@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const { db, stmts } = require('../lib/db');
 const { requireAuth } = require('../lib/auth');
-const { LIMITS } = require('../lib/constants');
+const { LIMITS, GEMINI_MODELS, DEFAULT_GEMINI_MODEL } = require('../lib/constants');
 const { validatePreferredLanguages } = require('../lib/validation');
 const { jsonToChordPro } = require('../lib/ocr-convert');
 
@@ -187,8 +187,25 @@ function createSettingsRouter() {
     res.json({ success: true });
   });
 
+  router.get('/settings/ocr-model', requireAuth, (req, res) => {
+    const user = stmts.getFullUserById.get(req.user.id);
+    res.json({
+      model: user?.gemini_model || DEFAULT_GEMINI_MODEL,
+      models: GEMINI_MODELS,
+    });
+  });
+
+  router.put('/settings/ocr-model', requireAuth, (req, res) => {
+    const { model } = req.body;
+    if (!model || !GEMINI_MODELS.some(m => m.id === model)) {
+      return res.status(400).json({ error: 'Invalid model' });
+    }
+    db.prepare('UPDATE users SET gemini_model = ? WHERE id = ?').run(model, req.user.id);
+    res.json({ success: true });
+  });
+
   router.post('/ocr/gemini', requireAuth, express.json({ limit: LIMITS.MAX_BODY_JSON }), async (req, res) => {
-    const { image } = req.body;
+    const { image, model: requestModel } = req.body;
     if (!image || typeof image !== 'string') return res.status(400).json({ error: 'Base64 image is required' });
 
     const sizeEstimate = (image.length * 3) / 4;
@@ -203,6 +220,11 @@ function createSettingsRouter() {
     } catch {
       return res.status(500).json({ error: 'Failed to decrypt API key. Try re-saving it in Settings.' });
     }
+
+    // Resolve model: request body > user preference > default
+    const geminiModel = (requestModel && GEMINI_MODELS.some(m => m.id === requestModel))
+      ? requestModel
+      : (user.gemini_model || DEFAULT_GEMINI_MODEL);
 
     let mimeType = 'image/jpeg';
     const dataUrlMatch = image.match(/^data:((?:image\/(?:jpeg|png|webp|gif))|application\/pdf);base64,/);
@@ -233,7 +255,7 @@ function createSettingsRouter() {
 
     try {
       const geminiRes = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent',
+        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
@@ -287,7 +309,7 @@ function createSettingsRouter() {
 
   // Refinement endpoint — multi-turn conversation with image context
   router.post('/ocr/gemini/refine', requireAuth, express.json({ limit: LIMITS.MAX_BODY_JSON }), async (req, res) => {
-    const { image, history, message } = req.body;
+    const { image, history, message, model: requestModel } = req.body;
     if (!image || !message || !Array.isArray(history)) {
       return res.status(400).json({ error: 'image, history, and message are required' });
     }
@@ -300,6 +322,10 @@ function createSettingsRouter() {
     let apiKey;
     try { apiKey = decryptApiKey(user.gemini_api_key); }
     catch { return res.status(500).json({ error: 'Failed to decrypt API key.' }); }
+
+    const geminiModel = (requestModel && GEMINI_MODELS.some(m => m.id === requestModel))
+      ? requestModel
+      : (user.gemini_model || DEFAULT_GEMINI_MODEL);
 
     let mimeType = 'image/jpeg';
     const dataUrlMatch = image.match(/^data:((?:image\/(?:jpeg|png|webp|gif))|application\/pdf);base64,/);
@@ -327,7 +353,7 @@ function createSettingsRouter() {
 
     try {
       const geminiRes = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent',
+        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
