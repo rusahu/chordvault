@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { db, stmts, isRegistrationAllowed } = require('../lib/db');
-const { requireAuth } = require('../lib/auth');
+const { requireAuth, hashPassword } = require('../lib/auth');
 const { validateUserCredentials } = require('../lib/validation');
 const { ROLES, LIMITS } = require('../lib/constants');
 const { handleDbError } = require('../lib/errors');
@@ -50,7 +50,7 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
 
     const isFirstUser = userCount === 0;
     const role = isFirstUser ? ROLES.OWNER : ROLES.USER;
-    const hash = await bcrypt.hash(password, 10);
+    const hash = await hashPassword(password);
     try {
       const result = db.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)').run(username.trim(), hash, role);
       const token = jwt.sign({ id: result.lastInsertRowid, username: username.trim() }, JWT_SECRET, { expiresIn: '30d' });
@@ -86,7 +86,7 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     const invite = db.prepare("SELECT * FROM invites WHERE code = ? AND used_at IS NULL").get(code.trim());
     if (!invite) return res.status(400).json({ error: 'Invalid or already used invite code' });
 
-    const hash = await bcrypt.hash(password, 10);
+    const hash = await hashPassword(password);
     try {
       const result = db.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)').run(username.trim(), hash, ROLES.USER);
       db.prepare('UPDATE invites SET used_by = ?, used_at = CURRENT_TIMESTAMP WHERE id = ?').run(result.lastInsertRowid, invite.id);
@@ -107,7 +107,7 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     if (!(await bcrypt.compare(current_password, user.password_hash))) {
       return res.status(401).json({ error: 'Current password is incorrect' });
     }
-    const hash = await bcrypt.hash(new_password, 10);
+    const hash = await hashPassword(new_password);
     db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.user.id);
     res.json({ success: true });
   });
