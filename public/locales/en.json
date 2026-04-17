@@ -94,6 +94,9 @@
   "admin.copy": "Copy",
   "admin.userCreated": "User @{username} created",
   "admin.songDeleted": "Song deleted",
+  "admin.resetPassword": "Reset Password",
+  "admin.resetPasswordPrompt": "Enter new password for @{username}:",
+  "admin.passwordReset": "Password reset successfully",
 
   "common.loading": "Loading...",
 

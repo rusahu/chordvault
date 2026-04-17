@@ -367,6 +367,7 @@ A live format badge in the editor shows which format was detected. The editor it
 | POST | `/api/admin/users` | Admin | Create user directly |
 | PUT | `/api/admin/users/:id/role` | Admin | Change role |
 | PUT | `/api/admin/users/:id/disabled` | Admin | Enable/disable user |
+| PUT | `/api/admin/users/:id/password` | Admin | Reset user password |
 | DELETE | `/api/admin/users/:id` | Admin | Delete user + cascade |
 | DELETE | `/api/admin/songs/:id` | Admin | Delete any song |
 | GET | `/api/admin/corrections` | Admin | List all pending corrections |
