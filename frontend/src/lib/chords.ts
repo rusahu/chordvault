@@ -194,27 +194,17 @@ class ResponsiveHtmlFormatter {
       return `<span class="column">${chords}<span class="lyrics"></span></span>`;
     }
 
-    // Split lyrics by whitespace, preserving the whitespace
-    const initialChunks = lyrics.split(/(\s+)/).filter((chunk: string) => chunk !== '');
-    const chunks: string[] = [];
-    
-    // Refinement: if the first chunk is multiple spaces, split it so the chord
-    // only "anchors" to the first space, and the rest are raw wrap points.
-    if (initialChunks[0] && /\s{2,}/.test(initialChunks[0])) {
-      chunks.push(initialChunks[0].charAt(0));
-      chunks.push(initialChunks[0].slice(1));
-      chunks.push(...initialChunks.slice(1));
-    } else {
-      chunks.push(...initialChunks);
-    }
-
+    // Split lyrics by whitespace chunks. We treat any sequence of spaces as one unit
+    // so the browser doesn't wrap "inside" the spacing between chords.
+    const chunks = lyrics.split(/(\s+)/).filter((chunk: string) => chunk !== '');
     let chordPlaced = false;
 
     return chunks.map((chunk: string) => {
       const isSpace = /\s+/.test(chunk);
       
       // If we've already placed the chord for this item, and this is a space,
-      // output it as raw text to allow native browser line wrapping.
+      // output it as raw text. To prevent ugly wrapping between multiple spaces,
+      // we ensure this raw text chunk is an unbreakable unit.
       if (isSpace && chordPlaced) {
         return escHtml(chunk);
       }
@@ -225,7 +215,8 @@ class ResponsiveHtmlFormatter {
       chordPlaced = true;
       
       const chords = `<span class="chord">${escHtml(currentChord)}</span>`;
-      return `<span class="column">${chords}<span class="lyrics">${escHtml(chunk)}</span></span>`;
+      const lyricText = escHtml(chunk);
+      return `<span class="column">${chords}<span class="lyrics">${lyricText}</span></span>`;
     }).join('');
   }
 }

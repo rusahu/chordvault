@@ -225,7 +225,7 @@
 .chord-sheet .column {
   display: inline-flex;
   flex-direction: column;
-  vertical-align: bottom;
+  vertical-align: top;
   flex-shrink: 0;
   margin-right: 1px;
 }
@@ -241,7 +241,7 @@
   display: block;
   white-space: pre;
   letter-spacing: 0.02em;
-  padding-right: 0.5ch;
+  padding-right: 0.4ch;
 }
 
 .chord-sheet .lyrics {
@@ -250,6 +250,8 @@
   color: var(--text);
   white-space: pre;
   line-height: 1.2;
+  min-height: 1.2em;
+  display: block;
 }
 
 .chord-sheet .comment,
