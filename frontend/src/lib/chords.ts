@@ -154,6 +154,70 @@ export function ensureKeyDirective(content: string): string {
   return content;
 }
 
+class ResponsiveHtmlFormatter {
+  format(song: ChordSheetJS.Song): string {
+    return song.paragraphs.map(p => this.renderParagraph(p)).join('');
+  }
+
+  private renderParagraph(p: ChordSheetJS.Paragraph): string {
+    const cls = `paragraph ${p.type}`;
+    const content = p.lines.map(l => this.renderLine(l)).join('');
+    return `<div class="${cls}">${content}</div>`;
+  }
+
+  private renderLine(l: ChordSheetJS.Line): string {
+    if (l.type === 'comment') {
+      const firstItem = l.items[0];
+      const content = firstItem && 'content' in firstItem ? (firstItem as any).content : 
+                     (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '');
+      return `<div class="comment">${escHtml(content || '')}</div>`;
+    }
+    // Check for section labels (h3.label in old formatter)
+    const firstItem = l.items[0];
+    if (firstItem && 'lyrics' in firstItem) {
+      const it = firstItem as ChordSheetJS.ChordLyricsPair;
+      if (!it.chords && it.lyrics && /^(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*$/i.test(it.lyrics.trim())) {
+        return `<div class="row"><h3 class="label">${escHtml(it.lyrics.trim())}</h3></div>`;
+      }
+    }
+
+    const content = l.items.map(it => this.renderItem(it as ChordSheetJS.ChordLyricsPair)).join('');
+    return `<div class="row">${content}</div>`;
+  }
+
+  private renderItem(it: ChordSheetJS.ChordLyricsPair): string {
+    const lyrics = it.lyrics || '';
+
+    // If no lyrics, just render the chord column
+    if (!lyrics) {
+      const chords = it.chords ? `<span class="chord">${escHtml(it.chords)}</span>` : '<span class="chord"></span>';
+      return `<span class="column">${chords}<span class="lyrics"></span></span>`;
+    }
+
+    // Split lyrics by whitespace, preserving the whitespace
+    const chunks = lyrics.split(/(\s+)/).filter((chunk: string) => chunk !== '');
+    let chordPlaced = false;
+
+    return chunks.map((chunk: string) => {
+      const isSpace = /\s+/.test(chunk);
+      
+      // If we've already placed the chord for this item, and this is a space,
+      // output it as raw text to allow native browser line wrapping.
+      if (isSpace && chordPlaced) {
+        return escHtml(chunk);
+      }
+
+      // If we haven't placed the chord yet, or if it's a word, wrap in a column.
+      // The chord is only attached to the VERY FIRST chunk (word or space).
+      const currentChord = chordPlaced ? '' : (it.chords || '');
+      chordPlaced = true;
+      
+      const chords = `<span class="chord">${escHtml(currentChord)}</span>`;
+      return `<span class="column">${chords}<span class="lyrics">${escHtml(chunk)}</span></span>`;
+    }).join('');
+  }
+}
+
 export function renderChordPro(content: string, semitones = 0, nashville = false): string {
   try {
     const song = parseSongAuto(content);
@@ -170,17 +234,7 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
       transposed = cloned;
     }
 
-    const FormatterClass = ChordSheetJS.HtmlDivFormatter || (ChordSheetJS as Record<string, unknown>).HtmlFormatter as typeof ChordSheetJS.HtmlDivFormatter;
-    const html = new FormatterClass({ normalizeChords: false } as Record<string, unknown>).format(transposed)
-      .replace(/<h1[^>]*>.*?<\/h1>/gi, '')
-      .replace(
-        /<div class="paragraph (chorus|verse|bridge|prechorus|pre-chorus|outro|intro|interlude)">(?!<div class="row"><h3 class="label">)/gi,
-        (match, section: string) => {
-          const LABELS: Record<string, string> = { prechorus: 'Pre-Chorus' };
-          const label = LABELS[section.toLowerCase()] ?? section.charAt(0).toUpperCase() + section.slice(1);
-          return `${match}<div class="row"><h3 class="label">${label}</h3></div>`;
-        }
-      );
+    const html = new ResponsiveHtmlFormatter().format(transposed);
     return `<div class="chord-sheet">${html}</div>`;
   } catch {
     return `<pre style="font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre-wrap;color:var(--text)">${escHtml(content)}</pre>`;
@@ -267,7 +321,7 @@ export function autoFit(): { fontSize: number; twoCol: boolean } {
     if (offset) wrap.style.setProperty('--font-scale', String(1 + offset * 0.12));
     else wrap.style.removeProperty('--font-scale');
 
-    const available = window.innerHeight - wrap.getBoundingClientRect().top;
+    const available = window.innerHeight - wrap.getBoundingClientRect().top - 24; // 24px safety margin
     return output.scrollHeight <= available;
   };
 
@@ -278,10 +332,12 @@ export function autoFit(): { fontSize: number; twoCol: boolean } {
     }
   }
 
-  // Fall back to 2-column
-  for (let offset = 0; offset >= -3; offset--) {
-    if (tryFit(offset, true)) {
-      return { fontSize: clampFontSize(offset), twoCol: true };
+  // Fall back to 2-column only if screen is wide enough (tablet/desktop)
+  if (window.innerWidth >= 640) {
+    for (let offset = 0; offset >= -3; offset--) {
+      if (tryFit(offset, true)) {
+        return { fontSize: clampFontSize(offset), twoCol: true };
+      }
     }
   }
 
@@ -291,7 +347,9 @@ export function autoFit(): { fontSize: number; twoCol: boolean } {
   if (prevScale) wrap.style.setProperty('--font-scale', prevScale);
   else wrap.style.removeProperty('--font-scale');
 
-  return { fontSize: clampFontSize(-3), twoCol: true };
+  // If nothing fits, use smallest font and 2-col (if wide) or 1-col (if narrow)
+  const finalTwoCol = window.innerWidth >= 640;
+  return { fontSize: clampFontSize(-3), twoCol: finalTwoCol };
 }
 
 
