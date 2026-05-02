@@ -195,7 +195,19 @@ class ResponsiveHtmlFormatter {
     }
 
     // Split lyrics by whitespace, preserving the whitespace
-    const chunks = lyrics.split(/(\s+)/).filter((chunk: string) => chunk !== '');
+    const initialChunks = lyrics.split(/(\s+)/).filter((chunk: string) => chunk !== '');
+    const chunks: string[] = [];
+    
+    // Refinement: if the first chunk is multiple spaces, split it so the chord
+    // only "anchors" to the first space, and the rest are raw wrap points.
+    if (initialChunks[0] && /\s{2,}/.test(initialChunks[0])) {
+      chunks.push(initialChunks[0].charAt(0));
+      chunks.push(initialChunks[0].slice(1));
+      chunks.push(...initialChunks.slice(1));
+    } else {
+      chunks.push(...initialChunks);
+    }
+
     let chordPlaced = false;
 
     return chunks.map((chunk: string) => {
