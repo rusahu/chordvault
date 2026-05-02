@@ -166,7 +166,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     setFontSize((prev) => { const n = clampFontSize(prev + delta); setStoredFontSize(n); return n; });
     setRenderKey((k) => k + 1);
   };
-  const resetFont = () => { setFontSize(0); setStoredFontSize(0); if (entry) entry._font = null; setRenderKey((k) => k + 1); };
+  const resetFont = () => { setFontSize(0); setStoredFontSize(0); if (entry) updateEntry({ _font: null }); setRenderKey((k) => k + 1); };
 
   const handleExportAllPdf = async () => {
     if (!setlist || exportingPdf) return;
@@ -185,7 +185,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const doFit = (perSong: boolean) => {
     const before = { fontSize, twoCol };
     const fit = autoFit();
-    if (perSong && entry) { entry._font = null; entry._twoCol = null; }
+    if (perSong && entry) { updateEntry({ _font: null, _twoCol: null }); }
     setFontSize(fit.fontSize); setStoredFontSize(fit.fontSize);
     setTwoCol(fit.twoCol); setStoredTwoCol(fit.twoCol);
     setRenderKey((k) => k + 1);
@@ -249,7 +249,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         fontSize={effFont || 0}
         onFontChange={changeEntryFont}
         onReset={() => {
-          if (entry) { entry._font = null; entry._twoCol = null; }
+          if (entry) { updateEntry({ _font: null, _twoCol: null }); }
           setFontSize(0); setStoredFontSize(0);
           setTwoCol(false); setStoredTwoCol(false);
           setRenderKey((k) => k + 1);
