@@ -36,9 +36,18 @@ function parseHash(): Route {
   const songMatch = hash.match(/^song\/(\d+)$/);
   if (songMatch) return { view: 'song-view', params: { id: songMatch[1] } };
 
-  // #setlist/42/play or #setlist/42/play/public
-  const playMatch = hash.match(/^setlist\/(\d+)\/play(\/public)?$/);
-  if (playMatch) return { view: 'setlist-play', params: { id: playMatch[1], ...(playMatch[2] ? { public: '1' } : {}) } };
+  // #setlist/42/play or #setlist/42/play/public or #setlist/42/play/2 or #setlist/42/play/public/2
+  const playMatch = hash.match(/^setlist\/(\d+)\/play(\/public)?(?:\/(\d+))?$/);
+  if (playMatch) {
+    return {
+      view: 'setlist-play',
+      params: {
+        id: playMatch[1],
+        ...(playMatch[2] ? { public: '1' } : {}),
+        ...(playMatch[3] ? { index: playMatch[3] } : {}),
+      },
+    };
+  }
 
   // #setlist/42
   const setlistMatch = hash.match(/^setlist\/(\d+)$/);
@@ -93,7 +102,12 @@ export function App() {
     // Update hash for deep-linkable views
     if (view === 'song-view' && params.id) location.hash = `#song/${params.id}`;
     else if (view === 'setlist-edit' && params.id) location.hash = `#setlist/${params.id}`;
-    else if (view === 'setlist-play' && params.id && !params.local) location.hash = `#setlist/${params.id}/play${params.public === '1' ? '/public' : ''}`;
+    else if (view === 'setlist-play' && params.id && !params.local) {
+      let h = `#setlist/${params.id}/play`;
+      if (params.public === '1') h += '/public';
+      if (params.index && params.index !== '0') h += `/${params.index}`;
+      location.hash = h;
+    }
     else if (['browse', 'my-songs', 'setlists', 'admin', 'settings', 'auth', 'about', 'public-setlists', 'local-setlists'].includes(view)) {
       // Use replaceState to clear hash without triggering hashchange (which would race with the rAF setRoute above)
       history.replaceState(null, '', location.pathname + location.search);
@@ -136,7 +150,8 @@ export function App() {
           // Local setlist play with pre-loaded data
           try {
             const sl = JSON.parse(params._setlist) as Setlist;
-            return <SetlistPlayView setlistId={sl.id} isLocal initialSetlist={sl} navigate={navigate} />;
+            const initialIdx = params.index ? parseInt(params.index) : undefined;
+            return <SetlistPlayView setlistId={sl.id} isLocal initialSetlist={sl} initialIndex={initialIdx} navigate={navigate} />;
           } catch { /* fall through */ }
         }
         const isPublic = params.public === '1';

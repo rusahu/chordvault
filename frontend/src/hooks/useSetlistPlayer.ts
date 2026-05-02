@@ -27,7 +27,11 @@ export function useSetlistPlayer({
 
   const [setlist, setSetlist] = useState<Setlist | null>(initialSetlist || null);
   const [index, setIndex] = useState(initialIndex || 0);
-  const origRef = useRef({ transpose: 0, nashville: 0 });
+  const initialIndexRef = useRef(initialIndex || 0);
+  const origRef = useRef({
+    transpose: initialSetlist?.entries[initialIndex || 0]?.transpose || 0,
+    nashville: initialSetlist?.entries[initialIndex || 0]?.nashville || 0,
+  });
 
   useEffect(() => {
     if (initialSetlist) return;
@@ -35,8 +39,9 @@ export function useSetlistPlayer({
     apiCall<Setlist>('GET', endpoint)
       .then((sl) => {
         setSetlist(sl);
-        if (sl.entries[0]) {
-          origRef.current = { transpose: sl.entries[0].transpose, nashville: sl.entries[0].nashville };
+        const startIdx = initialIndexRef.current;
+        if (sl.entries[startIdx]) {
+          origRef.current = { transpose: sl.entries[startIdx].transpose, nashville: sl.entries[startIdx].nashville };
         }
       })
       .catch((e) => { toast(e.message, 'error'); navigate(user ? 'setlists' : 'browse'); });
@@ -61,15 +66,49 @@ export function useSetlistPlayer({
   }, [setlist, entry, apiCall]);
 
   const goTo = useCallback((newIdx: number) => {
-    if (!setlist || newIdx < 0 || newIdx >= setlist.entries.length) return;
+    if (!setlist) return;
+
+    if (newIdx < 0 || newIdx >= setlist.entries.length) {
+      // Revert URL to current valid index
+      if (!setlist.isLocal) {
+        let h = `#setlist/${setlistId}/play`;
+        if (isPublic) h += '/public';
+        if (index > 0) h += `/${index}`;
+        history.replaceState(null, '', location.pathname + location.search + h);
+      }
+      return;
+    }
+
     autoSave();
     setIndex(newIdx);
     onNavigate?.();
     const newEntry = setlist.entries[newIdx];
     origRef.current = { transpose: newEntry.transpose, nashville: newEntry.nashville };
+
+    if (!setlist.isLocal) {
+      let h = `#setlist/${setlistId}/play`;
+      if (isPublic) h += '/public';
+      if (newIdx > 0) h += `/${newIdx}`;
+      history.replaceState(null, '', location.pathname + location.search + h);
+    }
+
     // Scroll after React re-renders the new song content
     requestAnimationFrame(() => window.scrollTo(0, 0));
-  }, [setlist, autoSave, onNavigate]);
+  }, [setlist, autoSave, onNavigate, setlistId, isPublic, index]);
+
+  useEffect(() => {
+    const onHash = () => {
+      const match = location.hash.match(/^#setlist\/\d+\/play(?:\/public)?(?:\/(\d+))?$/);
+      if (match) {
+        const urlIdx = match[1] ? parseInt(match[1]) : 0;
+        if (urlIdx !== index) {
+          goTo(urlIdx);
+        }
+      }
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, [goTo, index]);
 
   const prev = useCallback(() => goTo(index - 1), [goTo, index]);
   const next = useCallback(() => goTo(index + 1), [goTo, index]);
