@@ -4,6 +4,7 @@ const { requireAuth, optionalAuth, isAdminRole } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
 const { parseId, validateSongInput, validateVisibility, validateLanguage } = require('../lib/validation');
 const { LANGUAGE_CODES } = require('../lib/languages');
+const { getFtsSearch } = require('../lib/searchUtils');
 
 function extractDirective(content, name) {
   const re = new RegExp(`\\{${name}:\\s*([^}]*)\\}`, 'i');
@@ -59,8 +60,9 @@ function createSongsRouter() {
     query += ' WHERE s.user_id = ? AND s.status = ?';
 
     if (q?.trim()) {
-      query += ' AND songs_search MATCH ?';
-      params.push(`"${q.trim().replace(/"/g, '""')}"`);
+      const search = getFtsSearch(q);
+      query += search.sql;
+      params.push(...search.params);
     }
 
     if (language?.trim()) {
@@ -87,8 +89,9 @@ function createSongsRouter() {
     query += ' WHERE s.visibility = ? AND s.status = ?';
 
     if (q?.trim()) {
-      query += ' AND songs_search MATCH ?';
-      params.push(`"${q.trim().replace(/"/g, '""')}"`);
+      const search = getFtsSearch(q);
+      query += search.sql;
+      params.push(...search.params);
     }
 
     if (language?.trim()) {
