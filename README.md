@@ -46,6 +46,7 @@
 
 ### Songs & Chords
 - **Rich chord editor:** CodeMirror 6 with ChordPro syntax highlighting (chords, sections, and directives each colored distinctly) + live preview side-by-side on desktop, tabbed on mobile
+- **Advanced search:** find songs by title, artist, or **lyrics** using SQLite FTS5 (full-text search). Powered by a `trigram` tokenizer for excellent CJK (Chinese, Japanese, Korean) support. Search your own library on the "My Songs" page or browse public songs.
 - **Multi-format input:** paste ChordPro, chords-over-lyrics, or Ultimate Guitar. Auto-detected on save.
 - **OCR (image/PDF → chord sheet):** snap a photo, pick an image, or upload a PDF — extract text with Gemini Flash, review the result, then use conversational refinement to fix any mistakes before saving (e.g. "move the G chord to the next word", "verse 2 should be Am not Em"). Choose your preferred Gemini model in Settings or per-extraction in the OCR modal. Works with CJK languages (Chinese, Japanese, Korean) and other non-Latin scripts.
 - **Key picker:** tap the current key to see all 12 keys, tap any key to transpose instantly
