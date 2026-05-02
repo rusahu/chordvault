@@ -630,11 +630,10 @@ body.perf-mode .song-view-title { font-size: 48px; }
 
 /* ── Responsive ─────────────────────────── */
 @media (max-width: 600px) {
-  #app { padding: 20px 16px; overflow-x: hidden; }
+  #app { padding: 20px 12px; overflow-x: hidden; }
   #nav { padding: 0 12px; height: 48px; }
   .nav-brand { font-size: 18px; }
   .nav-btn { padding: 5px 10px; font-size: 13px; }
-  .song-grid { grid-template-columns: 1fr; }
   .edit-cols { grid-template-columns: 1fr; }
   .song-view-title { font-size: 28px; }
   .chord-sheet-wrap { padding: 24px 20px; }
