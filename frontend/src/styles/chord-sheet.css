@@ -204,6 +204,7 @@
   column-gap: 32px;
   column-rule: 1px solid var(--border);
 }
+
 .chord-sheet-wrap.two-col .paragraph {
   break-inside: avoid;
 }
@@ -215,16 +216,17 @@
 }
 
 .chord-sheet .row {
-  display: flex;
-  flex-wrap: wrap;
-  line-height: 1;
+  display: block;
+  white-space: pre-wrap;
+  line-height: 1.1;
   margin-bottom: 0.6em;
 }
 
 .chord-sheet .column {
   display: inline-flex;
   flex-direction: column;
-  margin-right: 1px;
+  vertical-align: bottom;
+  flex-shrink: 0;
 }
 
 .chord-sheet-wrap { --font-scale: 1; }
@@ -235,7 +237,7 @@
   font-weight: 600;
   color: var(--chord);
   min-height: 1.2em;
-  padding-right: 6px;
+  display: block;
   white-space: pre;
   letter-spacing: 0.02em;
 }
@@ -245,7 +247,7 @@
   font-size: calc(18px * var(--font-scale));
   color: var(--text);
   white-space: pre;
-  line-height: 1.4;
+  line-height: 1.2;
 }
 
 .chord-sheet .comment,
