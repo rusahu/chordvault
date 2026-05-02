@@ -46,7 +46,7 @@ export function LocalSetlistEditView({ setlistId, navigate }: LocalSetlistEditVi
     setPickerOpen(false);
   };
 
-  const playLocal = async () => {
+  const playLocal = async (startIndex = 0) => {
     const sl = ls.getOne(setlistId);
     if (!sl || sl.entries.length === 0) return;
     try {
@@ -63,7 +63,7 @@ export function LocalSetlistEditView({ setlistId, navigate }: LocalSetlistEditVi
       }).filter(Boolean);
       if (entries.length === 0) { toast('No songs could be loaded', 'error'); return; }
       const enrichedSetlist: Setlist = { id: setlistId, name: sl.name, entries: entries as SetlistEntry[], isLocal: true, visibility: 'private', event_date: null };
-      navigate('setlist-play', { id: setlistId, local: '1', _setlist: JSON.stringify(enrichedSetlist) });
+      navigate('setlist-play', { id: setlistId, local: '1', index: String(startIndex), _setlist: JSON.stringify(enrichedSetlist) });
     } catch (e) { toast((e as Error).message, 'error'); }
   };
 
@@ -73,7 +73,7 @@ export function LocalSetlistEditView({ setlistId, navigate }: LocalSetlistEditVi
         <div className="song-view-nav">
           <button className="btn btn-ghost btn-sm" onClick={() => navigate('local-setlists')}>&#8592; {t('songView.back')}</button>
           <div style={{ display: 'flex', gap: 8 }}>
-            {setlist.entries.length > 0 && <button className="btn btn-sm" onClick={playLocal}>{t('setlist.play')}</button>}
+            {setlist.entries.length > 0 && <button className="btn btn-sm" onClick={() => playLocal(0)}>{t('setlist.play')}</button>}
             <button className="btn btn-danger btn-sm" onClick={deleteSetlist}>{t('admin.delete')}</button>
           </div>
         </div>
@@ -95,7 +95,7 @@ export function LocalSetlistEditView({ setlistId, navigate }: LocalSetlistEditVi
           {setlist.entries.map((entry, idx) => (
             <div key={idx} className="song-card setlist-song-item">
               <div className="setlist-song-pos">{idx + 1}</div>
-              <div className="song-card-info" onClick={() => navigate('song-view', { id: String(entry.song_id) })}>
+              <div className="song-card-info" onClick={() => playLocal(idx)}>
                 <div className="song-card-title">
                   {entry.title}
                   {entry.nashville ? <span className="badge badge-nashville">#</span> : null}
