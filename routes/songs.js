@@ -48,14 +48,27 @@ function createSongsRouter() {
   const router = express.Router();
 
   router.get('/songs', requireAuth, (req, res) => {
-    const { language } = req.query;
-    let query = 'SELECT id, title, artist, key, bpm, tags, language, visibility, created_at, updated_at FROM songs WHERE user_id = ? AND status = ?';
+    const { q, language } = req.query;
+    let query = 'SELECT s.id, s.title, s.artist, s.key, s.bpm, s.tags, s.language, s.visibility, s.created_at, s.updated_at FROM songs s';
     const params = [req.user.id, STATUS.ACTIVE];
+
+    if (q?.trim()) {
+      query += ' JOIN songs_search ss ON s.id = ss.rowid';
+    }
+
+    query += ' WHERE s.user_id = ? AND s.status = ?';
+
+    if (q?.trim()) {
+      query += ' AND songs_search MATCH ?';
+      params.push(`"${q.trim().replace(/"/g, '""')}"`);
+    }
+
     if (language?.trim()) {
-      query += ' AND language = ?';
+      query += ' AND s.language = ?';
       params.push(language.trim());
     }
-    query += ' ORDER BY updated_at DESC';
+
+    query += ' ORDER BY s.updated_at DESC';
     res.json(db.prepare(query).all(...params));
   });
 
@@ -64,17 +77,25 @@ function createSongsRouter() {
     let query = `
       SELECT s.id, s.title, s.artist, s.key, s.bpm, s.tags, s.language, s.visibility, s.updated_at, u.username
       FROM songs s JOIN users u ON s.user_id = u.id
-      WHERE s.visibility = ? AND s.status = ?
     `;
     const params = [VISIBILITY.PUBLIC, STATUS.ACTIVE];
+
     if (q?.trim()) {
-      query += ' AND (s.title LIKE ? OR s.artist LIKE ?)';
-      params.push(`%${q.trim()}%`, `%${q.trim()}%`);
+      query += ' JOIN songs_search ss ON s.id = ss.rowid';
     }
+
+    query += ' WHERE s.visibility = ? AND s.status = ?';
+
+    if (q?.trim()) {
+      query += ' AND songs_search MATCH ?';
+      params.push(`"${q.trim().replace(/"/g, '""')}"`);
+    }
+
     if (language?.trim()) {
       query += ' AND s.language = ?';
       params.push(language.trim());
     }
+
     query += ' ORDER BY s.updated_at DESC LIMIT 100';
     res.json(db.prepare(query).all(...params));
   });
