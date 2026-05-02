@@ -3,6 +3,7 @@ const { db } = require('../lib/db');
 const { requireAuth, optionalAuth, isAdminRole } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
 const { parseId, isValidDate, validateSetlistInput, validateTranspose } = require('../lib/validation');
+const { getLikeSearch } = require('../lib/searchUtils');
 
 function resolveSetlist(res, setlistId, userId) {
   const setlist = db.prepare('SELECT * FROM setlists WHERE id = ? AND user_id = ?').get(setlistId, userId);
@@ -41,8 +42,9 @@ function createSetlistsRouter() {
     `;
     const params = [req.user.id];
     if (q?.trim()) {
-      query += ' AND s.name LIKE ?';
-      params.push(`%${q.trim()}%`);
+      const search = getLikeSearch(q);
+      query += search.sql;
+      params.push(...search.params);
     }
     if (date_from?.trim() && isValidDate(date_from.trim())) {
       query += ' AND COALESCE(s.event_date, DATE(s.created_at)) >= ?';
@@ -77,8 +79,9 @@ function createSetlistsRouter() {
     `;
     const params = [VISIBILITY.PUBLIC];
     if (q?.trim()) {
-      query += ' AND s.name LIKE ?';
-      params.push(`%${q.trim()}%`);
+      const search = getLikeSearch(q);
+      query += search.sql;
+      params.push(...search.params);
     }
     if (date_from?.trim() && isValidDate(date_from.trim())) {
       query += ' AND COALESCE(s.event_date, DATE(s.created_at)) >= ?';

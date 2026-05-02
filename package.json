@@ -28,7 +28,8 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "opencc-js": "^1.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
