@@ -202,12 +202,11 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 
 .btn-sm { padding: 6px 14px; font-size: 13px; }
 .btn-full { width: 100%; justify-content: center; }
-
 /* ── Song Cards ─────────────────────────── */
 .song-grid {
   display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
 }
 
 .song-card {
@@ -220,9 +219,10 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: var(--shadow-sm);
+  gap: 12px;
+  flex-wrap: wrap;
+  min-height: 72px;
 }
-.song-card { min-height: 72px; }
 .song-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md), var(--glow-accent); transform: translateY(-3px); }
 .song-card:active { transform: translateY(0); box-shadow: var(--shadow-sm); transition-duration: 0.08s; }
 
