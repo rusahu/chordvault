@@ -227,6 +227,7 @@
   flex-direction: column;
   vertical-align: bottom;
   flex-shrink: 0;
+  margin-right: 1px;
 }
 
 .chord-sheet-wrap { --font-scale: 1; }
@@ -240,6 +241,7 @@
   display: block;
   white-space: pre;
   letter-spacing: 0.02em;
+  padding-right: 0.5ch;
 }
 
 .chord-sheet .lyrics {
