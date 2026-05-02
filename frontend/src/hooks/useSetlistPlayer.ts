@@ -113,6 +113,15 @@ export function useSetlistPlayer({
   const prev = useCallback(() => goTo(index - 1), [goTo, index]);
   const next = useCallback(() => goTo(index + 1), [goTo, index]);
 
+  const updateEntry = useCallback((updates: Partial<SetlistEntry>) => {
+    setSetlist((prev) => {
+      if (!prev) return null;
+      const newEntries = [...prev.entries];
+      newEntries[index] = { ...newEntries[index], ...updates };
+      return { ...prev, entries: newEntries };
+    });
+  }, [index]);
+
   const exit = useCallback(() => {
     autoSave();
     if (setlist?.isLocal) { location.hash = ''; navigate('local-setlists'); }
@@ -120,5 +129,5 @@ export function useSetlistPlayer({
     else { location.hash = ''; navigate(user ? 'setlists' : 'browse'); }
   }, [setlist, autoSave, navigate, user]);
 
-  return { setlist, entry, index, total, goTo, prev, next, exit, autoSave };
+  return { setlist, entry, index, total, goTo, prev, next, exit, autoSave, updateEntry };
 }
