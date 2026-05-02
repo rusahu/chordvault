@@ -84,7 +84,7 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
             <SetlistCard
               key={sl.id}
               setlist={sl}
-              onClick={() => navigate('setlist-play', { id: String(sl.id), public: '1' })}
+              onClick={() => navigate('setlist-edit', { id: String(sl.id), public: '1' })}
               showUsername
             />
           ))}

@@ -43,7 +43,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   // Render key for forcing re-render
   const [_renderKey, setRenderKey] = useState(0);
 
-  const { setlist, entry, index, total, prev, next, exit } = useSetlistPlayer({
+  const { setlist, entry, index, total, prev, next, exit, updateEntry } = useSetlistPlayer({
     setlistId,
     isPublic,
     initialSetlist,
@@ -69,32 +69,34 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   // Transpose
   const transpose = useCallback((delta: number) => {
     if (!setlist || !entry) return;
-    entry.transpose += delta;
+    updateEntry({ transpose: entry.transpose + delta });
     setRenderKey((k) => k + 1);
-  }, [setlist, entry]);
+  }, [setlist, entry, updateEntry]);
 
   // Per-song overrides
   const toggleEntryNum = useCallback((checked: boolean) => {
     if (!entry) return;
     const globalVal = slNashville || entry.nashville;
-    entry._num = (checked === !!globalVal) ? null : (checked ? 1 : 0);
-    entry.nashville = checked ? 1 : 0;
+    updateEntry({
+      _num: (checked === !!globalVal) ? null : (checked ? 1 : 0),
+      nashville: checked ? 1 : 0,
+    });
     setRenderKey((k) => k + 1);
-  }, [entry, slNashville]);
+  }, [entry, slNashville, updateEntry]);
 
   const toggleEntryTwoCol = useCallback(() => {
     if (!entry) return;
     const current = slEffective(entry, 'twoCol', twoCol);
-    entry._twoCol = !current;
+    updateEntry({ _twoCol: !current });
     setRenderKey((k) => k + 1);
-  }, [entry, twoCol]);
+  }, [entry, twoCol, updateEntry]);
 
   const changeEntryFont = useCallback((delta: number) => {
     if (!entry) return;
     const current = slEffective(entry, 'font', fontSize) || 0;
-    entry._font = clampFontSize(current + delta);
+    updateEntry({ _font: clampFontSize(current + delta) });
     setRenderKey((k) => k + 1);
-  }, [entry, fontSize]);
+  }, [entry, fontSize, updateEntry]);
 
   // Key picker
   const pickKey = useCallback((targetKey: string) => {
@@ -123,7 +125,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     if (!setlist || !entry) return;
     try {
       await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, { content_override: editContent });
-      entry.content_override = editContent;
+      updateEntry({ content_override: editContent });
       setEditing(false);
       setRenderKey((k) => k + 1);
       toast(t('setlist.editSaved'), 'success');
@@ -135,7 +137,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     try {
       await apiCall('POST', `/api/songs/${entry.song_id}/version`, { content: editContent });
       await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, { content_override: editContent });
-      entry.content_override = editContent;
+      updateEntry({ content_override: editContent });
       setEditing(false);
       setRenderKey((k) => k + 1);
       toast(t('setlist.versionCreated'), 'success');
@@ -166,7 +168,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     setFontSize((prev) => { const n = clampFontSize(prev + delta); setStoredFontSize(n); return n; });
     setRenderKey((k) => k + 1);
   };
-  const resetFont = () => { setFontSize(0); setStoredFontSize(0); if (entry) entry._font = null; setRenderKey((k) => k + 1); };
+  const resetFont = () => { setFontSize(0); setStoredFontSize(0); if (entry) updateEntry({ _font: null }); setRenderKey((k) => k + 1); };
 
   const handleExportAllPdf = async () => {
     if (!setlist || exportingPdf) return;
@@ -185,7 +187,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const doFit = (perSong: boolean) => {
     const before = { fontSize, twoCol };
     const fit = autoFit();
-    if (perSong && entry) { entry._font = null; entry._twoCol = null; }
+    if (perSong && entry) { updateEntry({ _font: null, _twoCol: null }); }
     setFontSize(fit.fontSize); setStoredFontSize(fit.fontSize);
     setTwoCol(fit.twoCol); setStoredTwoCol(fit.twoCol);
     setRenderKey((k) => k + 1);
@@ -249,7 +251,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         fontSize={effFont || 0}
         onFontChange={changeEntryFont}
         onReset={() => {
-          if (entry) { entry._font = null; entry._twoCol = null; }
+          if (entry) { updateEntry({ _font: null, _twoCol: null }); }
           setFontSize(0); setStoredFontSize(0);
           setTwoCol(false); setStoredTwoCol(false);
           setRenderKey((k) => k + 1);
