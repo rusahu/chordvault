@@ -184,7 +184,7 @@
 .font-reset { font-size: 14px; }
 .font-reset.disabled, .font-reset:disabled { opacity: 0.25; cursor: default; }
 .font-reset.disabled:hover, .font-reset:disabled:hover { background: var(--surface2); color: var(--text); border-color: var(--border); }
-.col-toggle.active, .autofit-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+.col-toggle.active, .autofit-btn.active, .save-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
 
 
 /* ── Chord Sheet ────────────────────────── */
