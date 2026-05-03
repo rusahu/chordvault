@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
@@ -39,6 +39,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const [slOptionsOpen, setSlOptionsOpen] = useState(false);
   const [fontSize, setFontSize] = useState(() => getStoredFontSize());
   const [twoCol, setTwoCol] = useState(() => getStoredTwoCol());
+  const [autoFitActive, setAutoFitActive] = useState(false);
 
   // Render key for forcing re-render
   const [_renderKey, setRenderKey] = useState(0);
@@ -66,6 +67,39 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     return renderChordPro(content, entryTranspose, !!effNum);
   }, [content, effNum, entry, entryTranspose]);
 
+  /**
+   * CRITICAL: Applies layout settings and forces the page to the absolute top.
+   * DO NOT USE scrollIntoView() - it causes "scroll to middle" bugs on mobile.
+   * window.scrollTo(0,0) ensures the user always starts at the beginning of a song.
+   */
+  const applyLayoutAndScrollToTop = useCallback((fit: { fontSize: number; twoCol: boolean }) => {
+    setFontSize(fit.fontSize);
+    setStoredFontSize(fit.fontSize);
+    setTwoCol(fit.twoCol);
+    setStoredTwoCol(fit.twoCol);
+    setRenderKey((k) => k + 1);
+
+    // Use requestAnimationFrame to ensure React has rendered the new layout before scrolling
+    requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+    });
+  }, []);
+
+  // Auto-fit effect
+  useEffect(() => {
+    if (autoFitActive && entry) {
+      // Wait for DOM to render the new song
+      const timer = setTimeout(() => {
+        const fit = autoFit();
+        // Only update if changed to avoid loop
+        if (fit.fontSize !== fontSize || fit.twoCol !== twoCol) {
+          applyLayoutAndScrollToTop(fit);
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [index, autoFitActive, renderedHtml, entry, fontSize, twoCol, applyLayoutAndScrollToTop]);
+
   // Transpose
   const transpose = useCallback((delta: number) => {
     if (!setlist || !entry) return;
@@ -86,17 +120,25 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
 
   const toggleEntryTwoCol = useCallback(() => {
     if (!entry) return;
+    if (autoFitActive) {
+      setAutoFitActive(false);
+      toast('Auto-fit disabled', 'info');
+    }
     const current = slEffective(entry, 'twoCol', twoCol);
     updateEntry({ _twoCol: !current });
     setRenderKey((k) => k + 1);
-  }, [entry, twoCol, updateEntry]);
+  }, [entry, twoCol, autoFitActive, toast, updateEntry]);
 
   const changeEntryFont = useCallback((delta: number) => {
     if (!entry) return;
+    if (autoFitActive) {
+      setAutoFitActive(false);
+      toast('Auto-fit disabled', 'info');
+    }
     const current = slEffective(entry, 'font', fontSize) || 0;
     updateEntry({ _font: clampFontSize(current + delta) });
     setRenderKey((k) => k + 1);
-  }, [entry, fontSize, updateEntry]);
+  }, [entry, fontSize, autoFitActive, toast, updateEntry]);
 
   // Key picker
   const pickKey = useCallback((targetKey: string) => {
@@ -163,12 +205,37 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   useKeyboardShortcuts(shortcuts, !!setlist);
 
   // Global settings changes
-  const changeTwoCol = (val: boolean) => { setTwoCol(val); setStoredTwoCol(val); setRenderKey((k) => k + 1); };
-  const changeFont = (delta: number) => {
-    setFontSize((prev) => { const n = clampFontSize(prev + delta); setStoredFontSize(n); return n; });
+  const changeTwoCol = (val: boolean) => {
+    if (autoFitActive) {
+      setAutoFitActive(false);
+      toast('Auto-fit disabled', 'info');
+    }
+    setTwoCol(val);
+    setStoredTwoCol(val);
     setRenderKey((k) => k + 1);
   };
-  const resetFont = () => { setFontSize(0); setStoredFontSize(0); if (entry) updateEntry({ _font: null }); setRenderKey((k) => k + 1); };
+  const changeFont = (delta: number) => {
+    if (autoFitActive) {
+      setAutoFitActive(false);
+      toast('Auto-fit disabled', 'info');
+    }
+    setFontSize((prev) => {
+      const n = clampFontSize(prev + delta);
+      setStoredFontSize(n);
+      return n;
+    });
+    setRenderKey((k) => k + 1);
+  };
+  const resetFont = () => {
+    if (autoFitActive) {
+      setAutoFitActive(false);
+      toast('Auto-fit disabled', 'info');
+    }
+    setFontSize(0);
+    setStoredFontSize(0);
+    if (entry) updateEntry({ _font: null });
+    setRenderKey((k) => k + 1);
+  };
 
   const handleExportAllPdf = async () => {
     if (!setlist || exportingPdf) return;
@@ -184,24 +251,21 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     }
   };
 
-  const doFit = (perSong: boolean) => {
-    const before = { fontSize, twoCol };
-    const fit = autoFit();
-    if (perSong && entry) { updateEntry({ _font: null, _twoCol: null }); }
-    setFontSize(fit.fontSize); setStoredFontSize(fit.fontSize);
-    setTwoCol(fit.twoCol); setStoredTwoCol(fit.twoCol);
-    setRenderKey((k) => k + 1);
-    requestAnimationFrame(() => {
-      document.querySelector('.chord-sheet-wrap')?.scrollIntoView({ behavior: 'smooth' });
-    });
-    if (fit.fontSize === before.fontSize && fit.twoCol === before.twoCol) {
-      toast('Already fitted', 'info');
-    } else {
-      const parts: string[] = [];
-      if (fit.twoCol) parts.push('multi-column');
-      if (fit.fontSize !== 0) parts.push(`font ${fit.fontSize > 0 ? '+' : ''}${fit.fontSize}`);
-      toast(parts.length ? `Fitted: ${parts.join(', ')}` : 'Fitted to default', 'success');
+  const doFit = () => {
+    if (autoFitActive) {
+      setAutoFitActive(false);
+      toast('Auto-fit disabled', 'info');
+      return;
     }
+
+    const fit = autoFit();
+    if (entry) {
+      updateEntry({ _font: null, _twoCol: null });
+    }
+    applyLayoutAndScrollToTop(fit);
+
+    setAutoFitActive(true);
+    toast('Auto-fit enabled for setlist', 'success');
   };
 
   if (!setlist) return <Loading />;
@@ -254,10 +318,12 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
           if (entry) { updateEntry({ _font: null, _twoCol: null }); }
           setFontSize(0); setStoredFontSize(0);
           setTwoCol(false); setStoredTwoCol(false);
+          setAutoFitActive(false);
           setRenderKey((k) => k + 1);
         }}
         onPickKey={pickKey}
-        onAutoFit={() => doFit(true)}
+        onAutoFit={doFit}
+        autoFitActive={autoFitActive}
         overrides={{
           num: entry._num != null,
           twoCol: entry._twoCol != null,
