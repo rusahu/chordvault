@@ -59,7 +59,8 @@ describe('SetlistPlayView Auto-Fit', () => {
       exit: vi.fn(),
       updateEntry: mockUpdateEntry,
       isModified: false,
-      saveEntry: vi.fn(),
+      saveOnline: vi.fn(),
+      saveLocal: vi.fn(),
     });
   });
 
@@ -108,7 +109,8 @@ describe('SetlistPlayView Auto-Fit', () => {
       exit: vi.fn(),
       updateEntry: mockUpdateEntry,
       isModified: false,
-      saveEntry: vi.fn(),
+      saveOnline: vi.fn(),
+      saveLocal: vi.fn(),
     });
     
     rerender(<SetlistPlayView setlistId={1} navigate={navigate} />);
