@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Mock } from 'vitest';
 import { SetlistPlayView } from '../SetlistPlayView';
 import * as chords from '../../lib/chords';
 import { useSetlistPlayer } from '../../hooks/useSetlistPlayer';
@@ -20,6 +21,10 @@ vi.mock('../../hooks/useSetlistPlayer', () => ({
 
 vi.mock('../../hooks/useApi', () => ({
   useApi: () => vi.fn(),
+}));
+
+vi.mock('../../context/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 1 } }),
 }));
 
 vi.mock('../../context/I18nContext', () => ({
@@ -44,7 +49,7 @@ describe('SetlistPlayView Auto-Fit', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useSetlistPlayer as any).mockReturnValue({
+    (useSetlistPlayer as Mock).mockReturnValue({
       setlist: { id: 1, title: 'Test Setlist', entries: [{ entry_id: 1, title: 'Song 1', content: 'C G' }, { entry_id: 2, title: 'Song 2', content: 'D A' }] },
       entry: { entry_id: 1, title: 'Song 1', content: 'C G', transpose: 0 },
       index: 0,
@@ -53,6 +58,9 @@ describe('SetlistPlayView Auto-Fit', () => {
       next: vi.fn(),
       exit: vi.fn(),
       updateEntry: mockUpdateEntry,
+      isModified: false,
+      saveOnline: vi.fn(),
+      saveLocal: vi.fn(),
     });
   });
 
@@ -91,15 +99,18 @@ describe('SetlistPlayView Auto-Fit', () => {
     expect(chords.autoFit).toHaveBeenCalledTimes(1);
     
     // Simulate swiping to next song (index 1)
-    (useSetlistPlayer as any).mockReturnValue({
+    (useSetlistPlayer as Mock).mockReturnValue({
       setlist: { id: 1, title: 'Test Setlist', entries: [{ entry_id: 1, title: 'Song 1', content: 'C G' }, { entry_id: 2, title: 'Song 2', content: 'D A' }] },
-      entry: { entry_id: 2, title: 'Song 2', content: 'D A', transpose: 0 },
-      index: 1,
+      entry: { entry_id: 1, title: 'Song 1', content: 'C G', transpose: 0 },
+      index: 0,
       total: 2,
       prev: vi.fn(),
       next: vi.fn(),
       exit: vi.fn(),
       updateEntry: mockUpdateEntry,
+      isModified: false,
+      saveOnline: vi.fn(),
+      saveLocal: vi.fn(),
     });
     
     rerender(<SetlistPlayView setlistId={1} navigate={navigate} />);

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useApi } from '../hooks/useApi';
+import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
 import { useSwipe } from '../hooks/useSwipe';
@@ -44,7 +45,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   // Render key for forcing re-render
   const [_renderKey, setRenderKey] = useState(0);
 
-  const { setlist, entry, index, total, prev, next, exit, updateEntry } = useSetlistPlayer({
+  const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
     isPublic,
     initialSetlist,
@@ -54,6 +55,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   });
 
   const content = entry ? (entry.content_override || entry.content) : '';
+
+  const { user } = useAuth();
+  const isOwner = setlist?.user_id && user && setlist.user_id === user.id;
 
   // Effective values for current entry
   const effNum = entry ? (slEffective(entry, 'num', slNashville) || entry.nashville) : false;
@@ -324,6 +328,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         onPickKey={pickKey}
         onAutoFit={doFit}
         autoFitActive={autoFitActive}
+        onSaveOnline={isOwner ? () => saveOnline(false) : undefined}
+        onSaveLocal={() => saveLocal(false)}
+        isModified={isModified}
         overrides={{
           num: entry._num != null,
           twoCol: entry._twoCol != null,

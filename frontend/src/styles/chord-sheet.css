@@ -184,7 +184,29 @@
 .font-reset { font-size: 14px; }
 .font-reset.disabled, .font-reset:disabled { opacity: 0.25; cursor: default; }
 .font-reset.disabled:hover, .font-reset:disabled:hover { background: var(--surface2); color: var(--text); border-color: var(--border); }
-.col-toggle.active, .autofit-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+.col-toggle.active, .autofit-btn.active, .save-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+.autofit-btn, .save-btn {
+  width: auto !important;
+  min-width: 40px;
+  padding: 0 12px !important;
+  font-size: 13px !important;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.save-btn.active {
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3);
+  animation: pulse-save 2s infinite;
+}
+
+@keyframes pulse-save {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
 
 
 /* ── Chord Sheet ────────────────────────── */
