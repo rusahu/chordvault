@@ -13,6 +13,7 @@ interface ToolbarProps {
   onReset: () => void;
   onPickKey: (key: string) => void;
   onAutoFit?: () => void;
+  autoFitActive?: boolean;
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
 }
 
@@ -28,6 +29,7 @@ export function Toolbar({
   onReset,
   onPickKey,
   onAutoFit,
+  autoFitActive,
   overrides,
 }: ToolbarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -75,9 +77,9 @@ export function Toolbar({
         <span className="toolbar-divider" />
         {onAutoFit && (
           <button
-            className="transpose-btn font-btn autofit-btn"
+            className={`transpose-btn font-btn autofit-btn${autoFitActive ? ' active' : ''}`}
             onClick={onAutoFit}
-            title="Auto-fit: adjust font and columns for this screen"
+            title={autoFitActive ? 'Auto-fit: ON (click to turn off)' : 'Auto-fit: adjust font and columns for this screen'}
           >
             Fit
           </button>
