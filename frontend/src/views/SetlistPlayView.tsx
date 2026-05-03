@@ -45,7 +45,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   // Render key for forcing re-render
   const [_renderKey, setRenderKey] = useState(0);
 
-  const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveEntry } = useSetlistPlayer({
+  const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
     isPublic,
     initialSetlist,
@@ -58,7 +58,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
 
   const { user } = useAuth();
   const isOwner = setlist?.user_id && user && setlist.user_id === user.id;
-  const saveLabel = isOwner ? 'Save to Setlist' : 'Save Locally';
 
   // Effective values for current entry
   const effNum = entry ? (slEffective(entry, 'num', slNashville) || entry.nashville) : false;
@@ -329,9 +328,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         onPickKey={pickKey}
         onAutoFit={doFit}
         autoFitActive={autoFitActive}
-        onSave={() => saveEntry(false)}
+        onSaveOnline={isOwner ? () => saveOnline(false) : undefined}
+        onSaveLocal={() => saveLocal(false)}
         isModified={isModified}
-        saveLabel={saveLabel}
         overrides={{
           num: entry._num != null,
           twoCol: entry._twoCol != null,
