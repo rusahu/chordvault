@@ -14,6 +14,9 @@ interface ToolbarProps {
   onPickKey: (key: string) => void;
   onAutoFit?: () => void;
   autoFitActive?: boolean;
+  onSave?: () => void;
+  isModified?: boolean;
+  saveLabel?: string;
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
 }
 
@@ -30,6 +33,9 @@ export function Toolbar({
   onPickKey,
   onAutoFit,
   autoFitActive,
+  onSave,
+  isModified,
+  saveLabel,
   overrides,
 }: ToolbarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -82,6 +88,16 @@ export function Toolbar({
             title={autoFitActive ? 'Auto-fit: ON (click to turn off)' : 'Auto-fit: adjust font and columns for this screen'}
           >
             Fit
+          </button>
+        )}
+        {onSave && (
+          <button
+            className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
+            onClick={onSave}
+            disabled={!isModified}
+            title={isModified ? saveLabel : 'All changes saved'}
+          >
+            {isModified ? (saveLabel || 'Save') : 'Saved'}
           </button>
         )}
         <button
