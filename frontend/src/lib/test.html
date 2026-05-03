@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.chord-sheet .row {
+  display: block;
+  white-space: pre-wrap;
+  line-height: 1.1;
+  margin-bottom: 0.6em;
+}
+
+.chord-sheet .column {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: top;
+  flex-shrink: 0;
+  margin-right: 1px;
+}
+
+.chord-sheet .chord {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: orange;
+  min-height: 1.2em;
+  display: block;
+  white-space: pre;
+  letter-spacing: 0.02em;
+  padding-right: 0.4ch;
+}
+
+.chord-sheet .lyrics {
+  font-family: 'Outfit', sans-serif;
+  font-size: 18px;
+  color: white;
+  white-space: pre;
+  line-height: 1.2;
+  min-height: 1.2em;
+  display: block;
+}
+body { background: #222; color: white; }
+</style>
+</head>
+<body>
+<div class="chord-sheet">
+  <div class="row">
+    <span class="column"><span class="chord">A</span><span class="lyrics">  </span></span>
+    <span class="column"><span class="chord">F#m</span><span class="lyrics">   </span></span>
+    <span class="column"><span class="chord">E</span><span class="lyrics">  </span></span>
+    <span class="column"><span class="chord">D</span><span class="lyrics"></span></span>
+  </div>
+</div>
+</body>
+</html>
