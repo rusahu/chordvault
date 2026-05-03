@@ -73,37 +73,41 @@ export function useSetlistPlayer({
   }, [entry, savedState]);
 
   /**
-   * Saves the current transpose and Nashville settings for the active entry.
-   * Handles both server-side saving (for owners) and local localStorage saving (for public setlists).
-   * @param silent If true, suppresses the success toast.
+   * Saves the current transpose and Nashville settings to the server (only for owners).
    */
-  const saveEntry = useCallback(async (silent = false) => {
-    if (!setlist || !entry) return;
-    const isOwner = setlist.user_id && user && setlist.user_id === user.id;
-
+  const saveOnline = useCallback(async (silent = false) => {
+    if (!setlist || !entry || !user || setlist.user_id !== user.id) return;
     try {
-      if (isOwner) {
-        await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, {
-          transpose: entry.transpose,
-          nashville: !!entry.nashville,
-        });
-        if (!silent) toast('Saved to setlist', 'success');
-      } else {
-        saveSetlistOverride(setlist.id, entry.entry_id, {
-          transpose: entry.transpose,
-          nashville: !!entry.nashville,
-        });
-        if (!silent) toast('Saved locally', 'success');
-      }
+      await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, {
+        transpose: entry.transpose,
+        nashville: !!entry.nashville,
+      });
       setSavedState({ transpose: entry.transpose, nashville: !!entry.nashville });
+      if (!silent) toast('Saved to cloud', 'success');
     } catch (e) {
       if (!silent) toast((e as Error).message, 'error');
     }
   }, [setlist, entry, apiCall, user, toast]);
 
+  /**
+   * Saves the current transpose and Nashville settings locally in the browser.
+   */
+  const saveLocal = useCallback((silent = false) => {
+    if (!setlist || !entry) return;
+    saveSetlistOverride(setlist.id, entry.entry_id, {
+      transpose: entry.transpose,
+      nashville: !!entry.nashville,
+    });
+    setSavedState({ transpose: entry.transpose, nashville: !!entry.nashville });
+    if (!silent) toast('Saved locally', 'success');
+  }, [setlist, entry, toast]);
+
   const autoSave = useCallback(() => {
-    if (isModified) saveEntry(true);
-  }, [isModified, saveEntry]);
+    if (!isModified) return;
+    const isOwner = setlist?.user_id && user && setlist.user_id === user.id;
+    if (isOwner) saveOnline(true);
+    else saveLocal(true);
+  }, [isModified, setlist, user, saveOnline, saveLocal]);
 
   const goTo = useCallback((newIdx: number) => {
     if (!setlist) return;
@@ -172,5 +176,5 @@ export function useSetlistPlayer({
     else { location.hash = ''; navigate(user ? 'setlists' : 'browse'); }
   }, [setlist, autoSave, navigate, user]);
 
-  return { setlist, entry, index, total, goTo, prev, next, exit, autoSave, updateEntry, isModified, saveEntry };
+  return { setlist, entry, index, total, goTo, prev, next, exit, autoSave, updateEntry, isModified, saveOnline, saveLocal };
 }

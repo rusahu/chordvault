@@ -14,9 +14,9 @@ interface ToolbarProps {
   onPickKey: (key: string) => void;
   onAutoFit?: () => void;
   autoFitActive?: boolean;
-  onSave?: () => void;
+  onSaveOnline?: () => void;
+  onSaveLocal?: () => void;
   isModified?: boolean;
-  saveLabel?: string;
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
 }
 
@@ -33,9 +33,9 @@ export function Toolbar({
   onPickKey,
   onAutoFit,
   autoFitActive,
-  onSave,
+  onSaveOnline,
+  onSaveLocal,
   isModified,
-  saveLabel,
   overrides,
 }: ToolbarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -90,14 +90,25 @@ export function Toolbar({
             Fit
           </button>
         )}
-        {onSave && (
+        {(onSaveOnline || onSaveLocal) && <span className="toolbar-divider" />}
+        {onSaveOnline && (
           <button
             className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
-            onClick={onSave}
+            onClick={onSaveOnline}
             disabled={!isModified}
-            title={isModified ? saveLabel : 'All changes saved'}
+            title={isModified ? 'Update setlist for everyone' : 'Saved to cloud'}
           >
-            {isModified ? (saveLabel || 'Save') : 'Saved'}
+            {isModified ? 'Save Online' : 'Cloud'}
+          </button>
+        )}
+        {onSaveLocal && (
+          <button
+            className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
+            onClick={onSaveLocal}
+            disabled={!isModified}
+            title={isModified ? 'Save to this browser only' : 'Saved locally'}
+          >
+            {isModified ? 'Save Local' : 'Local'}
           </button>
         )}
         <button
