@@ -6,6 +6,7 @@ const KEYS = {
   fontsize: 'cv_fontsize',
   twocol: 'cv_twocol',
   localSetlists: 'cv_local_setlists',
+  setlistOverrides: 'cv_setlist_overrides',
 } as const;
 
 export function getStoredUser(): User | null {
@@ -55,4 +56,33 @@ export function getLocalSetlists(): LocalSetlist[] {
 
 export function saveLocalSetlists(arr: LocalSetlist[]): void {
   localStorage.setItem(KEYS.localSetlists, JSON.stringify(arr));
+}
+
+/**
+ * Gets personal transpose/Nashville overrides for a specific setlist.
+ * Format: { [entryId]: { transpose: number, nashville: boolean } }
+ */
+export function getSetlistOverrides(setlistId: number | string): Record<string, { transpose?: number; nashville?: boolean }> {
+  try {
+    const all = JSON.parse(localStorage.getItem(KEYS.setlistOverrides) || '{}');
+    return all[String(setlistId)] || {};
+  } catch { return {}; }
+}
+
+/**
+ * Saves a personal transpose/Nashville override for a single setlist entry.
+ */
+export function saveSetlistOverride(
+  setlistId: number | string,
+  entryId: number | string,
+  data: { transpose?: number; nashville?: boolean }
+): void {
+  try {
+    const all = JSON.parse(localStorage.getItem(KEYS.setlistOverrides) || '{}');
+    const sid = String(setlistId);
+    const eid = String(entryId);
+    if (!all[sid]) all[sid] = {};
+    all[sid][eid] = { ...all[sid][eid], ...data };
+    localStorage.setItem(KEYS.setlistOverrides, JSON.stringify(all));
+  } catch (e) { console.error('Failed to save setlist override', e); }
 }
