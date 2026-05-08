@@ -148,12 +148,76 @@
 .correction-actions { display: flex; gap: 8px; }
 .correction-preview { max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--bg); }
 .badge-pending { background: rgba(240,160,48,0.15); color: #f0a030; }
-
 /* ── Song View ──────────────────────────── */
+.song-versions-panel {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.versions-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.versions-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.version-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.version-chip:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+}
+
+.version-chip.active {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.version-chip-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.version-chip-user {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.yt-dot {
+  color: var(--accent);
+  font-size: 8px;
+}
+
 .song-view-header {
-  margin-bottom: 28px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
 }
 
 .song-view-nav {

@@ -50,14 +50,20 @@ function createSongsRouter() {
 
   router.get('/songs', requireAuth, (req, res) => {
     const { q, language } = req.query;
-    let query = 'SELECT s.id, s.title, s.artist, s.key, s.bpm, s.tags, s.language, s.visibility, s.created_at, s.updated_at FROM songs s';
-    const params = [req.user.id, STATUS.ACTIVE];
+    const userId = req.user.id;
+    let query = `
+      SELECT s.id, s.title, s.artist, s.key, s.bpm, s.tags, s.language, s.visibility, s.created_at, s.updated_at,
+             (SELECT COUNT(*) FROM songs v WHERE COALESCE(v.parent_id, v.id) = COALESCE(s.parent_id, s.id) AND v.status = ? AND (v.visibility = ? OR v.user_id = ?)) as version_count
+      FROM songs s
+    `;
+    const params = [STATUS.ACTIVE, VISIBILITY.PUBLIC, userId];
 
     if (q?.trim()) {
       query += ' JOIN songs_search ss ON s.id = ss.rowid';
     }
 
     query += ' WHERE s.user_id = ? AND s.status = ?';
+    params.push(userId, STATUS.ACTIVE);
 
     if (q?.trim()) {
       const search = getFtsSearch(q);
@@ -70,17 +76,19 @@ function createSongsRouter() {
       params.push(language.trim());
     }
 
-    query += ' ORDER BY s.updated_at DESC';
+    query += ' GROUP BY COALESCE(s.parent_id, s.id) ORDER BY MAX(s.updated_at) DESC';
     res.json(db.prepare(query).all(...params));
   });
 
   router.get('/songs/public', (req, res) => {
     const { q, language } = req.query;
+    const userId = req.user ? req.user.id : 0;
     let query = `
-      SELECT s.id, s.title, s.artist, s.key, s.bpm, s.tags, s.language, s.visibility, s.updated_at, u.username
+      SELECT s.id, s.title, s.artist, s.key, s.bpm, s.tags, s.language, s.visibility, s.updated_at, u.username,
+             (SELECT COUNT(*) FROM songs v WHERE COALESCE(v.parent_id, v.id) = COALESCE(s.parent_id, s.id) AND v.status = ? AND (v.visibility = ? OR v.user_id = ?)) as version_count
       FROM songs s JOIN users u ON s.user_id = u.id
     `;
-    const params = [VISIBILITY.PUBLIC, STATUS.ACTIVE];
+    const params = [STATUS.ACTIVE, VISIBILITY.PUBLIC, userId, VISIBILITY.PUBLIC, STATUS.ACTIVE];
 
     if (q?.trim()) {
       query += ' JOIN songs_search ss ON s.id = ss.rowid';
@@ -99,16 +107,21 @@ function createSongsRouter() {
       params.push(language.trim());
     }
 
-    query += ' ORDER BY s.updated_at DESC LIMIT 100';
+    query += ' GROUP BY COALESCE(s.parent_id, s.id) ORDER BY MAX(s.updated_at) DESC LIMIT 100';
     res.json(db.prepare(query).all(...params));
   });
 
   router.get('/users/:username/songs', (req, res) => {
     const user = db.prepare('SELECT id FROM users WHERE username = ?').get(req.params.username);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    const songs = db.prepare(
-      'SELECT id, title, artist, key, bpm, tags, language, updated_at FROM songs WHERE user_id = ? AND visibility = ? AND status = ? ORDER BY updated_at DESC'
-    ).all(user.id, VISIBILITY.PUBLIC, STATUS.ACTIVE);
+    const songs = db.prepare(`
+      SELECT s.id, s.title, s.artist, s.key, s.bpm, s.tags, s.language, s.updated_at,
+             (SELECT COUNT(*) FROM songs v WHERE COALESCE(v.parent_id, v.id) = COALESCE(s.parent_id, s.id) AND v.status = ? AND v.visibility = ?) as version_count
+      FROM songs s
+      WHERE s.user_id = ? AND s.visibility = ? AND s.status = ?
+      GROUP BY COALESCE(s.parent_id, s.id)
+      ORDER BY MAX(s.updated_at) DESC
+    `).all(STATUS.ACTIVE, VISIBILITY.PUBLIC, user.id, VISIBILITY.PUBLIC, STATUS.ACTIVE);
     res.json(songs);
   });
 
@@ -132,7 +145,13 @@ function createSongsRouter() {
         return res.status(404).json({ error: 'Song not found' });
       }
     }
-    res.json(song);
+    // Include version_count for single song view
+    const userId = req.user ? req.user.id : 0;
+    const versionCount = db.prepare(`
+      SELECT COUNT(*) as count FROM songs 
+      WHERE COALESCE(parent_id, id) = COALESCE(?, ?) AND status = ? AND (visibility = ? OR user_id = ?)
+    `).get(song.parent_id, song.id, STATUS.ACTIVE, VISIBILITY.PUBLIC, userId).count;
+    res.json({ ...song, version_count: versionCount });
   });
 
   router.post('/songs', requireAuth, (req, res) => {
@@ -242,7 +261,12 @@ function createSongsRouter() {
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
     const original = db.prepare('SELECT * FROM songs WHERE id = ?').get(id);
     if (!original || original.status !== STATUS.ACTIVE) return res.status(404).json({ error: 'Song not found' });
-    if (original.user_id !== req.user.id && !isAdminRole(req.user.role)) return res.status(403).json({ error: 'Not authorized' });
+    
+    const isOwner = original.user_id === req.user.id;
+    const isAdmin = isAdminRole(req.user.role);
+    const isPublic = original.visibility === VISIBILITY.PUBLIC;
+    if (!isOwner && !isAdmin && !isPublic) return res.status(403).json({ error: 'Not authorized' });
+
     const { content, youtube_url } = req.body;
     const validationError = validateSongInput({ content, youtube_url, requireContent: true, requireChord: true });
     if (validationError) return res.status(400).json({ error: validationError });

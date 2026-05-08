@@ -174,9 +174,14 @@ export function SongView({ songId, navigate }: SongViewProps) {
               </button>
             )}
             {user && !isOwner && song.visibility !== 'private' && (
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('correction', { id: String(song.id) })}>
-                &#9998; Correction
-              </button>
+              <>
+                <button className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
+                  &#43; Create Version
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={() => navigate('correction', { id: String(song.id) })}>
+                  &#9998; Correction
+                </button>
+              </>
             )}
             <button className="btn btn-ghost btn-sm" onClick={showAddToSetlist}>
               &#43; {t('songView.addToSetlist')}
@@ -195,19 +200,23 @@ export function SongView({ songId, navigate }: SongViewProps) {
           {isOwner && song.visibility === 'private' && <span className="badge badge-private">&#128274; Private</span>}
         </div>
         {versions.length > 1 && (
-          <div className="song-versions">
-            <span className="transpose-label">{t('setlist.versions')}:</span>
-            {versions.map((v) => (
-              <button
-                key={v.id}
-                className={`btn btn-ghost btn-sm${v.id === songId ? ' active' : ''}`}
-                onClick={() => navigate('song-view', { id: String(v.id) })}
-              >
-                {v.youtube_url && <span style={{ color: 'var(--accent)' }} title="Has YouTube video">&#9654; </span>}
-                {v.title}{v.parent_id ? ' (v)' : ''}
-                <span style={{ fontSize: 11, color: 'var(--muted)' }}> @{v.username}</span>
-              </button>
-            ))}
+          <div className="song-versions-panel">
+            <div className="versions-label">{t('setlist.versions')}</div>
+            <div className="versions-grid">
+              {versions.map((v, idx) => (
+                <button
+                  key={v.id}
+                  className={`version-chip${v.id === songId ? ' active' : ''}`}
+                  onClick={() => navigate('song-view', { id: String(v.id) })}
+                >
+                  <div className="version-chip-title">
+                    {v.youtube_url && <span className="yt-dot" title="Has YouTube video">●</span>}
+                    Ver {idx + 1}
+                  </div>
+                  <div className="version-chip-user">@{v.username}</div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
