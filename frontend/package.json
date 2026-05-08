@@ -17,15 +17,15 @@
     "@codemirror/commands": "^6.10.3",
     "@codemirror/language": "^6.12.3",
     "@codemirror/state": "^6.6.0",
-    "@codemirror/view": "^6.41.1",
+    "@codemirror/view": "^6.42.1",
     "@lezer/highlight": "^1.2.3",
-    "chordsheetjs": "^14.5.1",
+    "chordsheetjs": "^14.6.0",
     "codemirror": "^6.0.2",
     "dotenv": "^17.4.2",
     "html2canvas-pro": "^2.0.2",
     "jspdf": "^4.2.1",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -36,14 +36,14 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^10.2.1",
+    "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^29.1.1",
     "playwright": "^1.59.1",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.1",
-    "vite": "^8.0.10",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.11",
     "vitest": "^4.1.5"
   }
 }
