@@ -16,6 +16,7 @@ export interface Song {
   created_at: string;
   updated_at: string;
   key?: string;
+  version_count?: number;
 }
 
 export interface SongListItem {
@@ -29,6 +30,7 @@ export interface SongListItem {
   visibility: string;
   username: string;
   youtube_url?: string | null;
+  version_count?: number;
 }
 
 export interface Correction {
