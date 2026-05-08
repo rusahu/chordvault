@@ -23,6 +23,11 @@ export function SongCard({ song, isOwner, onClick, onEdit }: SongCardProps) {
         )}
       </div>
       <div className="song-card-actions">
+        {song.version_count && song.version_count > 1 && (
+          <span className="badge badge-tag" style={{ background: 'var(--accent-alt)', color: 'white' }}>
+            {song.version_count} Versions
+          </span>
+        )}
         {song.language && <span className="badge badge-lang" title={languageName(song.language)}>{song.language.toUpperCase()}</span>}
         {song.visibility === 'private' && <span className="badge badge-private" title="Private">&#128274;</span>}
         {song.key && <span className="badge badge-key">{song.key}</span>}

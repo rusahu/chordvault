@@ -178,12 +178,50 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
     else navigate('my-songs');
   };
 
+  const isOwner = !song || (user && song && user.id === song.user_id);
+
+  const saveAsVersion = async () => {
+    const targetId = songId || (song?.id);
+    if (!targetId) return;
+    if (!extractDirective(content, 'title')?.trim()) { toast(t('songEdit.titleRequired'), 'error'); return; }
+    if (!content.trim()) { toast(t('songEdit.contentRequired'), 'error'); return; }
+    const fmt = detectFormat(content);
+    if (!fmt) { toast('No chords detected. Add chords in [brackets] before the syllable, e.g. [G]Amazing [C]grace', 'error'); return; }
+    if (!extractDirective(content, 'x_language')) { toast('Please select a language', 'error'); return; }
+
+    let finalContent = toChordPro(content);
+    finalContent = ensureKeyDirective(finalContent);
+
+    try {
+      const result = await apiCall<{ id: number }>('POST', `/api/songs/${targetId}/version`, {
+        content: finalContent
+      });
+      toast('Version created successfully', 'success');
+      navigate('song-view', { id: String(result.id) });
+    } catch (e) { toast((e as Error).message, 'error'); }
+  };
+
   return (
     <>
-      <div className="edit-header">
+      <div className="edit-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
         <button className="btn btn-ghost btn-sm" onClick={cancel}>&#8592; {t('songEdit.cancel')}</button>
-        <h2>{song ? t('songEdit.editSong') : t('songEdit.newSong')}</h2>
-        <button className="btn btn-sm" onClick={save}>{t('songEdit.save')}</button>
+        <h2 style={{ minWidth: '200px' }}>{songId ? (isOwner ? t('songEdit.editSong') : 'Create Version') : t('songEdit.newSong')}</h2>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {isOwner && (
+            <button className="btn btn-sm" onClick={save}>
+              {t('songEdit.save')}
+            </button>
+          )}
+          {songId && (
+            <button 
+              className="btn btn-sm" 
+              style={{ background: 'var(--accent)', color: 'black', border: 'none' }} 
+              onClick={saveAsVersion}
+            >
+              {isOwner ? 'Save as New Version' : 'Save as My Version'}
+            </button>
+          )}
+        </div>
       </div>
       <div className="edit-cols">
         <div className="field">
@@ -216,6 +254,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           <span className="toggle">
             <input
               type="checkbox"
+              disabled={!isOwner}
               checked={visibility === 'public'}
               onChange={(e) => setVisibility(e.target.checked ? 'public' : 'private')}
             />
@@ -262,7 +301,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           </div>
         </div>
       </div>
-      {song && (
+      {song && isOwner && (
         <>
           <hr className="divider" />
           <button className="btn btn-danger btn-sm" onClick={deleteSong}>{t('songEdit.deleteSong')}</button>
