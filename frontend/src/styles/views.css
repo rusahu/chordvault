@@ -507,26 +507,27 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 8px 0;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 12px 0;
   position: sticky;
   top: 56px;
   z-index: 50;
-  background: var(--nav-bg);
-  backdrop-filter: blur(12px);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
 }
 
 .setlist-play-indicator {
-  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: 18px;
-  font-weight: 600;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 500;
   color: var(--text);
-  text-align: center;
   flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
 }
 
 /* Setlist sheet row — chord sheet flanked by prev/next buttons */
