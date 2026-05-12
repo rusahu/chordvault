@@ -397,7 +397,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 }
 
 .setlist-add-content {
-  background: var(--surface);
+  background: var(--surface-opaque, var(--bg));
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 24px;
@@ -405,10 +405,12 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
+  box-shadow: var(--shadow-lg);
 }
 
-.setlist-add-content .song-grid {
-  grid-template-columns: 1fr;
+.setlist-add-content .song-card {
+  background: var(--surface2, var(--bg));
+  opacity: 1 !important;
 }
 
 /* ── OCR Modal ──────────────────────────── */

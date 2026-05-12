@@ -23,6 +23,7 @@
   --accent-bg:    rgba(212,154,70,0.12);
   --focus-ring:   0 0 0 2px rgba(212,154,70,0.38);
   --glow-accent:  0 0 20px rgba(212,154,70,0.10);
+  --surface-opaque: #262626;
 
   /* Section Label Badge System */
   --badge-radius: 20px;
@@ -61,4 +62,5 @@
   --accent-bg:    rgba(199,115,34,0.08);
   --focus-ring:   0 0 0 2px rgba(199,115,34,0.25);
   --glow-accent:  0 0 20px rgba(199,115,34,0.05);
+  --surface-opaque: #ffffff;
 }
