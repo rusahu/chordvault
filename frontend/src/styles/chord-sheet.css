@@ -1,221 +1,10 @@
-/* ── Setlist Options Panel ─────────────── */
-.sl-options-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-/* Override dot indicator */
-.overridden { position: relative; }
-.overridden::after {
-  content: '';
-  position: absolute;
-  top: 1px;
-  right: 1px;
-  width: 6px;
-  height: 6px;
-  background: var(--accent);
-  border-radius: 50%;
-}
-
-.sl-options-title {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  margin-bottom: 2px;
-}
-.sl-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-  color: var(--text);
-  cursor: pointer;
-}
-.sl-font-btns {
-  display: flex;
-  gap: 4px;
-}
-.sl-font-btns .btn { min-width: 36px; }
-
-/* ── Transpose Bar ──────────────────────── */
-.transpose-bar {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 8px 12px;
-  margin-bottom: 20px;
-  box-shadow: var(--shadow-sm);
-}
-.transpose-tools {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.transpose-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
-
-/* Key current button */
-.key-current {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--accent);
-  background: none;
-  border: none;
-  padding: 2px 4px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.key-current:hover { text-decoration: underline; }
-.key-info {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--accent);
-  padding: 2px 4px;
-}
-.key-current.disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* Key picker row */
-.key-picker {
-  display: flex;
-  gap: 3px;
-  padding: 8px 12px;
-  margin-bottom: 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-.key-pill {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--muted);
-  background: none;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 6px;
-  cursor: pointer;
-  transition: all 0.1s;
-  text-align: center;
-  flex: 1;
-}
-.key-pill:hover { color: var(--accent); background: var(--accent-bg); }
-.key-pill.active { background: var(--accent); color: #000; font-weight: 600; }
-
-.transpose-btn {
-  width: 30px;
-  height: 30px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.1s;
-}
-.transpose-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
-
-.transpose-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  color: var(--accent);
-  min-width: 70px;
-  text-align: center;
-}
-
-.transpose-reset {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 12px;
-  cursor: pointer;
-  padding: 2px 6px;
-}
-.transpose-reset:hover { color: var(--text); }
-
-.number-toggle {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-  user-select: none;
-}
-.number-toggle input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--accent);
-  cursor: pointer;
-  margin: 0;
-}
-.number-toggle input:checked + span { color: var(--accent); font-weight: 500; }
-.number-toggle input:disabled { opacity: 0.35; cursor: not-allowed; }
-.number-toggle:has(input:disabled) { opacity: 0.35; cursor: not-allowed; }
-.transpose-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-.transpose-btn:disabled:hover { background: var(--surface2); color: var(--text); border-color: var(--border); }
-.col-toggle { font-size: 11px; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif; font-weight: 600; padding: 0 6px; white-space: nowrap; width: auto; }
-.autofit-btn { font-size: 11px; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif; font-weight: 600; padding: 0 6px; width: auto; }
-.toolbar-divider {
-  width: 1px;
-  height: 20px;
-  background: var(--border);
-  margin: 0 4px;
-}
-.font-btn { font-size: 12px; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif; font-weight: 600; padding: 0 8px; }
-.font-reset { font-size: 14px; }
-.font-reset.disabled, .font-reset:disabled { opacity: 0.25; cursor: default; }
-.font-reset.disabled:hover, .font-reset:disabled:hover { background: var(--surface2); color: var(--text); border-color: var(--border); }
-.col-toggle.active, .autofit-btn.active, .save-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
-
-.autofit-btn, .save-btn {
-  width: auto !important;
-  min-width: 40px;
-  padding: 0 12px !important;
-  font-size: 13px !important;
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.save-btn.active {
-  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3);
-  animation: pulse-save 2s infinite;
-}
-
-@keyframes pulse-save {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
-
-
 /* ── Chord Sheet ────────────────────────── */
 .chord-sheet-wrap {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 32px 40px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  box-shadow: var(--ui-shadow);
   overflow-x: auto;
   margin-top: 8px;
 }
@@ -229,7 +18,6 @@
 .chord-sheet-wrap.two-col .paragraph {
   break-inside: avoid;
 }
-
 
 /* ChordSheetJS output styles */
 .chord-sheet .paragraph {
@@ -307,20 +95,18 @@
   
   display: inline-block !important;
   margin: 24px 0 8px !important;
-  box-shadow: none !important;
 }
 
-/* Chorus: High Contrast & Premium Gradient */
+/* Chorus Styles */
 .paragraph.chorus .section-label,
 .paragraph.chorus h3.label {
   --badge-bg-top: var(--accent2);
   --badge-bg-bot: var(--accent);
   --badge-text:   #ffffff;
   --badge-border: var(--accent);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
 }
 
-/* Verse: Very Subtle */
+/* Verse Styles (Subtle) */
 .paragraph.verse .section-label,
 .paragraph.verse h3.label {
   --badge-bg-top: transparent;
@@ -330,20 +116,7 @@
   opacity: 0.8;
 }
 
-/* Bridge/Intro/Outro: Mid-Tone */
-.paragraph.bridge .section-label,
-.paragraph.bridge h3.label,
-.paragraph.intro .section-label,
-.paragraph.intro h3.label,
-.paragraph.outro .section-label,
-.paragraph.outro h3.label {
-  --badge-bg-top: var(--accent-bg);
-  --badge-bg-bot: var(--accent-bg);
-  --badge-text:   var(--accent);
-  --badge-border: rgba(var(--accent-rgb), 0.1);
-}
-
-/* Chorus gets a sophisticated soft-sweep highlight */
+/* Section Highlighting */
 .chord-sheet .paragraph.chorus {
   background: linear-gradient(90deg, var(--accent-bg) 0%, transparent 40%);
   border-left: 4px solid var(--accent);
@@ -352,18 +125,16 @@
   border-radius: 0 8px 8px 0;
 }
 
-/* Pre-chorus remains clean with a subtle dotted anchor */
-.chord-sheet .paragraph.prechorus {
-  border-left: 2px dotted var(--accent-alt);
-  padding-left: 20px;
-  margin-left: -20px;
-}
-
-/* Bridge gets a soft neutral sweep */
 .chord-sheet .paragraph.bridge {
   background: linear-gradient(90deg, var(--surface2) 0%, transparent 30%);
   border-left: 3px dashed var(--muted);
   padding: 12px 0 12px 20px;
   margin-left: -20px;
   border-radius: 0 8px 8px 0;
+}
+
+.chord-sheet .paragraph.prechorus {
+  border-left: 2px dotted var(--accent-alt);
+  padding-left: 20px;
+  margin-left: -20px;
 }
