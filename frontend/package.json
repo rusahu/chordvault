@@ -1,5 +1,6 @@
 {
   "name": "chordvault-frontend",
+  "version": "1.10.1",
   "private": true,
   "type": "module",
   "scripts": {
