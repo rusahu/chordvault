@@ -25,7 +25,7 @@
 }
 
 .nav-brand {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 22px;
   font-weight: 600;
   color: var(--accent);
@@ -60,7 +60,7 @@
   background: none;
   border: none;
   color: var(--muted);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif;
   font-size: 14px;
   font-weight: 400;
   padding: 6px 14px;
@@ -111,7 +111,7 @@
   background: none;
   border: none;
   color: var(--text);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif;
   font-size: 14px;
   padding: 10px 18px;
   text-align: left;
@@ -153,7 +153,7 @@ input[type=text], input[type=password], input[type=search], input[type=number], 
   border-radius: var(--radius);
   color: var(--text);
   color-scheme: dark light;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif;
   font-size: 14px;
   padding: 10px 12px;
   outline: none;
@@ -173,7 +173,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   color: #000;
   border: none;
   border-radius: var(--radius);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif;
   font-size: 14px;
   font-weight: 600;
   padding: 10px 22px;
@@ -229,7 +229,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 .song-card-info { flex: 1; min-width: 0; }
 
 .song-card-title {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 19px;
   font-weight: 600;
   color: var(--card-title);

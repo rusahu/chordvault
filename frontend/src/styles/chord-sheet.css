@@ -172,15 +172,15 @@
 .number-toggle:has(input:disabled) { opacity: 0.35; cursor: not-allowed; }
 .transpose-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .transpose-btn:disabled:hover { background: var(--surface2); color: var(--text); border-color: var(--border); }
-.col-toggle { font-size: 11px; font-family: 'Outfit', sans-serif; font-weight: 600; padding: 0 6px; white-space: nowrap; width: auto; }
-.autofit-btn { font-size: 11px; font-family: 'Outfit', sans-serif; font-weight: 600; padding: 0 6px; width: auto; }
+.col-toggle { font-size: 11px; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif; font-weight: 600; padding: 0 6px; white-space: nowrap; width: auto; }
+.autofit-btn { font-size: 11px; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif; font-weight: 600; padding: 0 6px; width: auto; }
 .toolbar-divider {
   width: 1px;
   height: 20px;
   background: var(--border);
   margin: 0 4px;
 }
-.font-btn { font-size: 12px; font-family: 'Outfit', sans-serif; font-weight: 600; padding: 0 8px; }
+.font-btn { font-size: 12px; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif; font-weight: 600; padding: 0 8px; }
 .font-reset { font-size: 14px; }
 .font-reset.disabled, .font-reset:disabled { opacity: 0.25; cursor: default; }
 .font-reset.disabled:hover, .font-reset:disabled:hover { background: var(--surface2); color: var(--text); border-color: var(--border); }
@@ -191,7 +191,7 @@
   min-width: 40px;
   padding: 0 12px !important;
   font-size: 13px !important;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -212,18 +212,17 @@
 /* ── Chord Sheet ────────────────────────── */
 .chord-sheet-wrap {
   background: var(--surface);
-  background-image: var(--chord-sheet-bg);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: var(--radius);
-  padding: 36px 40px;
-  box-shadow: var(--shadow-md);
+  border-radius: 12px;
+  padding: 32px 40px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
   overflow-x: auto;
+  margin-top: 8px;
 }
 
 .chord-sheet-wrap.two-col > #chord-output {
   column-count: 2;
-  column-gap: 32px;
+  column-gap: 56px;
   column-rule: 1px solid var(--border);
 }
 
@@ -234,14 +233,14 @@
 
 /* ChordSheetJS output styles */
 .chord-sheet .paragraph {
-  margin-bottom: 2.2em;
+  margin-bottom: 1.5em;
 }
 
 .chord-sheet .row {
   display: block;
   white-space: pre-wrap;
   line-height: 1.1;
-  margin-bottom: 0.6em;
+  margin-bottom: 0.8em;
 }
 
 .chord-sheet .column {
@@ -255,24 +254,25 @@
 .chord-sheet-wrap { --font-scale: 1; }
 
 .chord-sheet .chord {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: calc(15px * var(--font-scale));
+  font-family: var(--font-mono);
+  font-size: calc(14px * var(--font-scale));
   font-weight: 600;
   color: var(--chord);
   min-height: 1.2em;
   display: block;
   white-space: pre;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   padding-right: 0.4ch;
+  margin-bottom: 3px;
 }
 
 .chord-sheet .lyrics {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: calc(18px * var(--font-scale));
   color: var(--text);
   white-space: pre;
-  line-height: 1.2;
-  min-height: 1.2em;
+  line-height: 1.5;
+  min-height: 1.5em;
   display: block;
 }
 
@@ -285,34 +285,38 @@
 }
 
 .chord-sheet .section-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  margin: 16px 0 8px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 4px;
+  font-family: var(--font-sans) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  color: var(--accent) !important;
+  background: var(--accent-bg) !important;
+  padding: 2px 10px !important;
+  border-radius: 20px !important;
+  margin: 24px 0 8px !important;
+  display: inline-block !important;
+  border: 1px solid rgba(var(--accent-rgb), 0.2) !important;
 }
 
 /* Section labels (h3.label from ChordSheetJS) */
 .chord-sheet h3.label {
-  font-family: 'Outfit', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--accent);
-  margin: 0 0 8px;
-  padding: 3px 10px;
-  background: var(--accent-bg);
-  border-radius: 4px;
-  display: inline-block;
+  font-family: var(--font-sans) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  color: var(--accent) !important;
+  background: var(--accent-bg) !important;
+  padding: 2px 10px !important;
+  border-radius: 20px !important;
+  margin: 12px 0 8px !important;
+  display: inline-block !important;
 }
 
 /* Chorus gets a subtle left highlight to stand out from verses */
 .chord-sheet .paragraph.chorus {
-  border-left: 2px solid var(--accent-alt);
+  border-left: 2px solid var(--accent);
   padding-left: 16px;
   margin-left: -16px;
 }
