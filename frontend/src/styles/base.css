@@ -12,11 +12,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Global Typography Overrides ────────── */
-/* Force Sans-Serif for Chinese content (case-insensitive) */
-[lang*="zh" i] .song-view-title, 
-[lang*="zh" i] .view-title,
-[lang*="zh" i] .chord-sheet,
+/* ── Global Font Force (Universal Chinese Support) ── */
+[lang*="zh" i] h1, [lang*="zh" i] h2, [lang*="zh" i] h3, 
+[lang*="zh" i] .view-title, [lang*="zh" i] .song-view-title,
 [lang*="zh" i] body { 
   font-family: var(--font-sans) !important; 
 }
@@ -36,6 +34,7 @@ body {
   font-family: var(--font-serif);
   font-size: 28px;
   font-weight: 500;
+  color: var(--text);
 }
 
 /* ── Divider ────────────────────────────── */
