@@ -284,34 +284,63 @@
   margin: 8px 0 4px;
 }
 
-.chord-sheet .section-label {
+/* ── Section Labels (Badge System) ────────────────────────── */
+.chord-sheet .section-label,
+.chord-sheet h3.label {
+  /* Default Styles (Neutral/Subtle) */
+  --badge-bg-top: var(--surface2);
+  --badge-bg-bot: var(--surface2);
+  --badge-text:   var(--muted);
+  --badge-border: var(--border);
+
   font-family: var(--font-sans) !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
+  font-size: var(--badge-font-size) !important;
+  font-weight: var(--badge-font-weight) !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.1em !important;
-  color: var(--accent) !important;
-  background: var(--accent-bg) !important;
-  padding: 2px 10px !important;
-  border-radius: 20px !important;
-  margin: 24px 0 8px !important;
+  letter-spacing: var(--badge-letter-spacing) !important;
+  
+  color: var(--badge-text) !important;
+  background: linear-gradient(180deg, var(--badge-bg-top), var(--badge-bg-bot)) !important;
+  padding: var(--badge-padding) !important;
+  border-radius: var(--badge-radius) !important;
+  border: 1px solid var(--badge-border) !important;
+  
   display: inline-block !important;
-  border: 1px solid rgba(var(--accent-rgb), 0.2) !important;
+  margin: 24px 0 8px !important;
+  box-shadow: none !important;
 }
 
-/* Section labels (h3.label from ChordSheetJS) */
-.chord-sheet h3.label {
-  font-family: var(--font-sans) !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.1em !important;
-  color: var(--accent) !important;
-  background: var(--accent-bg) !important;
-  padding: 2px 10px !important;
-  border-radius: 20px !important;
-  margin: 12px 0 8px !important;
-  display: inline-block !important;
+/* Chorus: High Contrast & Premium Gradient */
+.paragraph.chorus .section-label,
+.paragraph.chorus h3.label {
+  --badge-bg-top: var(--accent2);
+  --badge-bg-bot: var(--accent);
+  --badge-text:   #ffffff;
+  --badge-border: var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+}
+
+/* Verse: Very Subtle */
+.paragraph.verse .section-label,
+.paragraph.verse h3.label {
+  --badge-bg-top: transparent;
+  --badge-bg-bot: transparent;
+  --badge-text:   var(--muted);
+  --badge-border: var(--border);
+  opacity: 0.8;
+}
+
+/* Bridge/Intro/Outro: Mid-Tone */
+.paragraph.bridge .section-label,
+.paragraph.bridge h3.label,
+.paragraph.intro .section-label,
+.paragraph.intro h3.label,
+.paragraph.outro .section-label,
+.paragraph.outro h3.label {
+  --badge-bg-top: var(--accent-bg);
+  --badge-bg-bot: var(--accent-bg);
+  --badge-text:   var(--accent);
+  --badge-border: rgba(var(--accent-rgb), 0.1);
 }
 
 /* Chorus gets a subtle left highlight to stand out from verses */
