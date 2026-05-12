@@ -198,27 +198,23 @@ export function SongView({ songId, navigate }: SongViewProps) {
           {song.bpm && <span className="badge badge-bpm">{song.bpm} bpm</span>}
           {song.language && <span className="badge badge-lang" title={languageName(song.language)}>{song.language.toUpperCase()}</span>}
           {isOwner && song.visibility === 'private' && <span className="badge badge-private">&#128274; Private</span>}
-        </div>
-        {versions.length > 1 && (
-          <div className="song-versions-panel">
-            <div className="versions-label">{t('setlist.versions')}</div>
-            <div className="versions-grid">
-              {versions.map((v, idx) => (
-                <button
-                  key={v.id}
-                  className={`version-chip${v.id === songId ? ' active' : ''}`}
-                  onClick={() => navigate('song-view', { id: String(v.id) })}
-                >
-                  <div className="version-chip-title">
-                    {v.youtube_url && <span className="yt-dot" title="Has YouTube video">●</span>}
-                    Ver {idx + 1}
-                  </div>
-                  <div className="version-chip-user">@{v.username}</div>
-                </button>
-              ))}
+          {versions.length > 1 && (
+            <div className="version-selector-container">
+              <span className="version-selector-label">Version</span>
+              <select
+                className="version-select-compact"
+                value={songId}
+                onChange={(e) => navigate('song-view', { id: e.target.value })}
+              >
+                {versions.map((v, idx) => (
+                  <option key={v.id} value={v.id}>
+                    {idx + 1} (@{v.username}) {v.youtube_url ? '▶' : ''}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <Toolbar
