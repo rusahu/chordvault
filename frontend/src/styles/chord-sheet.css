@@ -343,29 +343,27 @@
   --badge-border: rgba(var(--accent-rgb), 0.1);
 }
 
-/* Chorus gets a subtle background tint and left highlight */
+/* Chorus gets a sophisticated soft-sweep highlight */
 .chord-sheet .paragraph.chorus {
-  background: var(--accent-bg);
-  border-left: 3px solid var(--accent);
-  padding: 20px 24px;
+  background: linear-gradient(90deg, var(--accent-bg) 0%, transparent 40%);
+  border-left: 4px solid var(--accent);
+  padding: 12px 0 12px 24px;
   margin-left: -24px;
-  margin-right: -24px;
-  border-radius: 8px;
+  border-radius: 0 8px 8px 0;
 }
 
-/* Pre-chorus gets a dotted accent border (no background to keep it clean) */
+/* Pre-chorus remains clean with a subtle dotted anchor */
 .chord-sheet .paragraph.prechorus {
   border-left: 2px dotted var(--accent-alt);
-  padding-left: 16px;
-  margin-left: -16px;
+  padding-left: 20px;
+  margin-left: -20px;
 }
 
-/* Bridge gets a soft neutral tint and dashed border */
+/* Bridge gets a soft neutral sweep */
 .chord-sheet .paragraph.bridge {
-  background: var(--surface2);
-  border-left: 2px dashed var(--muted);
-  padding: 16px 20px;
+  background: linear-gradient(90deg, var(--surface2) 0%, transparent 30%);
+  border-left: 3px dashed var(--muted);
+  padding: 12px 0 12px 20px;
   margin-left: -20px;
-  margin-right: -20px;
-  border-radius: 8px;
+  border-radius: 0 8px 8px 0;
 }
