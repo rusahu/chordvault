@@ -161,22 +161,37 @@ class ResponsiveHtmlFormatter {
 
   private renderParagraph(p: ChordSheetJS.Paragraph): string {
     const cls = `paragraph ${p.type}`;
-    const content = p.lines.map(l => this.renderLine(l)).join('');
+    let content = p.lines.map(l => this.renderLine(l)).join('');
+
+    // If paragraph has a known type but the content doesn't already contain a label
+    if (p.type !== 'none' && !content.includes('class="label"')) {
+      const typeLabel = p.type.charAt(0).toUpperCase() + p.type.slice(1);
+      content = `<div class="row"><h3 class="label">${escHtml(typeLabel)}</h3></div>` + content;
+    }
+
     return `<div class="${cls}">${content}</div>`;
   }
 
   private renderLine(l: ChordSheetJS.Line): string {
+    const SECTION_RE = /^(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?$/i;
+
     if (l.type === 'comment') {
       const firstItem = l.items[0];
-      const content = firstItem && 'content' in firstItem ? (firstItem as any).content : 
-                     (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '');
-      return `<div class="comment">${escHtml(content || '')}</div>`;
+      const content = (firstItem && 'content' in firstItem ? (firstItem as any).content : 
+                     (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
+      
+      // If the comment is actually a section label, render it as a heading badge
+      if (SECTION_RE.test(content.trim())) {
+        return `<div class="row"><h3 class="label">${escHtml(content.trim())}</h3></div>`;
+      }
+      return `<div class="comment">${escHtml(content)}</div>`;
     }
-    // Check for section labels (h3.label in old formatter)
+
+    // Check for section labels on normal lyric lines
     const firstItem = l.items[0];
     if (firstItem && 'lyrics' in firstItem) {
       const it = firstItem as ChordSheetJS.ChordLyricsPair;
-      if (!it.chords && it.lyrics && /^(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*$/i.test(it.lyrics.trim())) {
+      if (!it.chords && it.lyrics && SECTION_RE.test(it.lyrics.trim())) {
         return `<div class="row"><h3 class="label">${escHtml(it.lyrics.trim())}</h3></div>`;
       }
     }

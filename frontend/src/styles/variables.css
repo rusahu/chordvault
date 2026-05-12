@@ -1,52 +1,58 @@
 :root {
-  --bg:       #1a1a22;
-  --surface:  #252530;
-  --surface2: #2f2f3c;
-  --border:   #3c3c4e;
-  --text:     #e8e8f0;
-  --muted:    #9898b0;
-  --accent:   #d9922a;
-  --accent2:  #eaa830;
-  --accent-alt: #7a9bb5;
-  --danger:   #ef4444;
-  --success:  #22c55e;
-  --chord:    #e6a530;
-  --radius:   10px;
-  --nav-bg:   rgba(26,26,34,0.92);
-  --overlay:  rgba(0,0,0,0.7);
-  --card-title: #ffffff;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.15);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.2);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.25);
-  --chord-sheet-bg: linear-gradient(160deg, #16162200 0%, rgba(217,146,42,0.03) 100%);
-  --ghost-bg: rgba(255,255,255,0.04);
-  --accent-bg: rgba(217,146,42,0.10);
-  --focus-ring: 0 0 0 2px rgba(217,146,42,0.35);
-  --glow-accent: 0 0 20px rgba(217,146,42,0.08);
+  /* ── Core Palette (Claude Dark) ── */
+  --bg:           #1a1a1a;
+  --surface:      #242424;
+  --surface2:     #303030;
+  --border:       #333333;
+  --text:         #e0e0e0;
+  --muted:        #8b8b93;
+  --accent:       #d49a46;
+  --accent2:      #e8a846;
+  --accent-alt:   #5b5b66;
+  --danger:       #ef4444;
+  --success:      #22c55e;
+  --chord:        #d49a46;
+  
+  /* ── Semantic UI Variables (The "Single Source of Truth") ── */
+  --ui-header-bg:    var(--bg);
+  --ui-card-bg:      var(--surface);
+  --ui-modal-bg:     var(--surface);
+  --ui-overlay:      rgba(0,0,0,0.75);
+  --ui-shadow:       0 4px 20px rgba(0,0,0,0.4);
+  --accent-bg:       rgba(212,154,70,0.12);
+  --accent-rgb:      212, 154, 70;
+
+  /* ── Typography System ── */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "PingFang TC", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans TC", sans-serif;
+  --font-serif: 'Crimson Pro', Georgia, "Times New Roman", "PingFang TC", "Microsoft YaHei", serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  /* ── Badge System ── */
+  --badge-radius: 20px;
+  --radius: 10px;
 }
 
 :root[data-theme="light"] {
-  --bg:       #eae8e3;
-  --surface:  #faf9f7;
-  --surface2: #f0eeea;
-  --border:   #ccc8be;
-  --text:     #1a1a2e;
-  --muted:    #6b6b80;
-  --accent:   #b86a08;
-  --accent2:  #a05e06;
-  --accent-alt: #5a7f96;
-  --danger:   #dc2626;
-  --success:  #16a34a;
-  --chord:    #b86a08;
-  --nav-bg:   rgba(234,232,227,0.92);
-  --overlay:  rgba(0,0,0,0.35);
-  --card-title: #0e0e18;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.05);
-  --shadow-lg: 0 8px 28px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.06);
-  --chord-sheet-bg: linear-gradient(160deg, #fffef9 0%, #f8f5ee 100%);
-  --ghost-bg: rgba(0,0,0,0.03);
-  --accent-bg: rgba(184,106,8,0.08);
-  --focus-ring: 0 0 0 2px rgba(184,106,8,0.25);
-  --glow-accent: 0 0 20px rgba(184,106,8,0.05);
+  /* ── Core Palette (Claude Light) ── */
+  --bg:           #f9f8f6;
+  --surface:      #ffffff;
+  --surface2:     #f0eee9;
+  --border:       #e8e6e1;
+  --text:         #2a2a2a;
+  --muted:        #71717a;
+  --accent:       #c77322;
+  --accent2:      #da7823;
+  --accent-alt:   #a1a1aa;
+  --danger:       #dc2626;
+  --success:      #16a34a;
+  --chord:        #c77322;
+
+  /* ── Semantic UI Variables ── */
+  --ui-header-bg:    var(--bg);
+  --ui-card-bg:      var(--surface);
+  --ui-modal-bg:     var(--surface);
+  --ui-overlay:      rgba(0,0,0,0.3);
+  --ui-shadow:       0 4px 20px rgba(0,0,0,0.06);
+  --accent-bg:       rgba(199,115,34,0.08);
+  --accent-rgb:      199, 115, 34;
 }
