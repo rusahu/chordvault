@@ -5,7 +5,7 @@
   margin-bottom: 8px;
 }
 .hero-title {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 42px;
   font-weight: 600;
   color: var(--accent);
@@ -29,7 +29,7 @@
 /* ── About Page ────────────────────────── */
 .about-page { max-width: 600px; margin: 0 auto; }
 .about-title {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 36px;
   font-weight: 600;
   color: var(--accent);
@@ -45,7 +45,7 @@
   margin-bottom: 24px;
 }
 .about-section h3 {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 20px;
   font-weight: 600;
   color: var(--accent-alt);
@@ -76,7 +76,7 @@
 }
 
 .auth-logo {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 36px;
   font-weight: 600;
   color: var(--accent);
@@ -104,7 +104,7 @@
   background: none;
   border: none;
   color: var(--muted);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif;
   font-size: 14px;
   font-weight: 500;
   padding: 8px;
@@ -128,7 +128,7 @@
   background: none;
   border: none;
   color: var(--muted);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif;
   font-size: 14px;
   font-weight: 500;
   padding: 8px;
@@ -150,51 +150,60 @@
 .badge-pending { background: rgba(240,160,48,0.15); color: #f0a030; }
 /* ── Song View ──────────────────────────── */
 .song-versions-panel {
-  margin-top: 20px;
-  padding: 16px;
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  margin-top: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding-bottom: 16px;
 }
 
 .versions-label {
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   color: var(--muted);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   font-weight: 600;
 }
 
 .versions-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 16px;
 }
 
 .version-chip {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   cursor: pointer;
   text-align: left;
   transition: all 0.2s;
-  min-width: 120px;
+  min-width: auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  opacity: 0.6;
 }
 
 .version-chip:hover {
-  border-color: var(--accent);
-  background: var(--surface2);
+  opacity: 1;
 }
 
 .version-chip.active {
-  background: var(--accent-bg);
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  opacity: 1;
+}
+
+.version-chip.active .version-chip-title {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .version-chip-title {
@@ -207,7 +216,7 @@
 }
 
 .version-chip-user {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
 }
 
@@ -228,7 +237,7 @@
 }
 
 .song-view-title {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 38px;
   font-weight: 600;
   line-height: 1.15;
@@ -240,7 +249,7 @@
   color: var(--muted);
   font-style: italic;
   margin-top: 6px;
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 .song-view-by {
@@ -287,7 +296,7 @@
 }
 
 .edit-header h2 {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 24px;
   flex: 1;
 }
@@ -309,7 +318,7 @@
   font-size: 12px;
   color: var(--muted);
   margin-bottom: 6px;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif;
 }
 .chordpro-hint code {
   font-family: 'JetBrains Mono', monospace;
@@ -343,7 +352,7 @@
 .stat-card.stat-warn .stat-value { color: #ff9800; }
 
 .stat-value {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 36px;
   font-weight: 600;
   color: var(--accent);
@@ -359,7 +368,7 @@
 }
 
 .admin-section-title {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 12px;
@@ -409,7 +418,7 @@
 .setlist-name-row { margin-top: 8px; }
 
 .setlist-name-input {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 28px;
   font-weight: 600;
   background: transparent;
@@ -509,7 +518,7 @@
 }
 
 .setlist-play-indicator {
-  font-family: 'Crimson Pro', serif;
+  font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 18px;
   font-weight: 600;
   color: var(--text);
@@ -636,7 +645,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif;
   font-size: 13px;
   padding: 6px 10px;
 }

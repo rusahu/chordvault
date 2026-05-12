@@ -161,7 +161,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   if (!song) return <Loading />;
 
   return (
-    <>
+    <div lang={song.language || undefined}>
       <div className="song-view-header">
         <div className="song-view-nav">
           <button className="btn btn-ghost btn-sm" onClick={() => { location.hash = ''; navigate(user ? 'my-songs' : 'browse'); }}>
@@ -305,6 +305,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

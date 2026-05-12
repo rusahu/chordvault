@@ -2,15 +2,23 @@
 
 body {
   background: var(--bg);
-  background-image: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(217,146,42,0.05) 0%, transparent 60%);
+  background-image: radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent-bg) 0%, transparent 60%);
   color: var(--text);
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 18px;
   line-height: 1.6;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-:root[data-theme="light"] body {
-  background-image: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(184,106,8,0.03) 0%, transparent 60%);
+
+/* ── Global Typography Overrides ────────── */
+/* Force Sans-Serif for Chinese content (case-insensitive) */
+[lang*="zh" i] .song-view-title, 
+[lang*="zh" i] .view-title,
+[lang*="zh" i] .chord-sheet,
+[lang*="zh" i] body { 
+  font-family: var(--font-sans) !important; 
 }
 
 /* ── Layout ─────────────────────────────── */
@@ -25,9 +33,9 @@ body {
 }
 
 .view-title {
-  font-family: 'Crimson Pro', serif;
+  font-family: var(--font-serif);
   font-size: 28px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 /* ── Divider ────────────────────────────── */
