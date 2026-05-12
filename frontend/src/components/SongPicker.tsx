@@ -83,25 +83,34 @@ export function SongPicker({ onPick, onClose }: SongPickerProps) {
                 </div>
               </div>
               {expandedId === s.id && (
-                <div className="song-card version-list-card" style={{ gridColumn: '1 / -1', marginTop: -12, paddingTop: 16, borderTopLeftRadius: 0, borderTopRightRadius: 0, background: 'var(--bg-alt)' }}>
+                <div className="song-card version-list-card" style={{ gridColumn: '1 / -1', marginTop: -12, padding: '12px 16px', borderTopLeftRadius: 0, borderTopRightRadius: 0, background: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   {loadingVersions ? (
-                    <div style={{ padding: 8, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Loading versions...</div>
+                    <div style={{ padding: 8, color: 'var(--muted)', fontSize: 13 }}>Loading versions...</div>
                   ) : (
-                    <div className="version-items">
-                      {versions.map((v) => (
-                        <div
-                          key={v.id}
-                          className="version-item"
-                          onClick={() => onPick({ ...s, id: v.id, username: v.username })}
-                          style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', borderRadius: 4, transition: 'background 0.2s' }}
-                          onMouseOver={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
-                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                    <>
+                      <div className="version-selector-container" style={{ background: 'var(--surface)' }}>
+                        <span className="version-selector-label">Version</span>
+                        <select
+                          className="version-select-compact"
+                          onChange={(e) => {
+                            const vId = parseInt(e.target.value);
+                            const v = versions.find(ver => ver.id === vId);
+                            if (v) onPick({ ...s, id: v.id, username: v.username });
+                          }}
+                          defaultValue=""
                         >
-                          <span style={{ fontSize: 14 }}>{v.title} <small style={{ color: 'var(--muted)' }}>@{v.username}</small></span>
-                          {v.youtube_url && <span style={{ color: 'var(--accent)', fontSize: 12 }}>▶ YT</span>}
-                        </div>
-                      ))}
-                    </div>
+                          <option value="" disabled>Select...</option>
+                          {versions.map((v, idx) => (
+                            <option key={v.id} value={v.id}>
+                              {idx + 1} (@{v.username}) {v.youtube_url ? '▶' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>
+                        {versions.length} {t('setlist.versions').toLowerCase()}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
