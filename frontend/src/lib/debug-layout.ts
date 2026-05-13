@@ -1,4 +1,4 @@
-import ChordSheetJS, { Song, Paragraph, Line } from 'chordsheetjs';
+import ChordSheetJS, { Song, Paragraph, Line, ChordLyricsPair, Comment } from 'chordsheetjs';
 import { escHtml } from './util';
 
 // Mocking the ResponsiveHtmlFormatter from chords.ts
@@ -16,22 +16,21 @@ class ResponsiveHtmlFormatter {
   private renderLine(l: Line): string {
     console.log('ITEMS:', JSON.stringify(l.items));
     if (l.type === 'comment') {
-      const firstItem = l.items[0] as any;
-      const content = firstItem && 'content' in firstItem ? firstItem.content : 
-                     (firstItem && 'lyrics' in firstItem ? firstItem.lyrics : '');
-      return `<div class="comment">${escHtml(content || '')}</div>`;
+      const firstItem = l.items[0] as Comment;
+      const content = firstItem?.content || '';
+      return `<div class="comment">${escHtml(content)}</div>`;
     }
-    const firstItem = l.items[0] as any;
+    const firstItem = l.items[0] as ChordLyricsPair;
     if (firstItem && 'lyrics' in firstItem && !firstItem.chords && 
         firstItem.lyrics && /^(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*$/i.test(firstItem.lyrics.trim())) {
       return `<div class="row"><h3 class="label">${escHtml(firstItem.lyrics.trim())}</h3></div>`;
     }
 
-    const content = l.items.map((it: any) => this.renderItem(it)).join('');
+    const content = l.items.map((it) => this.renderItem(it as ChordLyricsPair)).join('');
     return `<div class="row">${content}</div>`;
   }
 
-  private renderItem(it: any): string {
+  private renderItem(it: ChordLyricsPair): string {
     const lyrics = it.lyrics || '';
     if (!lyrics) {
       const chords = it.chords ? `<span class="chord">${escHtml(it.chords)}</span>` : '<span class="chord"></span>';

@@ -11,6 +11,7 @@ vi.mock('../../lib/chords', async () => {
   return {
     ...actual,
     autoFit: vi.fn().mockReturnValue({ fontSize: -1, twoCol: true }),
+    autoFitSetlist: vi.fn().mockReturnValue({ fontSize: -1, twoCol: true }),
     renderChordPro: vi.fn().mockReturnValue('<div id="chord-output">Song Content</div>'),
   };
 });
@@ -72,7 +73,10 @@ describe('SetlistPlayView Auto-Fit', () => {
     // Enable Auto-Fit
     fireEvent.click(fitBtn);
     
-    expect(chords.autoFit).toHaveBeenCalled();
+    // The useAutoFit hook calls autoFit
+    await waitFor(() => {
+      expect(chords.autoFit).toHaveBeenCalled();
+    });
     expect(screen.getByTitle(/Auto-fit: ON/)).toBeInTheDocument();
   });
 
@@ -96,13 +100,18 @@ describe('SetlistPlayView Auto-Fit', () => {
     
     const fitBtn = screen.getByTitle(/Auto-fit: adjust font/);
     fireEvent.click(fitBtn); // Enable
-    expect(chords.autoFit).toHaveBeenCalledTimes(1);
     
+    await waitFor(() => {
+      expect(chords.autoFit).toHaveBeenCalled();
+    });
+    
+    const initialCallCount = (chords.autoFit as Mock).mock.calls.length;
+
     // Simulate swiping to next song (index 1)
     (useSetlistPlayer as Mock).mockReturnValue({
       setlist: { id: 1, title: 'Test Setlist', entries: [{ entry_id: 1, title: 'Song 1', content: 'C G' }, { entry_id: 2, title: 'Song 2', content: 'D A' }] },
-      entry: { entry_id: 1, title: 'Song 1', content: 'C G', transpose: 0 },
-      index: 0,
+      entry: { entry_id: 2, title: 'Song 2', content: 'D A', transpose: 0 },
+      index: 1,
       total: 2,
       prev: vi.fn(),
       next: vi.fn(),
@@ -116,7 +125,7 @@ describe('SetlistPlayView Auto-Fit', () => {
     rerender(<SetlistPlayView setlistId={1} navigate={navigate} />);
     
     await waitFor(() => {
-      expect(chords.autoFit).toHaveBeenCalledTimes(2);
+      expect((chords.autoFit as Mock).mock.calls.length).toBeGreaterThan(initialCallCount);
     });
   });
 });

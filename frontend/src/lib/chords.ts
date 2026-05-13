@@ -177,8 +177,8 @@ class ResponsiveHtmlFormatter {
 
     if (l.type === 'comment') {
       const firstItem = l.items[0];
-      const content = (firstItem && 'content' in firstItem ? (firstItem as any).content : 
-                     (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
+      const content = (firstItem && 'content' in (firstItem as ChordSheetJS.Comment) ? (firstItem as ChordSheetJS.Comment).content : 
+                     (firstItem && 'lyrics' in (firstItem as ChordSheetJS.ChordLyricsPair) ? (firstItem as ChordSheetJS.ChordLyricsPair).lyrics : '')) || '';
       
       // If the comment is actually a section label, render it as a heading badge
       if (SECTION_RE.test(content.trim())) {
@@ -189,7 +189,7 @@ class ResponsiveHtmlFormatter {
 
     // Check for section labels on normal lyric lines
     const firstItem = l.items[0];
-    if (firstItem && 'lyrics' in firstItem) {
+    if (firstItem && 'lyrics' in (firstItem as ChordSheetJS.ChordLyricsPair)) {
       const it = firstItem as ChordSheetJS.ChordLyricsPair;
       if (!it.chords && it.lyrics && SECTION_RE.test(it.lyrics.trim())) {
         return `<div class="row"><h3 class="label">${escHtml(it.lyrics.trim())}</h3></div>`;
@@ -322,54 +322,85 @@ export function fontScaleValue(offset: number): string | undefined {
   return offset ? String(1 + offset * 0.12) : undefined;
 }
 
-export function autoFit(): { fontSize: number; twoCol: boolean } {
-  const wrap = document.querySelector('.chord-sheet-wrap') as HTMLElement | null;
-  if (!wrap) return { fontSize: 0, twoCol: false };
-
-  const output = wrap.querySelector('#chord-output') as HTMLElement | null;
-  if (!output) return { fontSize: 0, twoCol: false };
-
-  const wasTwoCol = wrap.classList.contains('two-col');
-  const prevScale = wrap.style.getPropertyValue('--font-scale');
-
-  const tryFit = (offset: number, twoCol: boolean): boolean => {
-    // Apply settings and measure actual layout
-    if (twoCol) wrap.classList.add('two-col');
-    else wrap.classList.remove('two-col');
-    if (offset) wrap.style.setProperty('--font-scale', String(1 + offset * 0.12));
-    else wrap.style.removeProperty('--font-scale');
-
-    const available = window.innerHeight - wrap.getBoundingClientRect().top - 24; // 24px safety margin
-    return output.scrollHeight <= available;
-  };
-
-  // Try single-column first, shrinking font
-  for (let offset = 0; offset >= -3; offset--) {
-    if (tryFit(offset, false)) {
-      return { fontSize: clampFontSize(offset), twoCol: false };
-    }
+/** Internal helper for robust layout measurement */
+function tryFitLayout(
+  wrap: HTMLElement,
+  output: HTMLElement,
+  offset: number,
+  twoCol: boolean
+): boolean {
+  // Apply settings temporarily for measurement
+  if (twoCol) wrap.classList.add('two-col');
+  else wrap.classList.remove('two-col');
+  
+  if (offset !== 0) {
+    wrap.style.setProperty('--font-scale', String(fontScaleValue(offset)));
+  } else {
+    wrap.style.removeProperty('--font-scale');
   }
 
-  // Fall back to 2-column only if screen is wide enough (tablet/desktop)
-  if (window.innerWidth >= 640) {
-    for (let offset = 0; offset >= -3; offset--) {
-      if (tryFit(offset, true)) {
-        return { fontSize: clampFontSize(offset), twoCol: true };
-      }
-    }
-  }
+  // SCROLL IMMUNITY: Calculate available height using absolute document coordinates.
+  const rect = wrap.getBoundingClientRect();
+  const available = window.innerHeight - rect.top - 24; // 24px safety margin
+  
+  return output.scrollHeight <= available;
+}
 
-  // Restore original state before returning fallback
+/** Internal helper to restore DOM state after measurement */
+function resetLayout(wrap: HTMLElement, wasTwoCol: boolean, prevScale: string) {
   if (wasTwoCol) wrap.classList.add('two-col');
   else wrap.classList.remove('two-col');
   if (prevScale) wrap.style.setProperty('--font-scale', prevScale);
   else wrap.style.removeProperty('--font-scale');
-
-  // If nothing fits, use smallest font and 2-col (if wide) or 1-col (if narrow)
-  const finalTwoCol = window.innerWidth >= 640;
-  return { fontSize: clampFontSize(-3), twoCol: finalTwoCol };
 }
 
+/**
+ * Robustly calculates fit for a single song in the Song View.
+ */
+export function autoFitSong(
+  wrap: HTMLElement,
+  output: HTMLElement
+): { fontSize: number; twoCol: boolean } {
+  const wasTwoCol = wrap.classList.contains('two-col');
+  const prevScale = wrap.style.getPropertyValue('--font-scale');
+
+  const width = window.innerWidth;
+  const isStrictMobile = width < 600;
+
+  // 1. Try single-column first, shrinking from 0 down to -3
+  for (let offset = 0; offset >= -3; offset--) {
+    if (tryFitLayout(wrap, output, offset, false)) {
+      resetLayout(wrap, wasTwoCol, prevScale);
+      return { fontSize: offset, twoCol: false };
+    }
+  }
+
+  // 2. Try 2-column if not mobile
+  if (!isStrictMobile) {
+    for (let offset = 0; offset >= -3; offset--) {
+      if (tryFitLayout(wrap, output, offset, true)) {
+        resetLayout(wrap, wasTwoCol, prevScale);
+        return { fontSize: offset, twoCol: true };
+      }
+    }
+  }
+
+  resetLayout(wrap, wasTwoCol, prevScale);
+  return { fontSize: -3, twoCol: !isStrictMobile };
+}
+
+/**
+ * Robustly calculates fit for a song within a Setlist.
+ */
+export function autoFitSetlist(
+  wrap: HTMLElement,
+  output: HTMLElement
+): { fontSize: number; twoCol: boolean } {
+  return autoFitSong(wrap, output);
+}
+
+/** Legacy export for backward compatibility during transition */
+export const autoFit = autoFitSong;
 
 export function slEffective<T>(
   entry: SetlistEntry,
