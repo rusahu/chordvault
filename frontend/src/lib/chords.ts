@@ -160,16 +160,38 @@ class ResponsiveHtmlFormatter {
   }
 
   private renderParagraph(p: ChordSheetJS.Paragraph): string {
-    const cls = `paragraph ${p.type}`;
+    const SECTION_RE = /^(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?$/i;
+    
     let content = p.lines.map(l => this.renderLine(l)).join('');
+    let detectedType = p.type;
 
-    // If paragraph has a known type but the content doesn't already contain a label
-    if (p.type !== 'none' && !content.includes('class="label"')) {
-      const typeLabel = p.type.charAt(0).toUpperCase() + p.type.slice(1);
+    // Promote paragraph type if the first line is a label (helps CSS match)
+    if (detectedType === 'none' || detectedType === 'indeterminate') {
+      const firstLine = p.lines[0];
+      const firstItem = firstLine?.items[0];
+      if (firstItem && 'lyrics' in firstItem && !firstItem.chords) {
+        const lyrics = (firstItem.lyrics || '').trim();
+        if (SECTION_RE.test(lyrics)) {
+          detectedType = lyrics.split(/\s+/)[0].toLowerCase().replace('-', '');
+        }
+      }
+    }
+
+    // Only add automatic label if:
+    // 1. Type is known (not none/indeterminate)
+    // 2. We haven't already rendered a label badge in this paragraph
+    // 3. The paragraph actually has content (prevents empty "Indeterminate" badges for metadata)
+    const hasRenderableContent = p.lines.some(l => 
+      l.items.some(it => ('lyrics' in it && it.lyrics?.trim()) || ('chords' in it && it.chords?.trim()))
+    );
+
+    if (detectedType !== 'none' && detectedType !== 'indeterminate' && 
+        !content.includes('class="label"') && hasRenderableContent) {
+      const typeLabel = detectedType.charAt(0).toUpperCase() + detectedType.slice(1);
       content = `<div class="row"><h3 class="label">${escHtml(typeLabel)}</h3></div>` + content;
     }
 
-    return `<div class="${cls}">${content}</div>`;
+    return `<div class="paragraph ${detectedType}">${content}</div>`;
   }
 
   private renderLine(l: ChordSheetJS.Line): string {
@@ -180,7 +202,6 @@ class ResponsiveHtmlFormatter {
       const content = (firstItem && 'content' in firstItem ? (firstItem as any).content : 
                      (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
       
-      // If the comment is actually a section label, render it as a heading badge
       if (SECTION_RE.test(content.trim())) {
         return `<div class="row"><h3 class="label">${escHtml(content.trim())}</h3></div>`;
       }
