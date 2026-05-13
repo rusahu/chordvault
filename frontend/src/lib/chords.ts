@@ -329,7 +329,6 @@ function tryFitLayout(
   offset: number,
   twoCol: boolean
 ): boolean {
-  // Apply settings temporarily for measurement
   if (twoCol) wrap.classList.add('two-col');
   else wrap.classList.remove('two-col');
   
@@ -339,12 +338,10 @@ function tryFitLayout(
     wrap.style.removeProperty('--font-scale');
   }
 
-  // SCROLL IMMUNITY: Calculate available height from the top of the container relative to the viewport.
-  // We use window.innerHeight minus the header area (rect.top if at the top of the page).
-  // If the user has scrolled, we adjust back to the "natural" position.
-  const rect = wrap.getBoundingClientRect();
-  const currentTop = rect.top;
-  const available = window.innerHeight - currentTop - 24; // 24px safety margin
+  // STABLE MATH: Use viewport height minus a fixed buffer for Header/Toolbar/Padding.
+  // This ensures the song fits the screen regardless of current scroll position.
+  const headerBuffer = 160; 
+  const available = Math.max(window.innerHeight - headerBuffer, 300);
   
   return output.scrollHeight <= available;
 }

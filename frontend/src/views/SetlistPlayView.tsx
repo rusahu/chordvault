@@ -259,6 +259,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       toast('Auto-fit disabled', 'info');
       return;
     }
+    
+    // Force a measurement immediately
     performFit();
     setAutoFitActive(true);
     toast('Auto-fit enabled for setlist', 'success');
