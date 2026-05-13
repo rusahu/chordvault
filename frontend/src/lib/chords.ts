@@ -339,9 +339,12 @@ function tryFitLayout(
     wrap.style.removeProperty('--font-scale');
   }
 
-  // SCROLL IMMUNITY: Calculate available height using absolute document coordinates.
+  // SCROLL IMMUNITY: Calculate available height from the top of the container relative to the viewport.
+  // We use window.innerHeight minus the header area (rect.top if at the top of the page).
+  // If the user has scrolled, we adjust back to the "natural" position.
   const rect = wrap.getBoundingClientRect();
-  const available = window.innerHeight - rect.top - 24; // 24px safety margin
+  const currentTop = rect.top;
+  const available = window.innerHeight - currentTop - 24; // 24px safety margin
   
   return output.scrollHeight <= available;
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -44,8 +44,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const effFontSize = localFontSize !== null ? localFontSize : globalFontSize;
   const effTwoCol = localTwoCol !== null ? localTwoCol : globalTwoCol;
 
-  const sheetRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     setSong(null);
     setLocalFontSize(null); // Reset local overrides on song change
@@ -74,17 +72,21 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const chord = useChordRenderer(content);
   const { setTranspose: resetChordTranspose, setNashville: resetChordNashville } = chord;
 
-  const { performFit } = useAutoFit({
+  const { sheetRef, performFit } = useAutoFit({
     enabled: false, // Manual only for SongView
     currentFontSize: effFontSize,
     currentTwoCol: effTwoCol,
     onApply: (fit) => {
       setLocalFontSize(fit.fontSize);
       setLocalTwoCol(fit.twoCol);
-      toast('Song fitted to screen', 'success');
     },
     deps: [content]
   });
+
+  const doManualFit = () => {
+    performFit();
+    toast('Song fitted to screen', 'success');
+  };
 
   // Reset transpose/nashville when navigating to a different song
   useEffect(() => {
@@ -263,7 +265,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
           setFontSizeTo(0);
         }}
         onPickKey={chord.pickKey}
-        onAutoFit={performFit}
+        onAutoFit={doManualFit}
         overrides={{
           twoCol: localTwoCol !== null && localTwoCol !== globalTwoCol,
           font: localFontSize !== null && localFontSize !== globalFontSize,
