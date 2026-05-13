@@ -15,7 +15,6 @@ import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
 import { renderChordPro, getSongKey, clampFontSize, songHasKey, slEffective } from '../lib/chords';
 import { normalizeKey, ALL_KEYS, ALL_KEYS_MINOR } from '../lib/keys';
-import { setStoredFontSize, setStoredTwoCol } from '../lib/storage';
 import type { Setlist } from '../types';
 
 interface SetlistPlayViewProps {
@@ -41,8 +40,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const [slNashville, setSlNashville] = useState(false);
   const [slHideYt, setSlHideYt] = useState(false);
   const [slOptionsOpen, setSlOptionsOpen] = useState(false);
-  const { fontSize: globalFontSize } = useFontScale();
-  const { twoCol: globalTwoCol } = useTwoCol();
+  const { fontSize: globalFontSize, setFontSizeTo } = useFontScale();
+  const { twoCol: globalTwoCol, setTwoColTo } = useTwoCol();
 
   const [autoFitActive, setAutoFitActive] = useState(false);
 
@@ -219,7 +218,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       setAutoFitActive(false);
       toast('Auto-fit disabled', 'info');
     }
-    setStoredTwoCol(val);
+    setTwoColTo(val);
     setRenderKey((k) => k + 1);
   };
   const changeFont = (delta: number) => {
@@ -227,8 +226,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       setAutoFitActive(false);
       toast('Auto-fit disabled', 'info');
     }
-    const n = clampFontSize(globalFontSize + delta);
-    setStoredFontSize(n);
+    setFontSizeTo(globalFontSize + delta);
     setRenderKey((k) => k + 1);
   };
   const resetFont = () => {
@@ -236,7 +234,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       setAutoFitActive(false);
       toast('Auto-fit disabled', 'info');
     }
-    setStoredFontSize(0);
+    setFontSizeTo(0);
     if (entry) updateEntry({ _font: null });
     setRenderKey((k) => k + 1);
   };
@@ -315,6 +313,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         onFontChange={changeEntryFont}
         onReset={() => {
           if (entry) { updateEntry({ _font: null, _twoCol: null }); }
+          setTwoColTo(false); // Restore global default
+          setFontSizeTo(0);
           setAutoFitActive(false);
           setRenderKey((k) => k + 1);
         }}

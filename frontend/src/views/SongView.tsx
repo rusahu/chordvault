@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -32,9 +32,9 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const [userSetlists, setUserSetlists] = useState<SetlistListItem[]>([]);
   const [exporting, setExporting] = useState(false);
 
-  // Global preferences (Base default)
-  const { fontSize: globalFontSize } = useFontScale();
-  const { twoCol: globalTwoCol } = useTwoCol();
+  // Global base preferences
+  const { fontSize: globalFontSize, setFontSizeTo } = useFontScale();
+  const { twoCol: globalTwoCol, setTwoColTo } = useTwoCol();
 
   // LOCAL STATE (Isolates layout changes to this specific view/song)
   const [localFontSize, setLocalFontSize] = useState<number | null>(null);
@@ -43,6 +43,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
   // Computed layout: Local state takes priority, then global preference
   const effFontSize = localFontSize !== null ? localFontSize : globalFontSize;
   const effTwoCol = localTwoCol !== null ? localTwoCol : globalTwoCol;
+
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setSong(null);
@@ -72,7 +74,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const chord = useChordRenderer(content);
   const { setTranspose: resetChordTranspose, setNashville: resetChordNashville } = chord;
 
-  const { sheetRef, performFit } = useAutoFit({
+  const { performFit } = useAutoFit({
     enabled: false, // Manual only for SongView
     currentFontSize: effFontSize,
     currentTwoCol: effTwoCol,
@@ -254,7 +256,12 @@ export function SongView({ songId, navigate }: SongViewProps) {
           const nextVal = clampFontSize(effFontSize + delta);
           setLocalFontSize(nextVal === globalFontSize ? null : nextVal);
         }}
-        onReset={() => { setLocalFontSize(null); setLocalTwoCol(null); }}
+        onReset={() => { 
+          setLocalFontSize(null); 
+          setLocalTwoCol(null);
+          setTwoColTo(false); // Restore global default
+          setFontSizeTo(0);
+        }}
         onPickKey={chord.pickKey}
         onAutoFit={performFit}
         overrides={{
