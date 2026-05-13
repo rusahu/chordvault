@@ -10,7 +10,7 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
-import { renderChordPro, getSongKey, clampFontSize, songHasKey, slEffective, autoFit } from '../lib/chords';
+import { renderChordPro, getSongKey, clampFontSize, songHasKey, slEffective } from '../lib/chords';
 import { normalizeKey, ALL_KEYS, ALL_KEYS_MINOR } from '../lib/keys';
 import { getStoredFontSize, setStoredFontSize, getStoredTwoCol, setStoredTwoCol } from '../lib/storage';
 import type { Setlist } from '../types';
@@ -70,39 +70,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     if (!entry) return '';
     return renderChordPro(content, entryTranspose, !!effNum);
   }, [content, effNum, entry, entryTranspose]);
-
-  /**
-   * CRITICAL: Applies layout settings and forces the page to the absolute top.
-   * DO NOT USE scrollIntoView() - it causes "scroll to middle" bugs on mobile.
-   * window.scrollTo(0,0) ensures the user always starts at the beginning of a song.
-   */
-  const applyLayoutAndScrollToTop = useCallback((fit: { fontSize: number; twoCol: boolean }) => {
-    setFontSize(fit.fontSize);
-    setStoredFontSize(fit.fontSize);
-    setTwoCol(fit.twoCol);
-    setStoredTwoCol(fit.twoCol);
-    setRenderKey((k) => k + 1);
-
-    // Use requestAnimationFrame to ensure React has rendered the new layout before scrolling
-    requestAnimationFrame(() => {
-      window.scrollTo(0, 0);
-    });
-  }, []);
-
-  // Auto-fit effect
-  useEffect(() => {
-    if (autoFitActive && entry) {
-      // Wait for DOM to render the new song
-      const timer = setTimeout(() => {
-        const fit = autoFit();
-        // Only update if changed to avoid loop
-        if (fit.fontSize !== fontSize || fit.twoCol !== twoCol) {
-          applyLayoutAndScrollToTop(fit);
-        }
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [index, autoFitActive, renderedHtml, entry, fontSize, twoCol, applyLayoutAndScrollToTop]);
 
   // Transpose
   const transpose = useCallback((delta: number) => {
@@ -261,13 +228,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       toast('Auto-fit disabled', 'info');
       return;
     }
-
-    const fit = autoFit();
-    if (entry) {
-      updateEntry({ _font: null, _twoCol: null });
-    }
-    applyLayoutAndScrollToTop(fit);
-
     setAutoFitActive(true);
     toast('Auto-fit enabled for setlist', 'success');
   };
@@ -306,6 +266,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
           fontSize={fontSize}
           onFontChange={changeFont}
           onFontReset={resetFont}
+          onAutoFit={doFit}
         />
       )}
 
@@ -364,7 +325,12 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
               <div style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>The song owner has marked it as private.</div>
             </div>
           ) : (
-            <ChordSheet html={renderedHtml} twoCol={!!effTwoCol} fontSize={effFont || 0} />
+            <ChordSheet 
+              html={renderedHtml} 
+              twoCol={!!effTwoCol} 
+              fontSize={effFont || 0} 
+              autoFit={autoFitActive} 
+            />
           )}
           {index < total - 1 ? (
             <button className="setlist-side-btn setlist-side-next" onClick={next}>&#8250;</button>

@@ -1,4 +1,4 @@
-/* ── Demo Banner ────────────────────────── */
+/* -- Demo Banner -------------------------- */
 .demo-banner {
   background: var(--accent);
   color: #fff;
@@ -8,7 +8,7 @@
   line-height: 1.4;
 }
 
-/* ── Nav ────────────────────────────────── */
+/* -- Nav ---------------------------------- */
 #nav {
   position: sticky;
   top: 0;
@@ -86,7 +86,7 @@
   margin-right: 4px;
 }
 
-/* ── Nav Dropdown Menu ─────────────── */
+/* -- Nav Dropdown Menu --------------─ */
 .nav-menu-wrap {
   position: relative;
   margin-left: 4px;
@@ -133,7 +133,7 @@
   font-weight: 600;
 }
 
-/* ── Forms ──────────────────────────────── */
+/* -- Forms -------------------------------- */
 .field { margin-bottom: 14px; }
 
 .field label {
@@ -164,7 +164,7 @@ input::placeholder, textarea::placeholder { color: var(--muted); }
 
 textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; }
 
-/* ── Buttons ────────────────────────────── */
+/* -- Buttons ------------------------------ */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -202,7 +202,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 
 .btn-sm { padding: 6px 14px; font-size: 13px; }
 .btn-full { width: 100%; justify-content: center; }
-/* ── Song Cards ─────────────────────────── */
+/* -- Song Cards --------------------------─ */
 .song-grid {
   display: grid;
   gap: 12px;
@@ -255,7 +255,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   margin-left: 16px;
 }
 
-/* ── Badges ─────────────────────────────── */
+/* -- Badges ------------------------------─ */
 .badge {
   font-size: 11px;
   font-weight: 500;
@@ -271,7 +271,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 .badge-tag { background: rgba(122,155,181,0.12); color: var(--accent-alt); font-size: 10px; text-transform: lowercase; }
 .badge-private { background: var(--surface-alt, #2a2a35); color: var(--muted); font-size: 11px; }
 
-/* ── Tag Picker ──────────────────────────── */
+/* -- Tag Picker ---------------------------- */
 .tag-picker { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag-pill {
   padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border);
@@ -281,12 +281,12 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 .tag-pill:hover { border-color: var(--accent); }
 .tag-pill.active { background: rgba(240,160,48,0.15); color: var(--accent); border-color: var(--accent); }
 
-/* ── Song Card Tags & BPM ──────────────── */
+/* -- Song Card Tags & BPM ---------------- */
 .song-card-tags { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
 .song-view-bpm { margin-top: 6px; }
 .song-view-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
 
-/* ── Toggle ─────────────────────────────── */
+/* -- Toggle ------------------------------─ */
 .toggle {
   position: relative;
   width: 36px;
@@ -314,7 +314,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 .toggle input:checked + .toggle-slider { background: var(--accent); }
 .toggle input:checked + .toggle-slider:before { transform: translateX(16px); background: #000; }
 
-/* ── Search ─────────────────────────────── */
+/* -- Search ------------------------------─ */
 .search-row {
   display: flex;
   align-items: center;
@@ -331,7 +331,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 }
 .search-filters .language-filter { max-width: 220px; }
 
-/* ── Toast ──────────────────────────────── */
+/* -- Toast -------------------------------- */
 #toast {
   position: fixed;
   bottom: 28px;
@@ -356,7 +356,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 #toast.error { border-color: var(--danger); color: var(--danger); }
 #toast.success { border-color: var(--success); color: var(--success); }
 
-/* ── Key Badge ─────────────────────────── */
+/* -- Key Badge --------------------------─ */
 .badge-key {
   background: rgba(208,138,24,0.15);
   color: var(--accent);
@@ -365,7 +365,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   font-size: 12px;
 }
 
-/* ── Format Badge ──────────────────────── */
+/* -- Format Badge ------------------------ */
 .format-badge {
   font-size: 11px;
   font-weight: 500;
@@ -385,7 +385,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   border: 1px solid rgba(255, 152, 0, 0.3);
 }
 
-/* ── Setlist Overlay (add to setlist, song picker) ── */
+/* -- Setlist Overlay (add to setlist, song picker) -- */
 .setlist-add-overlay {
   position: fixed;
   inset: 0;
@@ -413,7 +413,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   opacity: 1 !important;
 }
 
-/* ── OCR Modal ──────────────────────────── */
+/* -- OCR Modal ---------------------------- */
 .ocr-row {
   margin-bottom: 8px;
 }
