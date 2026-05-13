@@ -1,5 +1,11 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html, body {
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
+}
+
 body {
   background: var(--bg);
   background-image: radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent-bg) 0%, transparent 60%);
