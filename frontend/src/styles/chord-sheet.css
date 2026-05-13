@@ -3,7 +3,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 32px 40px;
+  padding: 24px 32px;
   box-shadow: var(--ui-shadow);
   overflow-x: auto;
   margin-top: 8px;
@@ -13,7 +13,7 @@
 /* -- Library Fit Mode ---------------------- */
 .chord-sheet-wrap.fitted-mode {
   height: calc(100vh - 220px); 
-  padding: 24px;
+  padding: 20px;
   display: block; /* Standard block flow for reliable scrolling */
   overflow-y: auto;
 }
@@ -143,21 +143,21 @@
 .chord-sheet .paragraph.chorus {
   background: linear-gradient(90deg, var(--accent-bg) 0%, transparent 40%);
   border-left: 4px solid var(--accent);
-  padding: 12px 0 12px 24px;
-  margin-left: -24px;
+  padding: 12px 0 12px 28px;
+  margin-left: -32px;
   border-radius: 0 8px 8px 0;
 }
 
 .chord-sheet .paragraph.bridge {
   background: linear-gradient(90deg, var(--surface2) 0%, transparent 30%);
   border-left: 3px dashed var(--muted);
-  padding: 12px 0 12px 20px;
-  margin-left: -20px;
+  padding: 12px 0 12px 24px;
+  margin-left: -28px;
   border-radius: 0 8px 8px 0;
 }
 
 .chord-sheet .paragraph.prechorus {
   border-left: 2px dotted var(--accent-alt);
-  padding-left: 20px;
-  margin-left: -20px;
+  padding-left: 28px;
+  margin-left: -32px;
 }
