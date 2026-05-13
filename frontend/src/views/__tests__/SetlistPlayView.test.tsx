@@ -1,7 +1,6 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Mock } from 'vitest';
 import { SetlistPlayView } from '../SetlistPlayView';
-import * as chords from '../../lib/chords';
 import { useSetlistPlayer } from '../../hooks/useSetlistPlayer';
 
 // ─── Mocks ──────────────────────────────────────────────────────────

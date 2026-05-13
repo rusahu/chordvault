@@ -36,9 +36,9 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
   const manualScale = fontScaleValue(fontSize || 0);
   
   // Decide which styling strategy to use:
-  const style: React.CSSProperties = autoFit 
-    ? { fontSize: fitFontSize } 
-    : (manualScale ? { '--font-scale': String(manualScale) } as any : {});
+  const style = (manualScale && !autoFit) 
+    ? { '--font-scale': String(manualScale) } as React.CSSProperties
+    : (autoFit ? { fontSize: fitFontSize } : {});
 
   const isTwoCol = twoCol || (autoFit && autoTwoCol);
   const cls = `chord-sheet-wrap${isTwoCol ? ' two-col' : ''}${autoFit ? ' fitted-mode' : ''}`;
