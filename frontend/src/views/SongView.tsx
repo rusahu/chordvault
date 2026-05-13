@@ -32,8 +32,22 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const [userSetlists, setUserSetlists] = useState<SetlistListItem[]>([]);
   const [exporting, setExporting] = useState(false);
 
+  // Global preferences (Base default)
+  const { fontSize: globalFontSize } = useFontScale();
+  const { twoCol: globalTwoCol } = useTwoCol();
+
+  // LOCAL STATE (Isolates layout changes to this specific view/song)
+  const [localFontSize, setLocalFontSize] = useState<number | null>(null);
+  const [localTwoCol, setLocalTwoCol] = useState<boolean | null>(null);
+
+  // Computed layout: Local state takes priority, then global preference
+  const effFontSize = localFontSize !== null ? localFontSize : globalFontSize;
+  const effTwoCol = localTwoCol !== null ? localTwoCol : globalTwoCol;
+
   useEffect(() => {
     setSong(null);
+    setLocalFontSize(null); // Reset local overrides on song change
+    setLocalTwoCol(null);
     apiCall<Song>('GET', `/api/songs/${songId}`)
       .then((data) => {
         setSong(data);
@@ -57,16 +71,14 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const content = song?.content || '';
   const chord = useChordRenderer(content);
   const { setTranspose: resetChordTranspose, setNashville: resetChordNashville } = chord;
-  const fontScale = useFontScale();
-  const twoColState = useTwoCol();
 
   const { sheetRef, performFit } = useAutoFit({
     enabled: false, // Manual only for SongView
-    currentFontSize: fontScale.fontSize,
-    currentTwoCol: twoColState.twoCol,
+    currentFontSize: effFontSize,
+    currentTwoCol: effTwoCol,
     onApply: (fit) => {
-      fontScale.setFontSizeTo(fit.fontSize);
-      twoColState.setTwoColTo(fit.twoCol);
+      setLocalFontSize(fit.fontSize);
+      setLocalTwoCol(fit.twoCol);
       toast('Song fitted to screen', 'success');
     },
     deps: [content]
@@ -104,7 +116,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
       const { exportSongPdf } = await import('../lib/pdf-export');
       await exportSongPdf(song, renderedHtml, {
         transpose: chord.transpose,
-        fontSize: fontScale.fontSize,
+        fontSize: effFontSize,
       });
       toast('PDF exported', 'success');
     } catch (e) {
@@ -235,16 +247,20 @@ export function SongView({ songId, navigate }: SongViewProps) {
         nashville={chord.nashville}
         nashvilleDisabled={!songHasKey(content, chord.transpose)}
         onNashvilleChange={chord.toggleNashville}
-        twoCol={twoColState.twoCol}
-        onTwoColToggle={twoColState.toggleTwoCol}
-        fontSize={fontScale.fontSize}
-        onFontChange={fontScale.changeFontSize}
-        onReset={() => { fontScale.resetFontSize(); twoColState.setTwoColTo(false); }}
+        twoCol={effTwoCol}
+        onTwoColToggle={() => setLocalTwoCol(!effTwoCol)}
+        fontSize={effFontSize}
+        onFontChange={(delta) => setLocalFontSize(Math.max(-3, Math.min(5, effFontSize + delta)))}
+        onReset={() => { setLocalFontSize(null); setLocalTwoCol(null); }}
         onPickKey={chord.pickKey}
         onAutoFit={performFit}
+        overrides={{
+          twoCol: localTwoCol !== null,
+          font: localFontSize !== null,
+        }}
       />
 
-      <ChordSheet ref={sheetRef} html={renderedHtml} twoCol={twoColState.twoCol} fontSize={fontScale.fontSize} />
+      <ChordSheet ref={sheetRef} html={renderedHtml} twoCol={effTwoCol} fontSize={effFontSize} />
 
       {(song.tags || song.youtube_url) && (
         <div className="song-view-meta song-view-meta-bottom">

@@ -6,6 +6,8 @@ import { useToast } from '../context/ToastContext';
 import { useSwipe } from '../hooks/useSwipe';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useSetlistPlayer } from '../hooks/useSetlistPlayer';
+import { useFontScale } from '../hooks/useFontScale';
+import { useTwoCol } from '../hooks/useTwoCol';
 import { useAutoFit } from '../hooks/useAutoFit';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
@@ -13,7 +15,7 @@ import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
 import { renderChordPro, getSongKey, clampFontSize, songHasKey, slEffective } from '../lib/chords';
 import { normalizeKey, ALL_KEYS, ALL_KEYS_MINOR } from '../lib/keys';
-import { getStoredFontSize, setStoredFontSize, getStoredTwoCol, setStoredTwoCol } from '../lib/storage';
+import { setStoredFontSize, setStoredTwoCol } from '../lib/storage';
 import type { Setlist } from '../types';
 
 interface SetlistPlayViewProps {
@@ -35,13 +37,17 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const [editContent, setEditContent] = useState('');
   const [exportingPdf, setExportingPdf] = useState(false);
 
-  // Global setlist settings
+  // Global setlist settings (Base defaults)
   const [slNashville, setSlNashville] = useState(false);
   const [slHideYt, setSlHideYt] = useState(false);
   const [slOptionsOpen, setSlOptionsOpen] = useState(false);
-  const [fontSize, setFontSize] = useState(() => getStoredFontSize());
-  const [twoCol, setTwoCol] = useState(() => getStoredTwoCol());
+  const { fontSize: globalFontSize } = useFontScale();
+  const { twoCol: globalTwoCol } = useTwoCol();
+
   const [autoFitActive, setAutoFitActive] = useState(false);
+
+  // SESSION FITS (Isolates Auto-Fit results to the current playback session)
+  const [sessionFits, setSessionFits] = useState<Record<number, { fontSize: number, twoCol: boolean }>>({});
 
   // Render key for forcing re-render
   const [_renderKey, setRenderKey] = useState(0);
@@ -60,10 +66,22 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const { user } = useAuth();
   const isOwner = setlist?.user_id && user && setlist.user_id === user.id;
 
-  // Effective values for current entry
+  // Effective values for current entry:
+  // Priority 1: Session Fit (if Auto-Fit is ON)
+  // Priority 2: Manual Entry Override (saved in setlist)
+  // Priority 3: Global User Preference
   const effNum = entry ? (slEffective(entry, 'num', slNashville) || entry.nashville) : false;
-  const effTwoCol = entry ? slEffective(entry, 'twoCol', twoCol) : twoCol;
-  const effFont = entry ? slEffective(entry, 'font', fontSize) : fontSize;
+  
+  const currentFit = autoFitActive && entry ? sessionFits[Number(entry.entry_id)] : null;
+
+  const effTwoCol = currentFit 
+    ? currentFit.twoCol 
+    : (entry ? slEffective(entry, 'twoCol', globalTwoCol) : globalTwoCol);
+    
+  const effFont = currentFit 
+    ? currentFit.fontSize 
+    : (entry ? slEffective(entry, 'font', globalFontSize) : globalFontSize);
+
   const keyDisplay = entry ? getSongKey(content, entry.transpose) : '';
 
   const entryTranspose = entry?.transpose ?? 0;
@@ -72,28 +90,16 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     return renderChordPro(content, entryTranspose, !!effNum);
   }, [content, effNum, entry, entryTranspose]);
 
-  /**
-   * CRITICAL: Applies layout settings and forces the page to the absolute top.
-   * window.scrollTo(0,0) ensures the user always starts at the beginning of a song.
-   */
-  const applyLayoutAndScrollToTop = useCallback((fit: { fontSize: number; twoCol: boolean }) => {
-    setFontSize(fit.fontSize);
-    setStoredFontSize(fit.fontSize);
-    setTwoCol(fit.twoCol);
-    setStoredTwoCol(fit.twoCol);
-    setRenderKey((k) => k + 1);
-
-    requestAnimationFrame(() => {
-      window.scrollTo(0, 0);
-    });
-  }, []);
-
   // Use the robust AutoFit hook
   const { sheetRef, performFit } = useAutoFit({
     enabled: autoFitActive,
     currentFontSize: effFont || 0,
     currentTwoCol: !!effTwoCol,
-    onApply: applyLayoutAndScrollToTop,
+    onApply: (fit) => {
+      if (entry) {
+        setSessionFits(prev => ({ ...prev, [Number(entry.entry_id)]: fit }));
+      }
+    },
     deps: [index, renderedHtml]
   });
 
@@ -104,7 +110,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     setRenderKey((k) => k + 1);
   }, [setlist, entry, updateEntry]);
 
-  // Per-song overrides
+  // Per-song overrides (Manual)
   const toggleEntryNum = useCallback((checked: boolean) => {
     if (!entry) return;
     const globalVal = slNashville || entry.nashville;
@@ -121,10 +127,10 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       setAutoFitActive(false);
       toast('Auto-fit disabled', 'info');
     }
-    const current = slEffective(entry, 'twoCol', twoCol);
+    const current = slEffective(entry, 'twoCol', globalTwoCol);
     updateEntry({ _twoCol: !current });
     setRenderKey((k) => k + 1);
-  }, [entry, twoCol, autoFitActive, toast, updateEntry]);
+  }, [entry, globalTwoCol, autoFitActive, toast, updateEntry]);
 
   const changeEntryFont = useCallback((delta: number) => {
     if (!entry) return;
@@ -132,10 +138,10 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       setAutoFitActive(false);
       toast('Auto-fit disabled', 'info');
     }
-    const current = slEffective(entry, 'font', fontSize) || 0;
+    const current = slEffective(entry, 'font', globalFontSize) || 0;
     updateEntry({ _font: clampFontSize(current + delta) });
     setRenderKey((k) => k + 1);
-  }, [entry, fontSize, autoFitActive, toast, updateEntry]);
+  }, [entry, globalFontSize, autoFitActive, toast, updateEntry]);
 
   // Key picker
   const pickKey = useCallback((targetKey: string) => {
@@ -207,7 +213,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       setAutoFitActive(false);
       toast('Auto-fit disabled', 'info');
     }
-    setTwoCol(val);
     setStoredTwoCol(val);
     setRenderKey((k) => k + 1);
   };
@@ -216,11 +221,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       setAutoFitActive(false);
       toast('Auto-fit disabled', 'info');
     }
-    setFontSize((prevSize) => {
-      const n = clampFontSize(prevSize + delta);
-      setStoredFontSize(n);
-      return n;
-    });
+    const n = clampFontSize(globalFontSize + delta);
+    setStoredFontSize(n);
     setRenderKey((k) => k + 1);
   };
   const resetFont = () => {
@@ -228,7 +230,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       setAutoFitActive(false);
       toast('Auto-fit disabled', 'info');
     }
-    setFontSize(0);
     setStoredFontSize(0);
     if (entry) updateEntry({ _font: null });
     setRenderKey((k) => k + 1);
@@ -239,7 +240,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     setExportingPdf(true);
     try {
       const { exportSetlistPdf } = await import('../lib/pdf-export');
-      await exportSetlistPdf(setlist, { nashville: slNashville, fontSize });
+      await exportSetlistPdf(setlist, { nashville: slNashville, fontSize: effFont || 0 });
       toast('Setlist PDF exported', 'success');
     } catch (e) {
       toast((e as Error).message || 'PDF export failed', 'error');
@@ -254,7 +255,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       toast('Auto-fit disabled', 'info');
       return;
     }
-
+    performFit();
     setAutoFitActive(true);
     toast('Auto-fit enabled for setlist', 'success');
   };
@@ -288,9 +289,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
           onNashvilleChange={(v) => { setSlNashville(v); setRenderKey((k) => k + 1); }}
           hideYt={slHideYt}
           onHideYtChange={(v) => { setSlHideYt(v); setRenderKey((k) => k + 1); }}
-          twoCol={twoCol}
+          twoCol={effTwoCol}
           onTwoColChange={changeTwoCol}
-          fontSize={fontSize}
+          fontSize={effFont || 0}
           onFontChange={changeFont}
           onFontReset={resetFont}
           onAutoFit={doFit}
@@ -308,8 +309,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         onFontChange={changeEntryFont}
         onReset={() => {
           if (entry) { updateEntry({ _font: null, _twoCol: null }); }
-          setFontSize(0); setStoredFontSize(0);
-          setTwoCol(false); setStoredTwoCol(false);
           setAutoFitActive(false);
           setRenderKey((k) => k + 1);
         }}
