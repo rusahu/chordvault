@@ -1,5 +1,5 @@
 :root {
-  /* ── Core Palette (Claude Dark) ── */
+  /* -- Core Palette (Claude Dark) -- */
   --bg:           #1a1a1a;
   --surface:      #242424;
   --surface2:     #303030;
@@ -13,7 +13,7 @@
   --success:      #22c55e;
   --chord:        #d49a46;
   
-  /* ── Semantic UI Variables (The "Single Source of Truth") ── */
+  /* -- Semantic UI Variables (The "Single Source of Truth") -- */
   --ui-header-bg:    var(--bg);
   --ui-card-bg:      var(--surface);
   --ui-modal-bg:     var(--surface);
@@ -22,18 +22,18 @@
   --accent-bg:       rgba(212,154,70,0.12);
   --accent-rgb:      212, 154, 70;
 
-  /* ── Typography System ── */
+  /* -- Typography System -- */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "PingFang TC", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans TC", sans-serif;
   --font-serif: 'Crimson Pro', Georgia, "Times New Roman", "PingFang TC", "Microsoft YaHei", serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
 
-  /* ── Badge System ── */
+  /* -- Badge System -- */
   --badge-radius: 20px;
   --radius: 10px;
 }
 
 :root[data-theme="light"] {
-  /* ── Core Palette (Claude Light) ── */
+  /* -- Core Palette (Claude Light) -- */
   --bg:           #f9f8f6;
   --surface:      #ffffff;
   --surface2:     #f0eee9;
@@ -47,7 +47,7 @@
   --success:      #16a34a;
   --chord:        #c77322;
 
-  /* ── Semantic UI Variables ── */
+  /* -- Semantic UI Variables -- */
   --ui-header-bg:    var(--bg);
   --ui-card-bg:      var(--surface);
   --ui-modal-bg:     var(--surface);

@@ -12,17 +12,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Global Font Force (Universal Chinese Support) ── */
+/* -- Global Font Force (Universal Chinese Support) -- */
 [lang*="zh" i] h1, [lang*="zh" i] h2, [lang*="zh" i] h3, 
 [lang*="zh" i] .view-title, [lang*="zh" i] .song-view-title,
 [lang*="zh" i] body { 
   font-family: var(--font-sans) !important; 
 }
 
-/* ── Layout ─────────────────────────────── */
+/* -- Layout ------------------------------─ */
 #app { max-width: 860px; margin: 0 auto; padding: 32px 24px; }
 
-/* ── View Header ────────────────────────── */
+/* -- View Header -------------------------- */
 .view-header {
   display: flex;
   align-items: center;
@@ -37,14 +37,14 @@ body {
   color: var(--text);
 }
 
-/* ── Divider ────────────────────────────── */
+/* -- Divider ------------------------------ */
 .divider {
   border: none;
   border-top: 1px solid var(--border);
   margin: 24px 0;
 }
 
-/* ── Empty State ────────────────────────── */
+/* -- Empty State -------------------------- */
 .empty {
   text-align: center;
   padding: 80px 20px;
@@ -54,7 +54,7 @@ body {
 .empty-icon { font-size: 56px; margin-bottom: 16px; opacity: 0.3; }
 .empty-text { font-size: 17px; margin-bottom: 20px; font-weight: 400; }
 
-/* ── View Transitions ──────────────────── */
+/* -- View Transitions -------------------- */
 @keyframes viewFadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
