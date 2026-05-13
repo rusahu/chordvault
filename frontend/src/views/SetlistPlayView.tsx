@@ -37,7 +37,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const [editContent, setEditContent] = useState('');
   const [exportingPdf, setExportingPdf] = useState(false);
 
-  // Global setlist settings (Base defaults)
+  // Global base preferences
   const [slNashville, setSlNashville] = useState(false);
   const [slHideYt, setSlHideYt] = useState(false);
   const [slOptionsOpen, setSlOptionsOpen] = useState(false);
@@ -46,7 +46,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
 
   const [autoFitActive, setAutoFitActive] = useState(false);
 
-  // SESSION FITS (Isolates Auto-Fit results to the current playback session)
+  // SESSION FITS: Results of "Auto-Fit" calculations for this session only.
   const [sessionFits, setSessionFits] = useState<Record<number, { fontSize: number, twoCol: boolean }>>({});
 
   // Render key for forcing re-render
@@ -66,22 +66,22 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const { user } = useAuth();
   const isOwner = setlist?.user_id && user && setlist.user_id === user.id;
 
-  // Effective values for current entry:
-  // Priority 1: Session Fit (if Auto-Fit is ON)
-  // Priority 2: Manual Entry Override (saved in setlist)
-  // Priority 3: Global User Preference
-  const effNum = entry ? (slEffective(entry, 'num', slNashville) || entry.nashville) : false;
+  // LAYOUT RESOLUTION LOGIC
+  // 1. If Auto-Fit is ON and we have a session fit, use it.
+  // 2. Otherwise, check for per-song overrides in the setlist entry.
+  // 3. Finally, fall back to global app preferences.
   
   const currentFit = autoFitActive && entry ? sessionFits[Number(entry.entry_id)] : null;
 
   const effTwoCol = currentFit 
     ? currentFit.twoCol 
-    : (entry ? slEffective(entry, 'twoCol', globalTwoCol) : globalTwoCol);
+    : (entry && entry._twoCol !== null ? !!entry._twoCol : globalTwoCol);
     
   const effFont = currentFit 
     ? currentFit.fontSize 
-    : (entry ? slEffective(entry, 'font', globalFontSize) : globalFontSize);
+    : (entry && entry._font !== null ? Number(entry._font) : globalFontSize);
 
+  const effNum = entry ? (slEffective(entry, 'num', slNashville) || entry.nashville) : false;
   const keyDisplay = entry ? getSongKey(content, entry.transpose) : '';
 
   const entryTranspose = entry?.transpose ?? 0;
@@ -93,8 +93,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   // Use the robust AutoFit hook
   const { sheetRef, performFit } = useAutoFit({
     enabled: autoFitActive,
-    currentFontSize: effFont || 0,
-    currentTwoCol: !!effTwoCol,
+    currentFontSize: effFont,
+    currentTwoCol: effTwoCol,
     onApply: (fit) => {
       if (entry) {
         setSessionFits(prev => ({ ...prev, [Number(entry.entry_id)]: fit }));
@@ -127,8 +127,11 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       setAutoFitActive(false);
       toast('Auto-fit disabled', 'info');
     }
-    const current = slEffective(entry, 'twoCol', globalTwoCol);
-    updateEntry({ _twoCol: !current });
+    const current = entry._twoCol !== null ? !!entry._twoCol : globalTwoCol;
+    const nextVal = !current;
+    
+    // If setting to global default, clear override
+    updateEntry({ _twoCol: nextVal === globalTwoCol ? null : nextVal });
     setRenderKey((k) => k + 1);
   }, [entry, globalTwoCol, autoFitActive, toast, updateEntry]);
 
@@ -138,8 +141,11 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       setAutoFitActive(false);
       toast('Auto-fit disabled', 'info');
     }
-    const current = slEffective(entry, 'font', globalFontSize) || 0;
-    updateEntry({ _font: clampFontSize(current + delta) });
+    const current = entry._font !== null ? Number(entry._font) : globalFontSize;
+    const nextVal = clampFontSize(current + delta);
+    
+    // If setting to global default, clear override
+    updateEntry({ _font: nextVal === globalFontSize ? null : nextVal });
     setRenderKey((k) => k + 1);
   }, [entry, globalFontSize, autoFitActive, toast, updateEntry]);
 
@@ -240,7 +246,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     setExportingPdf(true);
     try {
       const { exportSetlistPdf } = await import('../lib/pdf-export');
-      await exportSetlistPdf(setlist, { nashville: slNashville, fontSize: effFont || 0 });
+      await exportSetlistPdf(setlist, { nashville: slNashville, fontSize: effFont });
       toast('Setlist PDF exported', 'success');
     } catch (e) {
       toast((e as Error).message || 'PDF export failed', 'error');
@@ -291,7 +297,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
           onHideYtChange={(v) => { setSlHideYt(v); setRenderKey((k) => k + 1); }}
           twoCol={effTwoCol}
           onTwoColChange={changeTwoCol}
-          fontSize={effFont || 0}
+          fontSize={effFont}
           onFontChange={changeFont}
           onFontReset={resetFont}
           onAutoFit={doFit}
@@ -303,9 +309,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         nashville={!!effNum}
         nashvilleDisabled={!songHasKey(content, entry.transpose)}
         onNashvilleChange={toggleEntryNum}
-        twoCol={!!effTwoCol}
+        twoCol={effTwoCol}
         onTwoColToggle={toggleEntryTwoCol}
-        fontSize={effFont || 0}
+        fontSize={effFont}
         onFontChange={changeEntryFont}
         onReset={() => {
           if (entry) { updateEntry({ _font: null, _twoCol: null }); }
@@ -320,8 +326,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         isModified={isModified}
         overrides={{
           num: entry._num != null,
-          twoCol: entry._twoCol != null,
-          font: entry._font != null,
+          twoCol: entry._twoCol !== null && !!entry._twoCol !== globalTwoCol,
+          font: entry._font !== null && Number(entry._font) !== globalFontSize,
         }}
       />
 
@@ -351,7 +357,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
               <div style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>The song owner has marked it as private.</div>
             </div>
           ) : (
-            <ChordSheet ref={sheetRef} html={renderedHtml} twoCol={!!effTwoCol} fontSize={effFont || 0} />
+            <ChordSheet ref={sheetRef} html={renderedHtml} twoCol={effTwoCol} fontSize={effFont} />
           )}
           {index < total - 1 ? (
             <button className="setlist-side-btn setlist-side-next" onClick={next}>&#8250;</button>

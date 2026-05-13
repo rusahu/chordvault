@@ -11,7 +11,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
-import { renderChordPro, songHasKey } from '../lib/chords';
+import { renderChordPro, songHasKey, clampFontSize } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction, SetlistListItem } from '../types';
 
@@ -248,15 +248,18 @@ export function SongView({ songId, navigate }: SongViewProps) {
         nashvilleDisabled={!songHasKey(content, chord.transpose)}
         onNashvilleChange={chord.toggleNashville}
         twoCol={effTwoCol}
-        onTwoColToggle={() => setLocalTwoCol(!effTwoCol)}
+        onTwoColToggle={() => setLocalTwoCol(effTwoCol === globalTwoCol ? !globalTwoCol : globalTwoCol)}
         fontSize={effFontSize}
-        onFontChange={(delta) => setLocalFontSize(Math.max(-3, Math.min(5, effFontSize + delta)))}
+        onFontChange={(delta) => {
+          const nextVal = clampFontSize(effFontSize + delta);
+          setLocalFontSize(nextVal === globalFontSize ? null : nextVal);
+        }}
         onReset={() => { setLocalFontSize(null); setLocalTwoCol(null); }}
         onPickKey={chord.pickKey}
         onAutoFit={performFit}
         overrides={{
-          twoCol: localTwoCol !== null,
-          font: localFontSize !== null,
+          twoCol: localTwoCol !== null && localTwoCol !== globalTwoCol,
+          font: localFontSize !== null && localFontSize !== globalFontSize,
         }}
       />
 
