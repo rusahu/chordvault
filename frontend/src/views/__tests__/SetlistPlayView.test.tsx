@@ -64,7 +64,7 @@ describe('SetlistPlayView Auto-Fit', () => {
     });
   });
 
-  it('toggles autoFitActive and calls autoFit when enabled', async () => {
+  it('toggles autoFitActive when enabled', async () => {
     render(<SetlistPlayView setlistId={1} navigate={navigate} />);
     
     const fitBtn = screen.getByTitle(/Auto-fit: adjust font/);
@@ -72,7 +72,6 @@ describe('SetlistPlayView Auto-Fit', () => {
     // Enable Auto-Fit
     fireEvent.click(fitBtn);
     
-    expect(chords.autoFit).toHaveBeenCalled();
     expect(screen.getByTitle(/Auto-fit: ON/)).toBeInTheDocument();
   });
 
@@ -89,34 +88,5 @@ describe('SetlistPlayView Auto-Fit', () => {
     
     expect(screen.getByTitle(/Auto-fit: adjust font/)).toBeInTheDocument();
     expect(screen.queryByTitle(/Auto-fit: ON/)).not.toBeInTheDocument();
-  });
-
-  it('automatically calls autoFit when swiping to a new song while mode is active', async () => {
-    const { rerender } = render(<SetlistPlayView setlistId={1} navigate={navigate} />);
-    
-    const fitBtn = screen.getByTitle(/Auto-fit: adjust font/);
-    fireEvent.click(fitBtn); // Enable
-    expect(chords.autoFit).toHaveBeenCalledTimes(1);
-    
-    // Simulate swiping to next song (index 1)
-    (useSetlistPlayer as Mock).mockReturnValue({
-      setlist: { id: 1, title: 'Test Setlist', entries: [{ entry_id: 1, title: 'Song 1', content: 'C G' }, { entry_id: 2, title: 'Song 2', content: 'D A' }] },
-      entry: { entry_id: 1, title: 'Song 1', content: 'C G', transpose: 0 },
-      index: 0,
-      total: 2,
-      prev: vi.fn(),
-      next: vi.fn(),
-      exit: vi.fn(),
-      updateEntry: mockUpdateEntry,
-      isModified: false,
-      saveOnline: vi.fn(),
-      saveLocal: vi.fn(),
-    });
-    
-    rerender(<SetlistPlayView setlistId={1} navigate={navigate} />);
-    
-    await waitFor(() => {
-      expect(chords.autoFit).toHaveBeenCalledTimes(2);
-    });
   });
 });

@@ -1,4 +1,4 @@
-/* ── Hero ──────────────────────────────── */
+/* -- Hero -------------------------------- */
 .hero {
   text-align: center;
   padding: 48px 20px 36px;
@@ -26,7 +26,7 @@
   line-height: 1.5;
 }
 
-/* ── About Page ────────────────────────── */
+/* -- About Page -------------------------- */
 .about-page { max-width: 600px; margin: 0 auto; }
 .about-title {
   font-family: var(--font-serif);
@@ -57,7 +57,7 @@
   line-height: 1.6;
 }
 
-/* ── Auth ───────────────────────────────── */
+/* -- Auth --------------------------------─ */
 .auth-wrap {
   min-height: calc(100vh - 56px);
   display: flex;
@@ -114,7 +114,7 @@
 }
 .auth-tab.active { background: var(--surface); color: var(--text); }
 
-/* ── Setlist Tabs ────────────────────────── */
+/* -- Setlist Tabs -------------------------- */
 .setlist-tabs {
   display: flex;
   gap: 2px;
@@ -138,10 +138,10 @@
 }
 .setlist-tab.active { background: var(--surface); color: var(--text); }
 
-/* ── Settings ────────────────────────────── */
+/* -- Settings ------------------------------ */
 .settings-section { margin-bottom: 32px; }
 
-/* ── Corrections ────────────────────────── */
+/* -- Corrections -------------------------- */
 .corrections-section { margin-top: 32px; border-top: 1px solid var(--border); padding-top: 16px; }
 .correction-card { background: var(--ui-card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
 .correction-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: var(--muted); font-size: 13px; }
@@ -149,7 +149,7 @@
 .correction-preview { max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--bg); }
 .badge-pending { background: rgba(240,160,48,0.15); color: #f0a030; }
 
-/* ── Song View ──────────────────────────── */
+/* -- Song View ---------------------------- */
 .song-view-header { margin-bottom: 24px; }
 .song-view-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 
@@ -211,7 +211,7 @@
   font-family: var(--font-sans);
 }
 
-/* ── Toolbar / Transpose Bar ────────────── */
+/* -- Toolbar / Transpose Bar -------------- */
 .transpose-bar {
   display: flex;
   align-items: center;
@@ -226,6 +226,7 @@
 }
 
 .key-current {
+  flex-shrink: 0;
   background: var(--accent-bg);
   color: var(--accent);
   border: 1px solid rgba(var(--accent-rgb), 0.2);
@@ -241,6 +242,7 @@
 .key-current.disabled { opacity: 0.5; cursor: default; }
 
 .number-toggle {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -259,6 +261,7 @@
 .number-toggle input { display: none; }
 
 .transpose-btn {
+  flex-shrink: 0;
   background: transparent;
   border: 1px solid transparent;
   color: var(--muted);
@@ -285,6 +288,11 @@
   border-radius: 50%;
 }
 
+.transpose-btn.font-btn.autofit-btn {
+  width: auto;
+  padding: 0 10px;
+}
+
 .toolbar-divider {
   width: 1px;
   height: 20px;
@@ -301,7 +309,7 @@
   letter-spacing: 0.05em;
 }
 
-/* ── Key Picker ────────────────────────── */
+/* -- Key Picker -------------------------- */
 .key-picker {
   display: flex;
   flex-wrap: wrap;
@@ -332,7 +340,7 @@
 .key-pill:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
 .key-pill.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; box-shadow: var(--shadow-sm); }
 
-/* ── YouTube Link ─────────────────────── */
+/* -- YouTube Link ----------------------─ */
 .yt-link {
   display: inline-block; margin-left: 6px; padding: 2px 8px; font-size: 12px; font-weight: 500;
   color: #ff4444; background: var(--surface); border: 1px solid var(--border);
@@ -340,7 +348,7 @@
 }
 .yt-link:hover { background: var(--border); }
 
-/* ── Edit Form ──────────────────────────── */
+/* -- Edit Form ---------------------------- */
 .edit-header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
 .edit-header h2 { font-family: var(--font-serif); font-size: 24px; flex: 1; }
 .edit-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
@@ -349,7 +357,7 @@
 .chordpro-hint { font-size: 12px; color: var(--muted); margin-bottom: 6px; font-family: var(--font-sans); }
 .chordpro-hint code { font-family: var(--font-mono); background: var(--surface2); padding: 1px 5px; border-radius: 3px; color: var(--accent); }
 
-/* ── Admin ──────────────────────────────── */
+/* -- Admin -------------------------------- */
 .admin-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -401,7 +409,7 @@
 .user-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .user-card-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 
-/* ── Setlist Playback ───────────────────── */
+/* -- Setlist Playback --------------------─ */
 .setlist-play-header {
   display: flex;
   align-items: center;
@@ -442,7 +450,7 @@
 .setlist-side-prev { margin-right: -12px; border-radius: 0 12px 12px 0; }
 .setlist-side-next { margin-left: -12px; border-radius: 12px 0 0 12px; }
 
-/* ── Responsive ─────────────────────────── */
+/* -- Responsive --------------------------─ */
 @media (max-width: 600px) {
   #app { padding: 20px 12px; overflow-x: hidden; }
   .song-view-title { font-size: 28px; }

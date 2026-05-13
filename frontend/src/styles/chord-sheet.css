@@ -1,4 +1,4 @@
-/* ── Chord Sheet ────────────────────────── */
+/* -- Chord Sheet -------------------------- */
 .chord-sheet-wrap {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -7,12 +7,28 @@
   box-shadow: var(--ui-shadow);
   overflow-x: auto;
   margin-top: 8px;
+  font-size: 18px; /* Base for relative units */
 }
+
+/* -- Library Fit Mode ---------------------- */
+.chord-sheet-wrap.fitted-mode {
+  height: calc(100vh - 220px); 
+  padding: 24px;
+  display: block; /* Standard block flow for reliable scrolling */
+  overflow-y: auto;
+}
+
+.chord-sheet-wrap.fitted-mode #chord-output {
+  height: auto;
+  min-height: min-content;
+}
+/* ------------------------------------------ */
 
 .chord-sheet-wrap.two-col > #chord-output {
   column-count: 2;
   column-gap: 56px;
   column-rule: 1px solid var(--border);
+  height: 100%; /* Important for column splitting */
 }
 
 .chord-sheet-wrap.two-col .paragraph {
@@ -43,7 +59,7 @@
 
 .chord-sheet .chord {
   font-family: var(--font-mono);
-  font-size: calc(14px * var(--font-scale));
+  font-size: calc(0.77em * var(--font-scale)); /* 14px / 18px */
   font-weight: 600;
   color: var(--chord);
   min-height: 1.2em;
@@ -56,7 +72,7 @@
 
 .chord-sheet .lyrics {
   font-family: var(--font-sans);
-  font-size: calc(18px * var(--font-scale));
+  font-size: calc(1em * var(--font-scale)); /* 18px */
   color: var(--text);
   white-space: pre;
   line-height: 1.5;
@@ -67,12 +83,12 @@
 .chord-sheet .comment,
 .chord-sheet .tag {
   color: var(--muted);
-  font-size: calc(13px * var(--font-scale));
+  font-size: calc(0.72em * var(--font-scale)); /* 13px / 18px */
   font-style: italic;
   margin: 8px 0 4px;
 }
 
-/* ── Section Labels (Badge System) ────────────────────────── */
+/* -- Section Labels (Badge System) -------------------------- */
 .chord-sheet .section-label,
 .chord-sheet h3.label {
   /* Default Styles (Neutral/Subtle) */
@@ -80,6 +96,13 @@
   --badge-bg-bot: var(--surface2);
   --badge-text:   var(--muted);
   --badge-border: var(--border);
+
+  /* Missing variables defined here */
+  --badge-font-size: 11px;
+  --badge-font-weight: 600;
+  --badge-letter-spacing: 0.05em;
+  --badge-padding: 3px 10px;
+  --badge-radius: 20px;
 
   font-family: var(--font-sans) !important;
   font-size: var(--badge-font-size) !important;

@@ -58,11 +58,13 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const { setTranspose: resetChordTranspose, setNashville: resetChordNashville } = chord;
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
+  const [autoFitActive, setAutoFitActive] = useState(false);
 
   // Reset transpose/nashville when navigating to a different song
   useEffect(() => {
     resetChordTranspose(0);
     resetChordNashville(false);
+    setAutoFitActive(false);
   }, [songId, resetChordTranspose, resetChordNashville]);
 
   const renderedHtml = useMemo(
@@ -226,29 +228,22 @@ export function SongView({ songId, navigate }: SongViewProps) {
         onTwoColToggle={twoColState.toggleTwoCol}
         fontSize={fontScale.fontSize}
         onFontChange={fontScale.changeFontSize}
-        onReset={() => { fontScale.resetFontSize(); twoColState.setTwoColTo(false); }}
-        onPickKey={chord.pickKey}
-        onAutoFit={() => {
-          const before = { fontSize: fontScale.fontSize, twoCol: twoColState.twoCol };
-          const fit = autoFit();
-          fontScale.setFontSizeTo(fit.fontSize);
-          twoColState.setTwoColTo(fit.twoCol);
-          // Scroll chord sheet to top of viewport
-          requestAnimationFrame(() => {
-            document.querySelector('.chord-sheet-wrap')?.scrollIntoView({ behavior: 'smooth' });
-          });
-          if (fit.fontSize === before.fontSize && fit.twoCol === before.twoCol) {
-            toast('Already fitted', 'info');
-          } else {
-            const parts = [];
-            if (fit.twoCol) parts.push('multi-column');
-            if (fit.fontSize !== 0) parts.push(`font ${fit.fontSize > 0 ? '+' : ''}${fit.fontSize}`);
-            toast(parts.length ? `Fitted: ${parts.join(', ')}` : 'Fitted to default', 'success');
-          }
+        onReset={() => { 
+          fontScale.resetFontSize(); 
+          twoColState.setTwoColTo(false);
+          setAutoFitActive(false);
         }}
+        onPickKey={chord.pickKey}
+        onAutoFit={() => setAutoFitActive(!autoFitActive)}
+        autoFitActive={autoFitActive}
       />
 
-      <ChordSheet html={renderedHtml} twoCol={twoColState.twoCol} fontSize={fontScale.fontSize} />
+      <ChordSheet 
+        html={renderedHtml} 
+        twoCol={twoColState.twoCol} 
+        fontSize={fontScale.fontSize} 
+        autoFit={autoFitActive} 
+      />
 
       {(song.tags || song.youtube_url) && (
         <div className="song-view-meta song-view-meta-bottom">
