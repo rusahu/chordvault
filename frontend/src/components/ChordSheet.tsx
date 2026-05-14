@@ -11,7 +11,7 @@ interface ChordSheetProps {
 
 export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps) {
   const [autoTwoCol, setAutoTwoCol] = useState(false);
-  const [isFitting, setIsFitting] = useState(autoFit);
+  const [isFitting, setIsFitting] = useState(false);
 
   // Reset states when content or mode changes
   useEffect(() => {
@@ -22,16 +22,12 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
   const { fontSize: fitFontSize, ref } = useFitText({
     minFontSize: 40,
     maxFontSize: 100, // Never grow larger than standard
-    onFinish: () => setIsFitting(false)
+    onStart: () => setIsFitting(true),
+    onFinish: () => {
+      // Small delay to ensure browser has painted the final size before showing
+      setTimeout(() => setIsFitting(false), 50);
+    }
   });
-
-  // Fallback: If it reaches minFontSize, it might not trigger onFinish.
-  // We use an effect to ensure we stop "fitting" after the size settles.
-  useEffect(() => {
-    if (!autoFit || !isFitting) return;
-    const timer = setTimeout(() => setIsFitting(false), 500);
-    return () => clearTimeout(timer);
-  }, [fitFontSize, autoFit, isFitting]);
 
   // Smart Fallback: If font has to shrink too much, try 2-column
   useEffect(() => {
@@ -39,7 +35,7 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
     const size = parseInt(fitFontSize);
     if (size <= 65 && !autoTwoCol && !twoCol) {
       setAutoTwoCol(true);
-      setIsFitting(true); // Restart fitting for the new layout
+      setIsFitting(true);
     }
   }, [fitFontSize, autoFit, autoTwoCol, twoCol]);
 
@@ -48,7 +44,11 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
   
   // Decide which styling strategy to use:
   const style: React.CSSProperties = autoFit 
-    ? { fontSize: fitFontSize, opacity: isFitting ? 0 : 1, transition: 'opacity 0.2s ease' } 
+    ? { 
+        fontSize: fitFontSize, 
+        opacity: isFitting ? 0 : 1, 
+        transition: isFitting ? 'none' : 'opacity 0.25s ease-out' 
+      } 
     : (manualScale ? { '--font-scale': String(manualScale) } as any : {});
 
   const isTwoCol = twoCol || (autoFit && autoTwoCol);
