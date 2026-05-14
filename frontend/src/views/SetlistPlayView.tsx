@@ -290,6 +290,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         onToggleSettings={() => setSlOptionsOpen((v) => !v)}
         settingsActive={slOptionsOpen}
         isModified={isModified}
+        renderKey={index}
         overrides={{
           num: entry._num != null,
           twoCol: entry.two_col != null,

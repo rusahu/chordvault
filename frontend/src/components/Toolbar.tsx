@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { KeyPicker } from './KeyPicker';
 
 interface ToolbarProps {
@@ -21,6 +21,7 @@ interface ToolbarProps {
   isModified?: boolean;
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
   settingsActive?: boolean;
+  renderKey?: any;
 }
 
 export function Toolbar({
@@ -43,10 +44,15 @@ export function Toolbar({
   isModified,
   overrides,
   settingsActive,
+  renderKey,
 }: ToolbarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const ov = overrides || {};
   const isDefault = fontSize === 0 && !twoCol;
+
+  useEffect(() => {
+    setPickerOpen(false);
+  }, [renderKey]);
 
   return (
     <>
@@ -129,8 +135,8 @@ export function Toolbar({
         onPickKey={onPickKey}
         visible={pickerOpen}
         isModified={isModified}
-        onSaveOnline={onSaveOnline}
-        onSaveLocal={onSaveLocal}
+        onSaveOnline={onSaveOnline ? () => { onSaveOnline?.(); setPickerOpen(false); } : undefined}
+        onSaveLocal={onSaveLocal ? () => { onSaveLocal?.(); setPickerOpen(false); } : undefined}
       />
     </>
   );
