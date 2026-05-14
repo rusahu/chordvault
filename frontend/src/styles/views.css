@@ -563,14 +563,17 @@
 }
 
 .setlist-play-container .chord-sheet-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 32px;
+  box-shadow: var(--ui-shadow);
+  overflow-x: auto;
+  margin-top: 8px;
+  font-size: 18px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  margin-top: 0;
-  border-radius: 0;
-  border: none;
-  box-shadow: none;
-  background: transparent;
 }
 
 .setlist-play-container::-webkit-scrollbar {
@@ -590,20 +593,23 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 32px 8px; /* Increased side padding */
+  padding: 12px 24px;
   background: var(--surface);
+  border-bottom: 1px solid var(--border);
   z-index: 50;
 }
 
 .setlist-play-container .transpose-bar {
-  margin: 0;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  border-radius: 0;
-  box-shadow: none;
-  padding: 0 32px 14px; /* Balanced side and bottom padding */
-  justify-content: center;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
   background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 16px 0;
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
 }
 
 .setlist-play-indicator {
@@ -639,7 +645,7 @@
   justify-content: center;
   z-index: 1000;
   cursor: pointer;
-  opacity: 0;
+  opacity: 0.15; /* Permanently visible at low opacity */
   transition: all 0.3s ease;
   user-select: none;
 }
