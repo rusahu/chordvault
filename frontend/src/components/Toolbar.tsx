@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { KeyPicker } from './KeyPicker';
 
 interface ToolbarProps {
@@ -21,6 +21,7 @@ interface ToolbarProps {
   isModified?: boolean;
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
   settingsActive?: boolean;
+  renderKey?: any;
 }
 
 export function Toolbar({
@@ -43,10 +44,15 @@ export function Toolbar({
   isModified,
   overrides,
   settingsActive,
+  renderKey,
 }: ToolbarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const ov = overrides || {};
   const isDefault = fontSize === 0 && !twoCol;
+
+  useEffect(() => {
+    setPickerOpen(false);
+  }, [renderKey]);
 
   return (
     <>
@@ -91,32 +97,12 @@ export function Toolbar({
           <button
             className={`transpose-btn font-btn autofit-btn${autoFitActive ? ' active' : ''}`}
             onClick={onAutoFit}
-            title={autoFitActive ? 'Auto-fit: ON (click to turn off)' : 'Auto-fit: adjust font and columns for this screen'}
+            title="Auto-fit for this screen (one-time)"
           >
             FIT
           </button>
         )}
-        {(onSaveOnline || onSaveLocal) && <span className="toolbar-divider" />}
-        {onSaveOnline && (
-          <button
-            className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
-            onClick={onSaveOnline}
-            disabled={!isModified}
-            title={isModified ? 'Update setlist for everyone' : 'Saved to cloud'}
-          >
-            {isModified ? 'SAVE ONLINE' : 'CLOUD'}
-          </button>
-        )}
-        {onSaveLocal && (
-          <button
-            className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
-            onClick={onSaveLocal}
-            disabled={!isModified}
-            title={isModified ? 'Save to this browser only' : 'Saved locally'}
-          >
-            {isModified ? 'SAVE LOCAL' : 'LOCAL'}
-          </button>
-        )}
+        <span className="toolbar-spacer" />
         {onExportPdf && (
           <button
             className="transpose-btn font-btn pdf-btn"
@@ -148,6 +134,9 @@ export function Toolbar({
         currentKey={currentKey}
         onPickKey={onPickKey}
         visible={pickerOpen}
+        isModified={isModified}
+        onSaveOnline={onSaveOnline ? () => { onSaveOnline?.(); setPickerOpen(false); } : undefined}
+        onSaveLocal={onSaveLocal ? () => { onSaveLocal?.(); setPickerOpen(false); } : undefined}
       />
     </>
   );

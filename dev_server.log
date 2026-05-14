@@ -1,0 +1,17 @@
+
+> chordvault@1.11.0 dev
+> concurrently "node server.js" "cd frontend && npm run dev"
+
+[0] ◇ injected env (1) from .env // tip: ⌘ override existing { override: true }
+[1] 
+[1] > chordvault-frontend@1.11.0 dev
+[1] > vite
+[1] 
+[0] ChordVault running on port 3100
+[1] 
+[1]   VITE v8.0.11  ready in 105 ms
+[1] 
+[1]   ➜  Local:   http://localhost:5173/
+[1]   ➜  Network: use --host to expose
+[0] node server.js exited with code SIGHUP
+[1] cd frontend && npm run dev exited with code SIGHUP

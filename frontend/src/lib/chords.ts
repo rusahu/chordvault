@@ -368,27 +368,47 @@ export function autoFit(): { fontSize: number; twoCol: boolean } {
     // Apply settings and measure actual layout
     if (twoCol) wrap.classList.add('two-col');
     else wrap.classList.remove('two-col');
+    
     if (offset) wrap.style.setProperty('--font-scale', String(1 + offset * 0.12));
     else wrap.style.removeProperty('--font-scale');
 
-    const available = window.innerHeight - wrap.getBoundingClientRect().top - 24; // 24px safety margin
+    // Calculate available height inside the wrap, accounting for padding (24px top + 24px bottom)
+    const available = wrap.clientHeight - 48;
+    
+    // Safety check: if clientHeight is 0 (not rendered yet), fall back to viewport calc
+    if (available <= 0) {
+      const viewportAvailable = window.innerHeight - wrap.getBoundingClientRect().top - 48 - 24; // padding + margin
+      return output.scrollHeight <= viewportAvailable;
+    }
+
     return output.scrollHeight <= available;
   };
 
-  // Try single-column first, shrinking font
-  for (let offset = 0; offset >= -3; offset--) {
-    if (tryFit(offset, false)) {
-      return { fontSize: clampFontSize(offset), twoCol: false };
-    }
-  }
+  const isWide = window.innerWidth >= 640;
 
-  // Fall back to 2-column only if screen is wide enough (tablet/desktop)
-  if (window.innerWidth >= 640) {
-    for (let offset = 0; offset >= -3; offset--) {
-      if (tryFit(offset, true)) {
-        return { fontSize: clampFontSize(offset), twoCol: true };
-      }
+  if (isWide) {
+    // 1. Try 1-col, font 0 (The Gold Standard)
+    if (tryFit(0, false)) return { fontSize: 0, twoCol: false };
+
+    // 2. Try 2-col, font 0 (Prioritize 2-col over shrinking font)
+    if (tryFit(0, true)) return { fontSize: 0, twoCol: true };
+
+    // 3. Try shrinking font in 2-col mode
+    for (let offset = -1; offset >= -3; offset--) {
+      if (tryFit(offset, true)) return { fontSize: clampFontSize(offset), twoCol: true };
     }
+
+    // 4. Try shrinking font in 1-col mode
+    for (let offset = -1; offset >= -3; offset--) {
+      if (tryFit(offset, false)) return { fontSize: clampFontSize(offset), twoCol: false };
+    }
+  } else {
+    // Phone/Portrait: 1-col is preferred
+    for (let offset = 0; offset >= -3; offset--) {
+      if (tryFit(offset, false)) return { fontSize: clampFontSize(offset), twoCol: false };
+    }
+    // Last resort for phone: 2-col with tiny font (unlikely to be better, but just in case)
+    if (tryFit(-3, true)) return { fontSize: -3, twoCol: true };
   }
 
   // Restore original state before returning fallback
@@ -397,9 +417,8 @@ export function autoFit(): { fontSize: number; twoCol: boolean } {
   if (prevScale) wrap.style.setProperty('--font-scale', prevScale);
   else wrap.style.removeProperty('--font-scale');
 
-  // If nothing fits, use smallest font and 2-col (if wide) or 1-col (if narrow)
-  const finalTwoCol = window.innerWidth >= 640;
-  return { fontSize: clampFontSize(-3), twoCol: finalTwoCol };
+  // If nothing fits, use smallest font and appropriate column count
+  return { fontSize: -3, twoCol: isWide };
 }
 
 
@@ -408,7 +427,24 @@ export function slEffective<T>(
   key: 'num' | 'twoCol' | 'font' | 'hideYt',
   globalVal: T
 ): T {
-  const keyMap = { num: '_num', twoCol: '_twoCol', font: '_font', hideYt: '_hideYt' } as const;
-  const ov = entry[keyMap[key]];
+  if (key === 'font') {
+    // Priority: session _font > db font > globalVal
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (entry._font !== undefined && entry._font !== null) return entry._font as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (entry.font !== undefined && entry.font !== null) return entry.font as any;
+    return globalVal;
+  }
+  if (key === 'twoCol') {
+    // Priority: session _twoCol > db two_col > globalVal
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (entry._twoCol !== undefined && entry._twoCol !== null) return entry._twoCol as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (entry.two_col !== undefined && entry.two_col !== null) return (!!entry.two_col) as any;
+    return globalVal;
+  }
+  const keyMap = { num: '_num', hideYt: '_hideYt' } as const;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ov = (entry as any)[keyMap[key as 'num' | 'hideYt']];
   return (ov != null ? ov : globalVal) as T;
 }

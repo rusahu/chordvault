@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -45,7 +45,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   // Render key for forcing re-render
   const [_renderKey, setRenderKey] = useState(0);
 
-  const { setlist, entry, index, total, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
+  const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
     isPublic,
     initialSetlist,
@@ -56,6 +56,11 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       setRenderKey((k) => k + 1); 
     },
   });
+
+  // Handle auto-fit logic
+  useEffect(() => {
+    setAutoFitActive(false);
+  }, [index]);
 
   const content = entry ? (entry.content_override || entry.content) : '';
 
@@ -94,27 +99,19 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
 
   const toggleEntryTwoCol = useCallback(() => {
     if (!entry) return;
-    if (autoFitActive) {
-      setAutoFitActive(false);
-      toast('Auto-fit disabled', 'info');
-    }
     const current = slEffective(entry, 'twoCol', twoCol);
     const nextVal = !current;
-    updateEntry({ _twoCol: nextVal === twoCol ? null : nextVal });
+    updateEntry({ two_col: nextVal === (!!twoCol) ? null : (nextVal ? 1 : 0) });
     setRenderKey((k) => k + 1);
-  }, [entry, twoCol, autoFitActive, toast, updateEntry]);
+  }, [entry, twoCol, updateEntry]);
 
   const changeEntryFont = useCallback((delta: number) => {
     if (!entry) return;
-    if (autoFitActive) {
-      setAutoFitActive(false);
-      toast('Auto-fit disabled', 'info');
-    }
     const current = slEffective(entry, 'font', fontSize) || 0;
     const nextVal = clampFontSize(current + delta);
-    updateEntry({ _font: nextVal === fontSize ? null : nextVal });
+    updateEntry({ font: nextVal === fontSize ? null : nextVal });
     setRenderKey((k) => k + 1);
-  }, [entry, fontSize, autoFitActive, toast, updateEntry]);
+  }, [entry, fontSize, updateEntry]);
 
   // Key picker
   const pickKey = useCallback((targetKey: string) => {
@@ -182,19 +179,11 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
 
   // Global settings changes
   const changeTwoCol = (val: boolean) => {
-    if (autoFitActive) {
-      setAutoFitActive(false);
-      toast('Auto-fit disabled', 'info');
-    }
     setTwoCol(val);
     setStoredTwoCol(val);
     setRenderKey((k) => k + 1);
   };
   const changeFont = (delta: number) => {
-    if (autoFitActive) {
-      setAutoFitActive(false);
-      toast('Auto-fit disabled', 'info');
-    }
     setFontSize((prev) => {
       const n = clampFontSize(prev + delta);
       setStoredFontSize(n);
@@ -203,13 +192,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     setRenderKey((k) => k + 1);
   };
   const resetFont = () => {
-    if (autoFitActive) {
-      setAutoFitActive(false);
-      toast('Auto-fit disabled', 'info');
-    }
     setFontSize(0);
     setStoredFontSize(0);
-    if (entry) updateEntry({ _font: null });
+    if (entry) updateEntry({ font: null });
     setRenderKey((k) => k + 1);
   };
 
@@ -227,41 +212,17 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     }
   };
 
-  const [isFittingAll, setIsFittingAll] = useState(false);
-
   const doFit = () => {
-    if (autoFitActive) {
-      setAutoFitActive(false);
-      toast('Auto-fit disabled', 'info');
-      return;
-    }
     setAutoFitActive(true);
-    toast('Auto-fit enabled for setlist', 'success');
-  };
-
-  const fitAll = async () => {
-    if (!setlist || isFittingAll) return;
-    if (!confirm('This will cycle through all songs and save the best fit for each one. Continue?')) return;
-    
-    setIsFittingAll(true);
-    setAutoFitActive(false); // Use manual calculation loop
-    
-    for (let i = 0; i < total; i++) {
-      goTo(i);
-      // Wait for React to render the new song content
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const delay = (import.meta as any).env.MODE === 'test' ? 0 : 150;
-      await new Promise(r => setTimeout(r, delay)); 
-      
+    // Use a small timeout to let the autoFit() calculation run with visual feedback
+    setTimeout(() => {
       const result = autoFit();
       updateEntry({ 
-        _font: result.fontSize === fontSize ? null : result.fontSize,
-        _twoCol: result.twoCol === twoCol ? null : result.twoCol 
+        font: result.fontSize === fontSize ? null : result.fontSize,
+        two_col: result.twoCol === !!twoCol ? null : (result.twoCol ? 1 : 0)
       });
-    }
-    
-    setIsFittingAll(false);
-    toast('Finished fitting all songs', 'success');
+      setAutoFitActive(false);
+    }, 100);
   };
 
   if (!setlist) return <Loading />;
@@ -316,7 +277,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         fontSize={effFont || 0}
         onFontChange={changeEntryFont}
         onReset={() => {
-          if (entry) { updateEntry({ _font: null, _twoCol: null }); }
+          if (entry) { updateEntry({ font: null, two_col: null }); }
           setAutoFitActive(false);
           setRenderKey((k) => k + 1);
         }}
@@ -329,10 +290,11 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         onToggleSettings={() => setSlOptionsOpen((v) => !v)}
         settingsActive={slOptionsOpen}
         isModified={isModified}
+        renderKey={index}
         overrides={{
           num: entry._num != null,
-          twoCol: entry._twoCol != null,
-          font: entry._font != null,
+          twoCol: entry.two_col != null,
+          font: entry.font != null,
         }}
       />
 
@@ -347,19 +309,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
           fontSize={fontSize}
           onFontChange={changeFont}
           onFontReset={resetFont}
-          onFitAll={fitAll}
-          isFittingAll={isFittingAll}
         />
-      )}
-
-      {isFittingAll && (
-        <div className="fitting-overlay">
-          <div className="fitting-card">
-            <div className="spinner"></div>
-            <div>Fitting all songs...</div>
-            <div className="fitting-subtext">Optimizing font and columns for each song</div>
-          </div>
-        </div>
       )}
 
       {editing ? (
