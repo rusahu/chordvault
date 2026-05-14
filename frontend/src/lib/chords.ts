@@ -1,5 +1,6 @@
 import * as ChordSheetJS from 'chordsheetjs';
 import { escHtml } from './util';
+import { normalizeKey, normalizeChord } from './keys';
 import type { SetlistEntry } from '../types';
 
 const PARSER_NAMES = [
@@ -175,7 +176,7 @@ class ResponsiveHtmlFormatter {
         // Check lyrics for label or chords for bracketed label
         const potentialLabel = lyrics || chords;
         if (!lyrics !== !chords && SECTION_RE.test(potentialLabel)) {
-          detectedType = potentialLabel.replace(/[\[\]:]/g, '').split(/\s+/)[0].toLowerCase().replace('-', '');
+          detectedType = potentialLabel.replace(/[[\]:]/g, '').split(/\s+/)[0].toLowerCase().replace('-', '');
         }
       }
     }
@@ -206,7 +207,7 @@ class ResponsiveHtmlFormatter {
                      (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
       
       if (SECTION_RE.test(content.trim())) {
-        const cleanLabel = content.trim().replace(/[\[\]:]/g, '');
+        const cleanLabel = content.trim().replace(/[[\]:]/g, '');
         return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
       return `<div class="comment">${escHtml(content)}</div>`;
@@ -220,7 +221,7 @@ class ResponsiveHtmlFormatter {
       const chords = (it.chords || '').trim();
       // Only one of them should be present for a pure label line
       if (!lyrics !== !chords && SECTION_RE.test(lyrics || chords)) {
-        const cleanLabel = (lyrics || chords).replace(/[\[\]:]/g, '');
+        const cleanLabel = (lyrics || chords).replace(/[[\]:]/g, '');
         return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
     }
@@ -255,7 +256,8 @@ class ResponsiveHtmlFormatter {
 
       // If we haven't placed the chord yet, or if it's a word, wrap in a column.
       // The chord is only attached to the VERY FIRST chunk (word or space).
-      const currentChord = chordPlaced ? '' : (it.chords || '');
+      const rawChord = chordPlaced ? '' : (it.chords || '');
+      const currentChord = normalizeChord(rawChord);
       chordPlaced = true;
       
       const chords = `<span class="chord">${escHtml(currentChord)}</span>`;
@@ -312,7 +314,7 @@ export function getSongKey(content: string, semitones = 0): string {
     const transposed = semitones !== 0 ? song.transpose(semitones) : song;
     const keyRaw = transposed.key || (transposed.getMetadataValue ? transposed.getMetadataValue('key') : null);
     const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
-    if (key) return key;
+    if (key) return normalizeKey(key);
     // Fallback: derive key from first chord
     for (const p of transposed.paragraphs) {
       for (const line of p.lines) {
@@ -320,7 +322,7 @@ export function getSongKey(content: string, semitones = 0): string {
           const chords = (item as { chords?: string }).chords;
           if (chords && chords.trim()) {
             const m = chords.trim().match(/^([A-G][b#]?m?)/);
-            if (m) return m[1];
+            if (m) return normalizeKey(m[1]);
           }
         }
       }

@@ -10,3 +10,8 @@ export const ENHARMONIC_MAP: Record<string, string> = {
 export function normalizeKey(k: string): string {
   return ENHARMONIC_MAP[k] || k;
 }
+
+export function normalizeChord(chord: string): string {
+  if (!chord) return chord;
+  return chord.replace(/[A-G][b#]?m?/g, (m) => ENHARMONIC_MAP[m] || m);
+}
