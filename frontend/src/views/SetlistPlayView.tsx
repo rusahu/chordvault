@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -57,6 +57,11 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     },
   });
 
+  // Reset auto-fit mode when navigating between songs
+  useEffect(() => {
+    setAutoFitActive(false);
+  }, [index]);
+
   const content = entry ? (entry.content_override || entry.content) : '';
 
   const { user } = useAuth();
@@ -94,27 +99,19 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
 
   const toggleEntryTwoCol = useCallback(() => {
     if (!entry) return;
-    if (autoFitActive) {
-      setAutoFitActive(false);
-      toast('Auto-fit disabled', 'info');
-    }
     const current = slEffective(entry, 'twoCol', twoCol);
     const nextVal = !current;
     updateEntry({ _twoCol: nextVal === twoCol ? null : nextVal });
     setRenderKey((k) => k + 1);
-  }, [entry, twoCol, autoFitActive, toast, updateEntry]);
+  }, [entry, twoCol, updateEntry]);
 
   const changeEntryFont = useCallback((delta: number) => {
     if (!entry) return;
-    if (autoFitActive) {
-      setAutoFitActive(false);
-      toast('Auto-fit disabled', 'info');
-    }
     const current = slEffective(entry, 'font', fontSize) || 0;
     const nextVal = clampFontSize(current + delta);
     updateEntry({ _font: nextVal === fontSize ? null : nextVal });
     setRenderKey((k) => k + 1);
-  }, [entry, fontSize, autoFitActive, toast, updateEntry]);
+  }, [entry, fontSize, updateEntry]);
 
   // Key picker
   const pickKey = useCallback((targetKey: string) => {
@@ -182,19 +179,11 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
 
   // Global settings changes
   const changeTwoCol = (val: boolean) => {
-    if (autoFitActive) {
-      setAutoFitActive(false);
-      toast('Auto-fit disabled', 'info');
-    }
     setTwoCol(val);
     setStoredTwoCol(val);
     setRenderKey((k) => k + 1);
   };
   const changeFont = (delta: number) => {
-    if (autoFitActive) {
-      setAutoFitActive(false);
-      toast('Auto-fit disabled', 'info');
-    }
     setFontSize((prev) => {
       const n = clampFontSize(prev + delta);
       setStoredFontSize(n);
@@ -203,10 +192,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     setRenderKey((k) => k + 1);
   };
   const resetFont = () => {
-    if (autoFitActive) {
-      setAutoFitActive(false);
-      toast('Auto-fit disabled', 'info');
-    }
     setFontSize(0);
     setStoredFontSize(0);
     if (entry) updateEntry({ _font: null });
@@ -230,13 +215,16 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const [isFittingAll, setIsFittingAll] = useState(false);
 
   const doFit = () => {
-    if (autoFitActive) {
-      setAutoFitActive(false);
-      toast('Auto-fit disabled', 'info');
-      return;
-    }
     setAutoFitActive(true);
-    toast('Auto-fit enabled for setlist', 'success');
+    // Use a small timeout to let the autoFit() calculation run with visual feedback
+    setTimeout(() => {
+      const result = autoFit();
+      updateEntry({ 
+        _font: result.fontSize === fontSize ? null : result.fontSize,
+        _twoCol: result.twoCol === twoCol ? null : result.twoCol 
+      });
+      setAutoFitActive(false);
+    }, 100);
   };
 
   const fitAll = async () => {

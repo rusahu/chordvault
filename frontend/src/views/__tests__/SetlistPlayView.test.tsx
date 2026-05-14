@@ -64,14 +64,20 @@ describe('SetlistPlayView Auto-Fit', () => {
     });
   });
 
-  it('keeps Auto-fit as a persistent mode', async () => {
+  it('performs a one-time Auto-fit action', async () => {
     render(<SetlistPlayView setlistId={1} navigate={navigate} />);
     
     const fitBtn = screen.getByTitle(/Auto-fit: adjust font/);
     fireEvent.click(fitBtn);
     
-    // Button title should change to "Auto-fit: ON"
+    // Button should briefly show "Auto-fit: ON" (during timeout)
     expect(screen.getByTitle(/Auto-fit: ON/)).toBeInTheDocument();
+    
+    // After timeout it should be back to OFF
+    await waitFor(() => expect(screen.getByTitle(/Auto-fit: adjust font/)).toBeInTheDocument());
+    expect(mockUpdateEntry).toHaveBeenCalledWith(expect.objectContaining({
+      _font: expect.any(Number),
+    }));
   });
 
   it('fitAll cycles through songs and updates entries', async () => {
