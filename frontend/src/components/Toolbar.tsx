@@ -102,9 +102,9 @@ export function Toolbar({
             className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
             onClick={onSaveOnline}
             disabled={!isModified}
-            title={isModified ? 'Save key to cloud' : 'Key saved to cloud'}
+            title={isModified ? 'Save this key for everyone' : 'Key is set for everyone'}
           >
-            SAVE
+            FOR ALL
           </button>
         )}
         {onSaveLocal && (
@@ -112,9 +112,9 @@ export function Toolbar({
             className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
             onClick={onSaveLocal}
             disabled={!isModified}
-            title={isModified ? 'Save overrides to this browser' : 'Overrides saved to browser'}
+            title={isModified ? 'Save this key only for me' : 'Key is set only for me'}
           >
-            SYNC
+            FOR ME
           </button>
         )}
         <span className="toolbar-divider" />
