@@ -32,6 +32,8 @@ export function useSetlistPlayer({
   const [savedState, setSavedState] = useState({
     transpose: initialSetlist?.entries[initialIndex || 0]?.transpose || 0,
     nashville: !!initialSetlist?.entries[initialIndex || 0]?.nashville,
+    font: initialSetlist?.entries[initialIndex || 0]?.font || null,
+    two_col: initialSetlist?.entries[initialIndex || 0]?.two_col || null,
   });
 
   useEffect(() => {
@@ -47,6 +49,8 @@ export function useSetlistPlayer({
               ...en,
               transpose: ov.transpose ?? en.transpose,
               nashville: ov.nashville !== undefined ? (ov.nashville ? 1 : 0) : en.nashville,
+              font: ov.font ?? en.font,
+              two_col: ov.two_col !== undefined ? (ov.two_col === null ? null : (ov.two_col ? 1 : 0)) : en.two_col,
             };
           }
           return en;
@@ -55,9 +59,12 @@ export function useSetlistPlayer({
         setSetlist(sl);
         const startIdx = initialIndexRef.current;
         if (sl.entries[startIdx]) {
+          const e = sl.entries[startIdx];
           setSavedState({
-            transpose: sl.entries[startIdx].transpose,
-            nashville: !!sl.entries[startIdx].nashville,
+            transpose: e.transpose,
+            nashville: !!e.nashville,
+            font: e.font || null,
+            two_col: e.two_col || null,
           });
         }
       })
@@ -69,7 +76,10 @@ export function useSetlistPlayer({
 
   const isModified = useMemo(() => {
     if (!entry) return false;
-    return entry.transpose !== savedState.transpose || !!entry.nashville !== savedState.nashville;
+    return entry.transpose !== savedState.transpose || 
+           !!entry.nashville !== savedState.nashville ||
+           (entry.font || null) !== savedState.font ||
+           (entry.two_col || null) !== savedState.two_col;
   }, [entry, savedState]);
 
   /**
@@ -81,8 +91,15 @@ export function useSetlistPlayer({
       await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, {
         transpose: entry.transpose,
         nashville: !!entry.nashville,
+        font: entry.font || null,
+        two_col: entry.two_col || null,
       });
-      setSavedState({ transpose: entry.transpose, nashville: !!entry.nashville });
+      setSavedState({ 
+        transpose: entry.transpose, 
+        nashville: !!entry.nashville,
+        font: entry.font || null,
+        two_col: entry.two_col || null
+      });
       if (!silent) toast('Saved to cloud', 'success');
     } catch (e) {
       if (!silent) toast((e as Error).message, 'error');
@@ -97,8 +114,15 @@ export function useSetlistPlayer({
     saveSetlistOverride(setlist.id, entry.entry_id, {
       transpose: entry.transpose,
       nashville: !!entry.nashville,
+      font: entry.font || null,
+      two_col: entry.two_col || null,
     });
-    setSavedState({ transpose: entry.transpose, nashville: !!entry.nashville });
+    setSavedState({ 
+      transpose: entry.transpose, 
+      nashville: !!entry.nashville,
+      font: entry.font || null,
+      two_col: entry.two_col || null
+    });
     if (!silent) toast('Saved locally', 'success');
   }, [setlist, entry, toast]);
 
@@ -130,6 +154,8 @@ export function useSetlistPlayer({
     setSavedState({
       transpose: newEntry.transpose,
       nashville: !!newEntry.nashville,
+      font: newEntry.font || null,
+      two_col: newEntry.two_col || null,
     });
 
     if (!setlist.isLocal) {

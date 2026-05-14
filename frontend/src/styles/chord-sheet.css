@@ -3,24 +3,35 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 32px 40px;
+  padding: 24px 32px;
   box-shadow: var(--ui-shadow);
   overflow-x: auto;
   margin-top: 8px;
   font-size: 18px; /* Base for relative units */
+
+  /* Hide scrollbar while maintaining functionality */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chord-sheet-wrap::-webkit-scrollbar {
+  display: none;
 }
 
 /* -- Library Fit Mode ---------------------- */
 .chord-sheet-wrap.fitted-mode {
-  height: calc(100vh - 220px); 
-  padding: 24px;
-  display: block; /* Standard block flow for reliable scrolling */
-  overflow-y: auto;
-}
+  flex: 1;
+  min-height: 0;
+  padding: 24px 32px;
+  display: block; 
+  overflow-y: auto; 
+  margin-top: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
 
-.chord-sheet-wrap.fitted-mode #chord-output {
-  height: auto;
-  min-height: min-content;
+  /* Hide scrollbar while maintaining functionality to prevent width shifts */
 }
 /* ------------------------------------------ */
 
@@ -28,7 +39,7 @@
   column-count: 2;
   column-gap: 56px;
   column-rule: 1px solid var(--border);
-  height: 100%; /* Important for column splitting */
+  /* height: 100% removed to allow vertical overflow detection */
 }
 
 .chord-sheet-wrap.two-col .paragraph {
@@ -132,32 +143,33 @@
 /* Verse Styles (Subtle) */
 .paragraph.verse .section-label,
 .paragraph.verse h3.label {
-  --badge-bg-top: transparent;
-  --badge-bg-bot: transparent;
+  --badge-bg-top: var(--surface2);
+  --badge-bg-bot: var(--surface2);
   --badge-text:   var(--muted);
   --badge-border: var(--border);
-  opacity: 0.8;
+  opacity: 1;
 }
 
 /* Section Highlighting */
 .chord-sheet .paragraph.chorus {
   background: linear-gradient(90deg, var(--accent-bg) 0%, transparent 40%);
   border-left: 4px solid var(--accent);
-  padding: 12px 0 12px 24px;
-  margin-left: -24px;
-  border-radius: 0 8px 8px 0;
+  padding: 12px 0 12px 28px;
+  margin-left: -32px;
+  border-radius: 8px; /* Premium rounded corners on all sides */
 }
 
 .chord-sheet .paragraph.bridge {
   background: linear-gradient(90deg, var(--surface2) 0%, transparent 30%);
   border-left: 3px dashed var(--muted);
-  padding: 12px 0 12px 20px;
-  margin-left: -20px;
-  border-radius: 0 8px 8px 0;
+  padding: 12px 0 12px 24px;
+  margin-left: -28px;
+  border-radius: 8px;
 }
 
 .chord-sheet .paragraph.prechorus {
   border-left: 2px dotted var(--accent-alt);
-  padding-left: 20px;
-  margin-left: -20px;
+  padding-left: 28px;
+  margin-left: -32px;
+  border-radius: 8px;
 }

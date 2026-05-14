@@ -10,7 +10,7 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
-import { renderChordPro, getSongKey, clampFontSize, songHasKey, slEffective } from '../lib/chords';
+import { renderChordPro, getSongKey, clampFontSize, songHasKey, slEffective, autoFit } from '../lib/chords';
 import { normalizeKey, ALL_KEYS, ALL_KEYS_MINOR } from '../lib/keys';
 import { getStoredFontSize, setStoredFontSize, getStoredTwoCol, setStoredTwoCol } from '../lib/storage';
 import type { Setlist } from '../types';
@@ -45,13 +45,16 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   // Render key for forcing re-render
   const [_renderKey, setRenderKey] = useState(0);
 
-  const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
+  const { setlist, entry, index, total, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
     isPublic,
     initialSetlist,
     initialIndex,
     navigate,
-    onNavigate: () => { setEditing(false); setRenderKey((k) => k + 1); },
+    onNavigate: () => { 
+      setEditing(false); 
+      setRenderKey((k) => k + 1); 
+    },
   });
 
   const content = entry ? (entry.content_override || entry.content) : '';
@@ -96,7 +99,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       toast('Auto-fit disabled', 'info');
     }
     const current = slEffective(entry, 'twoCol', twoCol);
-    updateEntry({ _twoCol: !current });
+    const nextVal = !current;
+    updateEntry({ _twoCol: nextVal === twoCol ? null : nextVal });
     setRenderKey((k) => k + 1);
   }, [entry, twoCol, autoFitActive, toast, updateEntry]);
 
@@ -107,7 +111,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       toast('Auto-fit disabled', 'info');
     }
     const current = slEffective(entry, 'font', fontSize) || 0;
-    updateEntry({ _font: clampFontSize(current + delta) });
+    const nextVal = clampFontSize(current + delta);
+    updateEntry({ _font: nextVal === fontSize ? null : nextVal });
     setRenderKey((k) => k + 1);
   }, [entry, fontSize, autoFitActive, toast, updateEntry]);
 
@@ -222,6 +227,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     }
   };
 
+  const [isFittingAll, setIsFittingAll] = useState(false);
+
   const doFit = () => {
     if (autoFitActive) {
       setAutoFitActive(false);
@@ -232,43 +239,72 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     toast('Auto-fit enabled for setlist', 'success');
   };
 
+  const fitAll = async () => {
+    if (!setlist || isFittingAll) return;
+    if (!confirm('This will cycle through all songs and save the best fit for each one. Continue?')) return;
+    
+    setIsFittingAll(true);
+    setAutoFitActive(false); // Use manual calculation loop
+    
+    for (let i = 0; i < total; i++) {
+      goTo(i);
+      // Wait for React to render the new song content
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const delay = (import.meta as any).env.MODE === 'test' ? 0 : 150;
+      await new Promise(r => setTimeout(r, delay)); 
+      
+      const result = autoFit();
+      updateEntry({ 
+        _font: result.fontSize === fontSize ? null : result.fontSize,
+        _twoCol: result.twoCol === twoCol ? null : result.twoCol 
+      });
+    }
+    
+    setIsFittingAll(false);
+    toast('Finished fitting all songs', 'success');
+  };
+
   if (!setlist) return <Loading />;
   if (!entry) return <div className="empty"><div className="empty-text">{t('setlist.noSongsYet')}</div></div>;
 
   const hideYt = slEffective(entry, 'hideYt', slHideYt);
 
   return (
-    <div ref={containerRef}>
+    <div ref={containerRef} className="setlist-play-container">
       <div className="setlist-play-header">
-        <button className="btn btn-ghost btn-sm" onClick={exit}>&#8592; {t('setlist.exit')}</button>
-        <span className="setlist-play-indicator">
-          {entry.title} ({index + 1}/{total})
+        <div className="setlist-play-header-left">
+          <button className="btn-exit" onClick={exit}>&#8592; {t('setlist.exit').toUpperCase()}</button>
+        </div>
+
+        <div className="setlist-play-center">
+          <button 
+            className={`nav-circle-btn${index === 0 ? ' disabled' : ''}`} 
+            onClick={index > 0 ? prev : undefined} 
+            title="Previous Song"
+          >
+            &lt;
+          </button>
+          
+          <span className="setlist-play-indicator">
+            {entry.title} ({index + 1}/{total})
+          </span>
+
+          <button 
+            className={`nav-circle-btn${index === total - 1 ? ' disabled' : ''}`} 
+            onClick={index < total - 1 ? next : undefined} 
+            title="Next Song"
+          >
+            &gt;
+          </button>
+        </div>
+
+        <div className="setlist-play-header-right">
           {entry.bpm && <span className="badge badge-bpm">{entry.bpm} bpm</span>}
-          {entry.language && <span className="badge badge-lang">{entry.language.toUpperCase()}</span>}
           {!hideYt && entry.youtube_url && (
             <a href={entry.youtube_url} target="_blank" rel="noopener" className="yt-link" title="Watch on YouTube">&#9654; YT</a>
           )}
-        </span>
-        <button className="btn btn-ghost btn-sm" onClick={handleExportAllPdf} disabled={exportingPdf} title="Export setlist as PDF">
-          {exportingPdf ? '...' : '\u{1F4C4} PDF'}
-        </button>
-        <button className={`btn btn-ghost btn-sm${slOptionsOpen ? ' active' : ''}`} onClick={() => setSlOptionsOpen((v) => !v)} title="Settings">&#9881;</button>
+        </div>
       </div>
-
-      {slOptionsOpen && (
-        <SettingsPanel
-          nashville={slNashville}
-          onNashvilleChange={(v) => { setSlNashville(v); setRenderKey((k) => k + 1); }}
-          hideYt={slHideYt}
-          onHideYtChange={(v) => { setSlHideYt(v); setRenderKey((k) => k + 1); }}
-          twoCol={twoCol}
-          onTwoColChange={changeTwoCol}
-          fontSize={fontSize}
-          onFontChange={changeFont}
-          onFontReset={resetFont}
-          onAutoFit={doFit}
-        />
-      )}
 
       <Toolbar
         currentKey={keyDisplay}
@@ -281,8 +317,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         onFontChange={changeEntryFont}
         onReset={() => {
           if (entry) { updateEntry({ _font: null, _twoCol: null }); }
-          setFontSize(0); setStoredFontSize(0);
-          setTwoCol(false); setStoredTwoCol(false);
           setAutoFitActive(false);
           setRenderKey((k) => k + 1);
         }}
@@ -291,6 +325,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         autoFitActive={autoFitActive}
         onSaveOnline={isOwner ? () => saveOnline(false) : undefined}
         onSaveLocal={() => saveLocal(false)}
+        onExportPdf={handleExportAllPdf}
+        onToggleSettings={() => setSlOptionsOpen((v) => !v)}
+        settingsActive={slOptionsOpen}
         isModified={isModified}
         overrides={{
           num: entry._num != null,
@@ -298,6 +335,32 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
           font: entry._font != null,
         }}
       />
+
+      {slOptionsOpen && (
+        <SettingsPanel
+          nashville={slNashville}
+          onNashvilleChange={(v) => { setSlNashville(v); setRenderKey((k) => k + 1); }}
+          hideYt={slHideYt}
+          onHideYtChange={(v) => { setSlHideYt(v); setRenderKey((k) => k + 1); }}
+          twoCol={twoCol}
+          onTwoColChange={changeTwoCol}
+          fontSize={fontSize}
+          onFontChange={changeFont}
+          onFontReset={resetFont}
+          onFitAll={fitAll}
+          isFittingAll={isFittingAll}
+        />
+      )}
+
+      {isFittingAll && (
+        <div className="fitting-overlay">
+          <div className="fitting-card">
+            <div className="spinner"></div>
+            <div>Fitting all songs...</div>
+            <div className="fitting-subtext">Optimizing font and columns for each song</div>
+          </div>
+        </div>
+      )}
 
       {editing ? (
         <div className="setlist-editor">
@@ -314,10 +377,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
           </div>
         </div>
       ) : (
-        <div className="setlist-sheet-row">
-          {index > 0 ? (
-            <button className="setlist-side-btn setlist-side-prev" onClick={prev}>&#8249;</button>
-          ) : <div className="setlist-side-spacer" />}
+        <>
           {entry?.is_private_placeholder ? (
             <div className="empty" style={{ marginTop: 40 }}>
               <div className="empty-icon">&#128274;</div>
@@ -330,12 +390,10 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
               twoCol={!!effTwoCol} 
               fontSize={effFont || 0} 
               autoFit={autoFitActive} 
+              renderKey={_renderKey}
             />
           )}
-          {index < total - 1 ? (
-            <button className="setlist-side-btn setlist-side-next" onClick={next}>&#8250;</button>
-          ) : <div className="setlist-side-spacer" />}
-        </div>
+        </>
       )}
     </div>
   );

@@ -60,9 +60,9 @@ export function saveLocalSetlists(arr: LocalSetlist[]): void {
 
 /**
  * Gets personal transpose/Nashville overrides for a specific setlist.
- * Format: { [entryId]: { transpose: number, nashville: boolean } }
+ * Format: { [entryId]: { transpose: number, nashville: boolean, font: number, two_col: boolean } }
  */
-export function getSetlistOverrides(setlistId: number | string): Record<string, { transpose?: number; nashville?: boolean }> {
+export function getSetlistOverrides(setlistId: number | string): Record<string, { transpose?: number; nashville?: boolean; font?: number; two_col?: number | null }> {
   try {
     const all = JSON.parse(localStorage.getItem(KEYS.setlistOverrides) || '{}');
     return all[String(setlistId)] || {};
@@ -75,7 +75,7 @@ export function getSetlistOverrides(setlistId: number | string): Record<string, 
 export function saveSetlistOverride(
   setlistId: number | string,
   entryId: number | string,
-  data: { transpose?: number; nashville?: boolean }
+  data: { transpose?: number; nashville?: boolean; font?: number | null; two_col?: number | null }
 ): void {
   try {
     const all = JSON.parse(localStorage.getItem(KEYS.setlistOverrides) || '{}');

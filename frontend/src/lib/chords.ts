@@ -1,5 +1,6 @@
 import * as ChordSheetJS from 'chordsheetjs';
 import { escHtml } from './util';
+import { normalizeKey, normalizeChord } from './keys';
 import type { SetlistEntry } from '../types';
 
 const PARSER_NAMES = [
@@ -160,39 +161,68 @@ class ResponsiveHtmlFormatter {
   }
 
   private renderParagraph(p: ChordSheetJS.Paragraph): string {
-    const cls = `paragraph ${p.type}`;
+    const SECTION_RE = /^\[?(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?\]?$/i;
+    
     let content = p.lines.map(l => this.renderLine(l)).join('');
+    let detectedType = p.type;
 
-    // If paragraph has a known type but the content doesn't already contain a label
-    if (p.type !== 'none' && !content.includes('class="label"')) {
-      const typeLabel = p.type.charAt(0).toUpperCase() + p.type.slice(1);
+    // Promote paragraph type if the first line is a label (helps CSS match)
+    if (detectedType === 'none' || detectedType === 'indeterminate') {
+      const firstLine = p.lines[0];
+      const firstItem = firstLine?.items[0];
+      if (firstItem && 'lyrics' in firstItem) {
+        const lyrics = (firstItem.lyrics || '').trim();
+        const chords = (firstItem.chords || '').trim();
+        // Check lyrics for label or chords for bracketed label
+        const potentialLabel = lyrics || chords;
+        if (!lyrics !== !chords && SECTION_RE.test(potentialLabel)) {
+          detectedType = potentialLabel.replace(/[[\]:]/g, '').split(/\s+/)[0].toLowerCase().replace('-', '');
+        }
+      }
+    }
+
+    // Only add automatic label if:
+    // 1. Type is known (not none/indeterminate)
+    // 2. We haven't already rendered a label badge in this paragraph
+    // 3. The paragraph actually has content (prevents empty "Indeterminate" badges for metadata)
+    const hasRenderableContent = p.lines.some(l => 
+      l.items.some(it => ('lyrics' in it && it.lyrics?.trim()) || ('chords' in it && it.chords?.trim()))
+    );
+
+    if (detectedType !== 'none' && detectedType !== 'indeterminate' && 
+        !content.includes('class="label"') && hasRenderableContent) {
+      const typeLabel = detectedType.charAt(0).toUpperCase() + detectedType.slice(1);
       content = `<div class="row"><h3 class="label">${escHtml(typeLabel)}</h3></div>` + content;
     }
 
-    return `<div class="${cls}">${content}</div>`;
+    return `<div class="paragraph ${detectedType}">${content}</div>`;
   }
 
   private renderLine(l: ChordSheetJS.Line): string {
-    const SECTION_RE = /^(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?$/i;
+    const SECTION_RE = /^\[?(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?\]?$/i;
 
     if (l.type === 'comment') {
       const firstItem = l.items[0];
-      const content = (firstItem && 'content' in firstItem ? (firstItem as any).content : 
+      const content = (firstItem && 'content' in firstItem ? (firstItem as ChordSheetJS.Comment).content : 
                      (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
       
-      // If the comment is actually a section label, render it as a heading badge
       if (SECTION_RE.test(content.trim())) {
-        return `<div class="row"><h3 class="label">${escHtml(content.trim())}</h3></div>`;
+        const cleanLabel = content.trim().replace(/[[\]:]/g, '');
+        return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
       return `<div class="comment">${escHtml(content)}</div>`;
     }
 
-    // Check for section labels on normal lyric lines
+    // Check for section labels on normal lyric lines or bracketed chords
     const firstItem = l.items[0];
     if (firstItem && 'lyrics' in firstItem) {
       const it = firstItem as ChordSheetJS.ChordLyricsPair;
-      if (!it.chords && it.lyrics && SECTION_RE.test(it.lyrics.trim())) {
-        return `<div class="row"><h3 class="label">${escHtml(it.lyrics.trim())}</h3></div>`;
+      const lyrics = (it.lyrics || '').trim();
+      const chords = (it.chords || '').trim();
+      // Only one of them should be present for a pure label line
+      if (!lyrics !== !chords && SECTION_RE.test(lyrics || chords)) {
+        const cleanLabel = (lyrics || chords).replace(/[[\]:]/g, '');
+        return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
     }
 
@@ -226,7 +256,8 @@ class ResponsiveHtmlFormatter {
 
       // If we haven't placed the chord yet, or if it's a word, wrap in a column.
       // The chord is only attached to the VERY FIRST chunk (word or space).
-      const currentChord = chordPlaced ? '' : (it.chords || '');
+      const rawChord = chordPlaced ? '' : (it.chords || '');
+      const currentChord = normalizeChord(rawChord);
       chordPlaced = true;
       
       const chords = `<span class="chord">${escHtml(currentChord)}</span>`;
@@ -283,7 +314,7 @@ export function getSongKey(content: string, semitones = 0): string {
     const transposed = semitones !== 0 ? song.transpose(semitones) : song;
     const keyRaw = transposed.key || (transposed.getMetadataValue ? transposed.getMetadataValue('key') : null);
     const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
-    if (key) return key;
+    if (key) return normalizeKey(key);
     // Fallback: derive key from first chord
     for (const p of transposed.paragraphs) {
       for (const line of p.lines) {
@@ -291,7 +322,7 @@ export function getSongKey(content: string, semitones = 0): string {
           const chords = (item as { chords?: string }).chords;
           if (chords && chords.trim()) {
             const m = chords.trim().match(/^([A-G][b#]?m?)/);
-            if (m) return m[1];
+            if (m) return normalizeKey(m[1]);
           }
         }
       }
