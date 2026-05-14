@@ -101,7 +101,7 @@ function createSetlistsRouter() {
     const setlist = db.prepare('SELECT s.*, u.username FROM setlists s JOIN users u ON s.user_id = u.id WHERE s.id = ? AND s.visibility = ?').get(id, VISIBILITY.PUBLIC);
     if (!setlist) return res.status(404).json({ error: 'Setlist not found' });
     const entries = db.prepare(`
-      SELECT ss.id as entry_id, ss.song_id, ss.position, ss.transpose, ss.nashville, ss.content_override,
+      SELECT ss.id as entry_id, ss.song_id, ss.position, ss.transpose, ss.nashville, ss.font, ss.two_col, ss.content_override,
              so.title, so.artist, so.content, so.key, so.youtube_url, so.bpm, so.tags, so.language, so.visibility, so.user_id as song_user_id, u.username
       FROM setlist_songs ss
       JOIN songs so ON ss.song_id = so.id
@@ -132,7 +132,7 @@ function createSetlistsRouter() {
     const setlist = resolveSetlist(res, id, req.user.id);
     if (!setlist) return;
     const entries = db.prepare(`
-      SELECT ss.id as entry_id, ss.song_id, ss.position, ss.transpose, ss.nashville, ss.content_override,
+      SELECT ss.id as entry_id, ss.song_id, ss.position, ss.transpose, ss.nashville, ss.font, ss.two_col, ss.content_override,
              s.title, s.artist, s.content, s.key, s.youtube_url, s.bpm, s.tags, s.language, s.visibility, s.user_id as song_user_id, u.username
       FROM setlist_songs ss
       JOIN songs s ON ss.song_id = s.id
@@ -212,7 +212,7 @@ function createSetlistsRouter() {
     if (!resolveSetlist(res, setlistId, req.user.id)) return;
     const entry = db.prepare('SELECT * FROM setlist_songs WHERE id = ? AND setlist_id = ?').get(entryId, setlistId);
     if (!entry) return res.status(404).json({ error: 'Entry not found' });
-    const { transpose, nashville, content_override } = req.body;
+    const { transpose, nashville, font, two_col, content_override } = req.body;
     const transposeErr = validateTranspose(transpose);
     if (transposeErr) return res.status(400).json({ error: transposeErr });
     if (nashville !== undefined && typeof nashville !== 'boolean' && nashville !== 0 && nashville !== 1) {
@@ -224,10 +224,14 @@ function createSetlistsRouter() {
     db.prepare(`UPDATE setlist_songs SET
       transpose = COALESCE(?, transpose),
       nashville = COALESCE(?, nashville),
+      font = COALESCE(?, font),
+      two_col = COALESCE(?, two_col),
       content_override = ?
       WHERE id = ?`).run(
       transpose !== undefined ? transpose : null,
       nashville !== undefined ? (nashville ? 1 : 0) : null,
+      font !== undefined ? font : null,
+      two_col !== undefined ? (two_col === null ? null : (two_col ? 1 : 0)) : null,
       content_override !== undefined ? content_override : entry.content_override,
       entryId
     );
