@@ -298,6 +298,10 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
     if (!song) throw new Error('parse failed');
 
     let transposed = semitones !== 0 ? song.transpose(semitones) : song;
+    
+    // Fix accidentals after transposition to preserve sharp preference and prevent auto-correction
+    fixChordAccidentals(transposed);
+
     const keyRaw = transposed.key || (transposed.getMetadataValue ? transposed.getMetadataValue('key') : null);
     const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
 
@@ -313,6 +317,19 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
   } catch {
     return `<pre style="font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre-wrap;color:var(--text)">${escHtml(content)}</pre>`;
   }
+}
+
+export function fixChordAccidentals(song: ChordSheetJS.Song): void {
+  song.paragraphs.forEach((p) => {
+    p.lines.forEach((line) => {
+      line.items.forEach((item) => {
+        const it = item as { chords?: string };
+        if (it.chords) {
+          it.chords = normalizeChord(it.chords);
+        }
+      });
+    });
+  });
 }
 
 export function convertToNashville(song: ChordSheetJS.Song, key: string): ChordSheetJS.Song {
