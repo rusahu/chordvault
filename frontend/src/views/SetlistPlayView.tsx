@@ -53,7 +53,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     navigate,
     onNavigate: () => { 
       setEditing(false); 
-      setAutoFitActive(false);
       setRenderKey((k) => k + 1); 
     },
   });
