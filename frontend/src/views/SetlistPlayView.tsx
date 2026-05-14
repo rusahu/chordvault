@@ -51,7 +51,11 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     initialSetlist,
     initialIndex,
     navigate,
-    onNavigate: () => { setEditing(false); setRenderKey((k) => k + 1); },
+    onNavigate: () => { 
+      setEditing(false); 
+      setAutoFitActive(false);
+      setRenderKey((k) => k + 1); 
+    },
   });
 
   const content = entry ? (entry.content_override || entry.content) : '';
@@ -96,7 +100,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       toast('Auto-fit disabled', 'info');
     }
     const current = slEffective(entry, 'twoCol', twoCol);
-    updateEntry({ _twoCol: !current });
+    const nextVal = !current;
+    updateEntry({ _twoCol: nextVal === twoCol ? null : nextVal });
     setRenderKey((k) => k + 1);
   }, [entry, twoCol, autoFitActive, toast, updateEntry]);
 
@@ -107,7 +112,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       toast('Auto-fit disabled', 'info');
     }
     const current = slEffective(entry, 'font', fontSize) || 0;
-    updateEntry({ _font: clampFontSize(current + delta) });
+    const nextVal = clampFontSize(current + delta);
+    updateEntry({ _font: nextVal === fontSize ? null : nextVal });
     setRenderKey((k) => k + 1);
   }, [entry, fontSize, autoFitActive, toast, updateEntry]);
 
