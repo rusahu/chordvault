@@ -145,7 +145,7 @@
   border-left: 4px solid var(--accent);
   padding: 12px 0 12px 28px;
   margin-left: -32px;
-  border-radius: 0 8px 8px 0;
+  border-radius: 8px; /* Premium rounded corners on all sides */
 }
 
 .chord-sheet .paragraph.bridge {
@@ -153,11 +153,12 @@
   border-left: 3px dashed var(--muted);
   padding: 12px 0 12px 24px;
   margin-left: -28px;
-  border-radius: 0 8px 8px 0;
+  border-radius: 8px;
 }
 
 .chord-sheet .paragraph.prechorus {
   border-left: 2px dotted var(--accent-alt);
   padding-left: 28px;
   margin-left: -32px;
+  border-radius: 8px;
 }
