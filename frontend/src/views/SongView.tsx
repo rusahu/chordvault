@@ -242,6 +242,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
         onAutoFit={handleAutoFit}
         autoFitActive={autoFitActive}
         onExportPdf={handleExportPdf}
+        renderKey={songId}
       />
 
       <ChordSheet 
