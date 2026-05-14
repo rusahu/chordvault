@@ -15,7 +15,7 @@
   height: calc(100vh - 220px); 
   padding: 20px;
   display: block; /* Standard block flow for reliable scrolling */
-  overflow-y: auto;
+  overflow-y: scroll; /* Force scrollbar to prevent width-oscillation loops */
 }
 
 .chord-sheet-wrap.fitted-mode #chord-output {
@@ -28,7 +28,7 @@
   column-count: 2;
   column-gap: 56px;
   column-rule: 1px solid var(--border);
-  height: 100%; /* Important for column splitting */
+  /* height: 100% removed to allow vertical overflow detection */
 }
 
 .chord-sheet-wrap.two-col .paragraph {
