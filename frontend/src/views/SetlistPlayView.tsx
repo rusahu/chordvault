@@ -390,6 +390,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
               twoCol={!!effTwoCol} 
               fontSize={effFont || 0} 
               autoFit={autoFitActive} 
+              renderKey={_renderKey}
             />
           )}
         </>

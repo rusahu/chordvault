@@ -7,9 +7,10 @@ interface ChordSheetProps {
   twoCol?: boolean;
   fontSize?: number;
   autoFit?: boolean;
+  renderKey?: number;
 }
 
-export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps) {
+export function ChordSheet({ html, twoCol, fontSize, autoFit, renderKey }: ChordSheetProps) {
   const [autoTwoCol, setAutoTwoCol] = useState(false);
   const [isFitting, setIsFitting] = useState(false);
 
@@ -17,7 +18,7 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
   useEffect(() => {
     setAutoTwoCol(false);
     if (autoFit) setIsFitting(true);
-  }, [html, autoFit, twoCol]);
+  }, [html, autoFit, twoCol, renderKey]);
 
   const { fontSize: fitFontSize, ref } = useFitText({
     minFontSize: 40,
@@ -66,6 +67,23 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
       className={cls}
       style={style}
     >
+      {autoFit && isFitting && (
+        <div style={{ 
+          position: 'absolute', 
+          top: '50%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 12,
+          opacity: 1
+        }}>
+          <div className="spinner" style={{ width: 30, height: 30, border: '3px solid var(--muted)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'cv-spin 1s linear infinite' }}></div>
+          <div style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>Fitting...</div>
+        </div>
+      )}
       <div id="chord-output" dangerouslySetInnerHTML={{ __html: html }} />
     </div>
   );

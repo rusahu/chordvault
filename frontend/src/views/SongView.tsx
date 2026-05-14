@@ -64,7 +64,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
   useEffect(() => {
     resetChordTranspose(0);
     resetChordNashville(false);
-    setAutoFitActive(false);
   }, [songId, resetChordTranspose, resetChordNashville]);
 
   const renderedHtml = useMemo(
@@ -241,6 +240,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
         twoCol={twoColState.twoCol} 
         fontSize={fontScale.fontSize} 
         autoFit={autoFitActive} 
+        renderKey={songId}
       />
 
       {(song.tags || song.youtube_url) && (
