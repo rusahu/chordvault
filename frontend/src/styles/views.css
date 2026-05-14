@@ -569,6 +569,8 @@
   margin-top: 0;
   border-radius: 0;
   border: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 .setlist-play-container::-webkit-scrollbar {
@@ -588,10 +590,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 24px;
+  padding: 12px 32px 8px; /* Increased side padding */
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
   z-index: 50;
+}
+
+.setlist-play-container .transpose-bar {
+  margin: 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0 32px 14px; /* Balanced side and bottom padding */
+  justify-content: center;
+  background: var(--surface);
 }
 
 .setlist-play-indicator {
