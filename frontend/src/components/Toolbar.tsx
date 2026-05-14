@@ -97,27 +97,26 @@ export function Toolbar({
           </button>
         )}
         <span className="toolbar-spacer" />
-        {onSaveOnline && (
+        {onSaveOnline && isModified && (
           <button
-            className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
+            className="transpose-btn font-btn save-btn active"
             onClick={onSaveOnline}
-            disabled={!isModified}
-            title={isModified ? 'Save this key for everyone' : 'Key is set for everyone'}
+            title="Save this key for everyone"
           >
-            FOR ALL
+            SAVE (Online)
           </button>
         )}
-        {onSaveLocal && (
+        {onSaveLocal && isModified && (
           <button
-            className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
+            className="transpose-btn font-btn save-btn active"
             onClick={onSaveLocal}
-            disabled={!isModified}
-            title={isModified ? 'Save this key only for me' : 'Key is set only for me'}
+            title="Save this key only for me"
           >
-            FOR ME
+            Save (Local)
           </button>
         )}
-        <span className="toolbar-divider" />
+        {(onSaveOnline || onSaveLocal) && isModified && <span className="toolbar-divider" />}
+
         {onExportPdf && (
           <button
             className="transpose-btn font-btn pdf-btn"
