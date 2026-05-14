@@ -1,0 +1,2 @@
+◇ injected env (1) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+ChordVault running on port 3100

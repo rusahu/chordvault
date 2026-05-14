@@ -408,7 +408,24 @@ export function slEffective<T>(
   key: 'num' | 'twoCol' | 'font' | 'hideYt',
   globalVal: T
 ): T {
-  const keyMap = { num: '_num', twoCol: '_twoCol', font: '_font', hideYt: '_hideYt' } as const;
-  const ov = entry[keyMap[key]];
+  if (key === 'font') {
+    // Priority: session _font > db font > globalVal
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (entry._font !== undefined && entry._font !== null) return entry._font as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (entry.font !== undefined && entry.font !== null) return entry.font as any;
+    return globalVal;
+  }
+  if (key === 'twoCol') {
+    // Priority: session _twoCol > db two_col > globalVal
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (entry._twoCol !== undefined && entry._twoCol !== null) return entry._twoCol as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (entry.two_col !== undefined && entry.two_col !== null) return (!!entry.two_col) as any;
+    return globalVal;
+  }
+  const keyMap = { num: '_num', hideYt: '_hideYt' } as const;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ov = (entry as any)[keyMap[key as 'num' | 'hideYt']];
   return (ov != null ? ov : globalVal) as T;
 }

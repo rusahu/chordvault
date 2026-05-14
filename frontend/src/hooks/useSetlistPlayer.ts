@@ -126,12 +126,18 @@ export function useSetlistPlayer({
     if (!silent) toast('Saved locally', 'success');
   }, [setlist, entry, toast]);
 
-  const autoSave = useCallback(() => {
-    if (!isModified) return;
+  const autoSave = useCallback((currentEntry: SetlistEntry | null, currentSavedState: any) => {
+    if (!currentEntry) return;
+    const modified = currentEntry.transpose !== currentSavedState.transpose || 
+                    !!currentEntry.nashville !== currentSavedState.nashville ||
+                    (currentEntry.font || null) !== currentSavedState.font ||
+                    (currentEntry.two_col || null) !== currentSavedState.two_col;
+
+    if (!modified) return;
     const isOwner = setlist?.user_id && user && setlist.user_id === user.id;
     if (isOwner) saveOnline(true);
     else saveLocal(true);
-  }, [isModified, setlist, user, saveOnline, saveLocal]);
+  }, [setlist, user, saveOnline, saveLocal]);
 
   const goTo = useCallback((newIdx: number) => {
     if (!setlist) return;
@@ -147,7 +153,7 @@ export function useSetlistPlayer({
       return;
     }
 
-    autoSave();
+    autoSave(entry, savedState);
     setIndex(newIdx);
     onNavigate?.();
     const newEntry = setlist.entries[newIdx];
@@ -166,7 +172,12 @@ export function useSetlistPlayer({
     }
 
     // Scroll after React re-renders the new song content
-    requestAnimationFrame(() => window.scrollTo(0, 0));
+    // We use a small timeout to ensure the DOM has actually updated and stabilized
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      const output = document.querySelector('.chord-sheet-wrap');
+      if (output) output.scrollTo(0, 0);
+    }, 40);
   }, [setlist, autoSave, onNavigate, setlistId, isPublic, index]);
 
   useEffect(() => {
@@ -196,7 +207,7 @@ export function useSetlistPlayer({
   }, [index]);
 
   const exit = useCallback(() => {
-    autoSave();
+    autoSave(entry, savedState);
     if (setlist?.isLocal) { location.hash = ''; navigate('local-setlists'); }
     else if (setlist?.user_id && user && setlist.user_id === user.id) { navigate('setlist-edit', { id: String(setlist.id) }); }
     else { location.hash = ''; navigate(user ? 'setlists' : 'browse'); }

@@ -91,7 +91,7 @@ export function Toolbar({
           <button
             className={`transpose-btn font-btn autofit-btn${autoFitActive ? ' active' : ''}`}
             onClick={onAutoFit}
-            title={autoFitActive ? 'Auto-fit: ON (click to turn off)' : 'Auto-fit: adjust font and columns for this screen'}
+            title="Auto-fit for this screen (one-time)"
           >
             FIT
           </button>
@@ -102,9 +102,9 @@ export function Toolbar({
             className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
             onClick={onSaveOnline}
             disabled={!isModified}
-            title={isModified ? 'Update setlist for everyone' : 'Saved to cloud'}
+            title={isModified ? 'Save changes to cloud' : 'All changes saved to cloud'}
           >
-            {isModified ? 'SAVE ONLINE' : 'CLOUD'}
+            {isModified ? 'SAVE' : 'CLOUD'}
           </button>
         )}
         {onSaveLocal && (
@@ -112,9 +112,9 @@ export function Toolbar({
             className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
             onClick={onSaveLocal}
             disabled={!isModified}
-            title={isModified ? 'Save to this browser only' : 'Saved locally'}
+            title={isModified ? 'Save overrides to this browser' : 'All overrides synced to browser'}
           >
-            {isModified ? 'SAVE LOCAL' : 'LOCAL'}
+            {isModified ? 'SYNC' : 'LOCAL'}
           </button>
         )}
         {onExportPdf && (
