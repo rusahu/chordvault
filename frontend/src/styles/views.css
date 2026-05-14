@@ -528,6 +528,15 @@
 }
 
 /* -- Setlist Playback --------------------─ */
+:root:has(.setlist-play-container) {
+  overflow: hidden !important;
+}
+
+:root:has(.setlist-play-container) body {
+  overflow: hidden !important;
+  height: 100vh;
+}
+
 .setlist-play-container {
   display: flex;
   flex-direction: column;
@@ -536,7 +545,7 @@
   
   /* Negate #app padding (32px 24px) to go truly edge-to-edge */
   margin: -32px -24px; 
-  overflow: hidden; /* Prevent container-level scrollbars */
+  overflow: hidden;
 
   /* Force hidden scrollbars globally within this container */
   scrollbar-width: none;
