@@ -249,6 +249,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     for (let i = 0; i < total; i++) {
       goTo(i);
       // Wait for React to render the new song content
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const delay = (import.meta as any).env.MODE === 'test' ? 0 : 150;
       await new Promise(r => setTimeout(r, delay)); 
       
