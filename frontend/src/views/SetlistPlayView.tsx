@@ -238,7 +238,10 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const hideYt = slEffective(entry, 'hideYt', slHideYt);
 
   return (
-    <div ref={containerRef}>
+    <div ref={containerRef} className="setlist-play-container">
+      {index > 0 && <div className="nav-zone nav-zone-left" onClick={prev} />}
+      {index < total - 1 && <div className="nav-zone nav-zone-right" onClick={next} />}
+
       <div className="setlist-play-header">
         <button className="btn btn-ghost btn-sm" onClick={exit}>&#8592; {t('setlist.exit')}</button>
         <span className="setlist-play-indicator">
@@ -314,10 +317,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
           </div>
         </div>
       ) : (
-        <div className="setlist-sheet-row">
-          {index > 0 ? (
-            <button className="setlist-side-btn setlist-side-prev" onClick={prev}>&#8249;</button>
-          ) : <div className="setlist-side-spacer" />}
+        <>
           {entry?.is_private_placeholder ? (
             <div className="empty" style={{ marginTop: 40 }}>
               <div className="empty-icon">&#128274;</div>
@@ -332,10 +332,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
               autoFit={autoFitActive} 
             />
           )}
-          {index < total - 1 ? (
-            <button className="setlist-side-btn setlist-side-next" onClick={next}>&#8250;</button>
-          ) : <div className="setlist-side-spacer" />}
-        </div>
+        </>
       )}
     </div>
   );
