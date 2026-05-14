@@ -246,5 +246,12 @@ describe('renderChordPro sections', () => {
     const html = renderChordPro(content);
     expect(html).toContain('class="paragraph bridge"');
   });
+
+  it('handles bracketed labels like [Chorus]', () => {
+    const content = '[Chorus]\n[G]Lyrics';
+    const html = renderChordPro(content);
+    expect(html).toContain('class="paragraph chorus"');
+    expect(html).toContain('class="label">Chorus</h3>');
+  });
 });
 
