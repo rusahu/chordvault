@@ -8,8 +8,6 @@ interface SettingsPanelProps {
   fontSize: number;
   onFontChange: (delta: number) => void;
   onFontReset: () => void;
-  autoFitMode?: boolean;
-  onAutoFitModeChange?: (val: boolean) => void;
 }
 
 export function SettingsPanel({
@@ -22,8 +20,6 @@ export function SettingsPanel({
   fontSize,
   onFontChange,
   onFontReset,
-  autoFitMode,
-  onAutoFitModeChange,
 }: SettingsPanelProps) {
   return (
     <div className="sl-options-panel">

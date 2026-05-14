@@ -45,7 +45,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   // Render key for forcing re-render
   const [_renderKey, setRenderKey] = useState(0);
 
-  const { setlist, entry, index, total, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
+  const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
     isPublic,
     initialSetlist,
@@ -211,8 +211,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       setExportingPdf(false);
     }
   };
-
-  const [isFittingAll, _setIsFittingAll] = useState(false); // Kept for type safety if used elsewhere, but logic removed
 
   const doFit = () => {
     setAutoFitActive(true);

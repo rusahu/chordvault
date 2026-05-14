@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useApi } from './useApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -28,10 +28,8 @@ export function useSetlistPlayer({
 
   const [setlist, setSetlist] = useState<Setlist | null>(initialSetlist || null);
   const [index, setIndex] = useState(initialIndex || 0);
-  const initialIndexRef = useRef(initialIndex || 0);
-  const [savedState, setSavedState] = useState({
-    transpose: initialSetlist?.entries[initialIndex || 0]?.transpose || 0,
-  });
+  
+  const [savedTransposes, setSavedTransposes] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const endpoint = isPublic ? `/api/setlists/public/${setlistId}` : `/api/setlists/${setlistId}`;
@@ -39,26 +37,19 @@ export function useSetlistPlayer({
       .then((sl) => {
         // Merge local overrides
         const overrides = getSetlistOverrides(sl.id);
+        const transposes: Record<string, number> = {};
         sl.entries = sl.entries.map((en) => {
           const ov = overrides[String(en.entry_id)];
-          if (ov) {
-            return {
-              ...en,
-              transpose: ov.transpose ?? en.transpose,
-              // Number notation is now view-only
-            };
-          }
-          return en;
+          const transpose = ov?.transpose ?? en.transpose;
+          transposes[String(en.entry_id)] = transpose;
+          return {
+            ...en,
+            transpose,
+          };
         });
 
         setSetlist(sl);
-        const startIdx = initialIndexRef.current;
-        if (sl.entries[startIdx]) {
-          const e = sl.entries[startIdx];
-          setSavedState({
-            transpose: e.transpose,
-          });
-        }
+        setSavedTransposes(transposes);
       })
       .catch((e) => { toast(e.message, 'error'); navigate(user ? 'setlists' : 'browse'); });
   }, [setlistId, apiCall, isPublic, navigate, toast, user]);
@@ -68,8 +59,8 @@ export function useSetlistPlayer({
 
   const isModified = useMemo(() => {
     if (!entry) return false;
-    return entry.transpose !== savedState.transpose;
-  }, [entry, savedState]);
+    return entry.transpose !== (savedTransposes[String(entry.entry_id)] ?? 0);
+  }, [entry, savedTransposes]);
 
   /**
    * Saves the current transpose settings to the server (only for owners).
@@ -79,11 +70,11 @@ export function useSetlistPlayer({
     try {
       await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, {
         transpose: entry.transpose,
-        // Nashville/Font/TwoCol removed from save payload
       });
-      setSavedState({ 
-        transpose: entry.transpose, 
-      });
+      setSavedTransposes(prev => ({
+        ...prev,
+        [String(entry.entry_id)]: entry.transpose
+      }));
       if (!silent) toast('Key saved to cloud', 'success');
     } catch (e) {
       if (!silent) toast((e as Error).message, 'error');
@@ -98,21 +89,12 @@ export function useSetlistPlayer({
     saveSetlistOverride(setlist.id, entry.entry_id, {
       transpose: entry.transpose,
     });
-    setSavedState({ 
-      transpose: entry.transpose, 
-    });
+    setSavedTransposes(prev => ({
+      ...prev,
+      [String(entry.entry_id)]: entry.transpose
+    }));
     if (!silent) toast('Key saved locally', 'success');
   }, [setlist, entry, toast]);
-
-  const autoSave = useCallback((currentEntry: SetlistEntry | null, currentSavedState: any) => {
-    if (!currentEntry) return;
-    const modified = currentEntry.transpose !== currentSavedState.transpose;
-
-    if (!modified) return;
-    const isOwner = setlist?.user_id && user && setlist.user_id === user.id;
-    if (isOwner) saveOnline(true);
-    else saveLocal(true);
-  }, [setlist, user, saveOnline, saveLocal]);
 
   const goTo = useCallback((newIdx: number) => {
     if (!setlist) return;
@@ -128,13 +110,8 @@ export function useSetlistPlayer({
       return;
     }
 
-    autoSave(entry, savedState);
     setIndex(newIdx);
     onNavigate?.();
-    const newEntry = setlist.entries[newIdx];
-    setSavedState({
-      transpose: newEntry.transpose,
-    });
 
     if (!setlist.isLocal) {
       let h = `#setlist/${setlistId}/play`;
@@ -150,7 +127,7 @@ export function useSetlistPlayer({
       const output = document.querySelector('.chord-sheet-wrap');
       if (output) output.scrollTo(0, 0);
     }, 40);
-  }, [setlist, autoSave, onNavigate, setlistId, isPublic, index]);
+  }, [setlist, onNavigate, setlistId, isPublic, index]);
 
   useEffect(() => {
     const onHash = () => {
@@ -179,11 +156,10 @@ export function useSetlistPlayer({
   }, [index]);
 
   const exit = useCallback(() => {
-    autoSave(entry, savedState);
     if (setlist?.isLocal) { location.hash = ''; navigate('local-setlists'); }
     else if (setlist?.user_id && user && setlist.user_id === user.id) { navigate('setlist-edit', { id: String(setlist.id) }); }
     else { location.hash = ''; navigate(user ? 'setlists' : 'browse'); }
-  }, [setlist, autoSave, navigate, user]);
+  }, [setlist, navigate, user]);
 
-  return { setlist, entry, index, total, goTo, prev, next, exit, autoSave, updateEntry, isModified, saveOnline, saveLocal };
+  return { setlist, entry, index, total, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal };
 }

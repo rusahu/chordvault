@@ -97,26 +97,6 @@ export function Toolbar({
           </button>
         )}
         <span className="toolbar-spacer" />
-        {onSaveOnline && isModified && (
-          <button
-            className="transpose-btn font-btn save-btn active"
-            onClick={onSaveOnline}
-            title="Save this key for everyone"
-          >
-            SAVE (Online)
-          </button>
-        )}
-        {onSaveLocal && isModified && (
-          <button
-            className="transpose-btn font-btn save-btn active"
-            onClick={onSaveLocal}
-            title="Save this key only for me"
-          >
-            Save (Local)
-          </button>
-        )}
-        {(onSaveOnline || onSaveLocal) && isModified && <span className="toolbar-divider" />}
-
         {onExportPdf && (
           <button
             className="transpose-btn font-btn pdf-btn"
@@ -148,6 +128,9 @@ export function Toolbar({
         currentKey={currentKey}
         onPickKey={onPickKey}
         visible={pickerOpen}
+        isModified={isModified}
+        onSaveOnline={onSaveOnline}
+        onSaveLocal={onSaveLocal}
       />
     </>
   );
