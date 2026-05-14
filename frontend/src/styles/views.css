@@ -343,8 +343,8 @@
 
 .key-picker {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  gap: 12px;
   margin-top: 8px;
   padding: 12px;
   background: var(--surface);
@@ -352,6 +352,55 @@
   border-radius: 12px;
   animation: viewFadeIn 0.2s ease-out;
   box-shadow: var(--shadow-lg);
+}
+
+.key-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.key-picker-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  animation: slideDown 0.2s ease-out;
+}
+
+.key-picker-save-hint {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.key-picker-btns {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.key-picker-btns .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+.btn-save-online {
+  background: var(--accent) !important;
+  color: #000 !important;
+  border-color: var(--accent) !important;
+  font-weight: 600 !important;
+}
+.btn-save-online:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .key-pill {
