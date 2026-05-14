@@ -13,7 +13,7 @@
 /* -- Library Fit Mode ---------------------- */
 .chord-sheet-wrap.fitted-mode {
   flex: 1;
-  min-height: 0; /* Important for flex children scrolling */
+  min-height: 0;
   padding: 24px 32px;
   display: block; 
   overflow-y: auto; 
@@ -22,11 +22,14 @@
   border-left: none;
   border-right: none;
   border-bottom: none;
+
+  /* Hide scrollbar while maintaining functionality to prevent width shifts */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.chord-sheet-wrap.fitted-mode #chord-output {
-  height: auto;
-  min-height: min-content;
+.chord-sheet-wrap.fitted-mode::-webkit-scrollbar {
+  display: none;
 }
 /* ------------------------------------------ */
 
