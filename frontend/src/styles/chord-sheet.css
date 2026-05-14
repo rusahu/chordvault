@@ -8,6 +8,14 @@
   overflow-x: auto;
   margin-top: 8px;
   font-size: 18px; /* Base for relative units */
+
+  /* Hide scrollbar while maintaining functionality */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chord-sheet-wrap::-webkit-scrollbar {
+  display: none;
 }
 
 /* -- Library Fit Mode ---------------------- */
@@ -24,12 +32,6 @@
   border-bottom: none;
 
   /* Hide scrollbar while maintaining functionality to prevent width shifts */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.chord-sheet-wrap.fitted-mode::-webkit-scrollbar {
-  display: none;
 }
 /* ------------------------------------------ */
 
