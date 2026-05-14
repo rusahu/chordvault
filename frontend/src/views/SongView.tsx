@@ -10,7 +10,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
-import { renderChordPro, songHasKey } from '../lib/chords';
+import { renderChordPro, songHasKey, autoFit } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction, SetlistListItem } from '../types';
 
@@ -59,6 +59,16 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
   const [autoFitActive, setAutoFitActive] = useState(false);
+
+  const handleAutoFit = () => {
+    setAutoFitActive(true);
+    setTimeout(() => {
+      const result = autoFit();
+      fontScale.changeFontSize(result.fontSize);
+      twoColState.setTwoColTo(result.twoCol);
+      setAutoFitActive(false);
+    }, 100);
+  };
 
   // Reset transpose/nashville when navigating to a different song
   useEffect(() => {
@@ -227,10 +237,9 @@ export function SongView({ songId, navigate }: SongViewProps) {
         onReset={() => { 
           fontScale.resetFontSize(); 
           twoColState.setTwoColTo(false);
-          setAutoFitActive(false);
         }}
         onPickKey={chord.pickKey}
-        onAutoFit={() => setAutoFitActive(!autoFitActive)}
+        onAutoFit={handleAutoFit}
         autoFitActive={autoFitActive}
         onExportPdf={handleExportPdf}
       />
