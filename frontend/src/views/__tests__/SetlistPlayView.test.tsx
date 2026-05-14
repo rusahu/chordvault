@@ -67,34 +67,16 @@ describe('SetlistPlayView Auto-Fit', () => {
   it('performs a one-time Auto-fit action', async () => {
     render(<SetlistPlayView setlistId={1} navigate={navigate} />);
     
-    const fitBtn = screen.getByTitle(/Auto-fit: adjust font/);
+    const fitBtn = screen.getByTitle(/Auto-fit for this screen/);
     fireEvent.click(fitBtn);
     
-    // Button should briefly show "Auto-fit: ON" (during timeout)
-    expect(screen.getByTitle(/Auto-fit: ON/)).toBeInTheDocument();
+    // Button should briefly show "active" class
+    expect(fitBtn).toHaveClass('active');
     
     // After timeout it should be back to OFF
-    await waitFor(() => expect(screen.getByTitle(/Auto-fit: adjust font/)).toBeInTheDocument());
+    await waitFor(() => expect(fitBtn).not.toHaveClass('active'), { timeout: 2000 });
     expect(mockUpdateEntry).toHaveBeenCalledWith(expect.objectContaining({
-      _font: expect.any(Number),
+      font: expect.any(Number),
     }));
-  });
-
-  it('fitAll cycles through songs and updates entries', async () => {
-    render(<SetlistPlayView setlistId={1} navigate={navigate} />);
-    
-    // Open settings panel to find fitAll button
-    const settingsBtn = screen.getByTitle('Settings');
-    fireEvent.click(settingsBtn);
-    
-    const fitAllBtn = screen.getByText('Fit ALL songs');
-    
-    // Mock window.confirm
-    window.confirm = vi.fn().mockReturnValue(true);
-    
-    fireEvent.click(fitAllBtn);
-    
-    // Should finish quickly because delay is 0 in tests
-    await waitFor(() => expect(mockUpdateEntry).toHaveBeenCalled(), { timeout: 2000 });
   });
 });

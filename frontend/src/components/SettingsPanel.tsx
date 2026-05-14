@@ -8,8 +8,8 @@ interface SettingsPanelProps {
   fontSize: number;
   onFontChange: (delta: number) => void;
   onFontReset: () => void;
-  onFitAll?: () => void;
-  isFittingAll?: boolean;
+  autoFitMode?: boolean;
+  onAutoFitModeChange?: (val: boolean) => void;
 }
 
 export function SettingsPanel({
@@ -22,8 +22,8 @@ export function SettingsPanel({
   fontSize,
   onFontChange,
   onFontReset,
-  onFitAll,
-  isFittingAll,
+  autoFitMode,
+  onAutoFitModeChange,
 }: SettingsPanelProps) {
   return (
     <div className="sl-options-panel">
@@ -64,14 +64,6 @@ export function SettingsPanel({
           </button>
         </div>
       </div>
-      {onFitAll && (
-        <div className="sl-option">
-          <span>Bulk actions</span>
-          <button className="btn btn-ghost btn-sm" onClick={onFitAll} disabled={isFittingAll}>
-            {isFittingAll ? 'Fitting...' : 'Fit ALL songs'}
-          </button>
-        </div>
-      )}
     </div>
   );
 }
