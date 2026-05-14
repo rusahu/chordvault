@@ -9,7 +9,7 @@ describe('KeyPicker', () => {
 
   it('renders all 12 keys when visible', () => {
     render(<KeyPicker currentKey="G" onPickKey={onPickKey} visible={true} />);
-    const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const keys = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
     keys.forEach(k => {
       expect(screen.getByText(k)).toBeDefined();
     });
