@@ -10,7 +10,7 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
-import { renderChordPro, getSongKey, clampFontSize, songHasKey, slEffective } from '../lib/chords';
+import { renderChordPro, getSongKey, clampFontSize, songHasKey, slEffective, autoFit } from '../lib/chords';
 import { normalizeKey, ALL_KEYS, ALL_KEYS_MINOR } from '../lib/keys';
 import { getStoredFontSize, setStoredFontSize, getStoredTwoCol, setStoredTwoCol } from '../lib/storage';
 import type { Setlist } from '../types';
@@ -45,7 +45,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   // Render key for forcing re-render
   const [_renderKey, setRenderKey] = useState(0);
 
-  const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
+  const { setlist, entry, index, total, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
     isPublic,
     initialSetlist,
@@ -227,6 +227,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     }
   };
 
+  const [isFittingAll, setIsFittingAll] = useState(false);
+
   const doFit = () => {
     if (autoFitActive) {
       setAutoFitActive(false);
@@ -235,6 +237,30 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     }
     setAutoFitActive(true);
     toast('Auto-fit enabled for setlist', 'success');
+  };
+
+  const fitAll = async () => {
+    if (!setlist || isFittingAll) return;
+    if (!confirm('This will cycle through all songs and save the best fit for each one. Continue?')) return;
+    
+    setIsFittingAll(true);
+    setAutoFitActive(false); // Use manual calculation loop
+    
+    for (let i = 0; i < total; i++) {
+      goTo(i);
+      // Wait for React to render the new song content
+      const delay = (import.meta as any).env.MODE === 'test' ? 0 : 150;
+      await new Promise(r => setTimeout(r, delay)); 
+      
+      const result = autoFit();
+      updateEntry({ 
+        _font: result.fontSize === fontSize ? null : result.fontSize,
+        _twoCol: result.twoCol === twoCol ? null : result.twoCol 
+      });
+    }
+    
+    setIsFittingAll(false);
+    toast('Finished fitting all songs', 'success');
   };
 
   if (!setlist) return <Loading />;
@@ -290,8 +316,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         onFontChange={changeEntryFont}
         onReset={() => {
           if (entry) { updateEntry({ _font: null, _twoCol: null }); }
-          setFontSize(0); setStoredFontSize(0);
-          setTwoCol(false); setStoredTwoCol(false);
           setAutoFitActive(false);
           setRenderKey((k) => k + 1);
         }}
@@ -323,7 +347,19 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
           onFontChange={changeFont}
           onFontReset={resetFont}
           onAutoFit={doFit}
+          onFitAll={fitAll}
+          isFittingAll={isFittingAll}
         />
+      )}
+
+      {isFittingAll && (
+        <div className="fitting-overlay">
+          <div className="fitting-card">
+            <div className="spinner"></div>
+            <div>Fitting all songs...</div>
+            <div className="fitting-subtext">Optimizing font and columns for each song</div>
+          </div>
+        </div>
       )}
 
       {editing ? (

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { Mock } from 'vitest';
 import { SetlistPlayView } from '../SetlistPlayView';
 import { useSetlistPlayer } from '../../hooks/useSetlistPlayer';
@@ -53,6 +53,7 @@ describe('SetlistPlayView Auto-Fit', () => {
       entry: { entry_id: 1, title: 'Song 1', content: 'C G', transpose: 0 },
       index: 0,
       total: 2,
+      goTo: vi.fn(),
       prev: vi.fn(),
       next: vi.fn(),
       exit: vi.fn(),
@@ -63,29 +64,31 @@ describe('SetlistPlayView Auto-Fit', () => {
     });
   });
 
-  it('toggles autoFitActive when enabled', async () => {
+  it('keeps Auto-fit as a persistent mode', async () => {
     render(<SetlistPlayView setlistId={1} navigate={navigate} />);
     
     const fitBtn = screen.getByTitle(/Auto-fit: adjust font/);
-    
-    // Enable Auto-Fit
     fireEvent.click(fitBtn);
     
+    // Button title should change to "Auto-fit: ON"
     expect(screen.getByTitle(/Auto-fit: ON/)).toBeInTheDocument();
   });
 
-  it('disables autoFitActive when manual font change happens', async () => {
+  it('fitAll cycles through songs and updates entries', async () => {
     render(<SetlistPlayView setlistId={1} navigate={navigate} />);
     
-    const fitBtn = screen.getByTitle(/Auto-fit: adjust font/);
-    fireEvent.click(fitBtn); // Enable
+    // Open settings panel to find fitAll button
+    const settingsBtn = screen.getByTitle('Settings');
+    fireEvent.click(settingsBtn);
     
-    expect(screen.getByTitle(/Auto-fit: ON/)).toBeInTheDocument();
+    const fitAllBtn = screen.getByText('Fit ALL songs');
     
-    const fontPlusBtn = screen.getByText('A+');
-    fireEvent.click(fontPlusBtn);
+    // Mock window.confirm
+    window.confirm = vi.fn().mockReturnValue(true);
     
-    expect(screen.getByTitle(/Auto-fit: adjust font/)).toBeInTheDocument();
-    expect(screen.queryByTitle(/Auto-fit: ON/)).not.toBeInTheDocument();
+    fireEvent.click(fitAllBtn);
+    
+    // Should finish quickly because delay is 0 in tests
+    await waitFor(() => expect(mockUpdateEntry).toHaveBeenCalled(), { timeout: 2000 });
   });
 });
