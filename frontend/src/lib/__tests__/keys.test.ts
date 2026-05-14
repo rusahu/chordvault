@@ -55,6 +55,10 @@ describe('keys library', () => {
       expect(normalizeChord('D#sus4')).toBe('Ebsus4');
     });
 
+    it('handles numeric suffixes like 7', () => {
+      expect(normalizeChord('Ab7')).toBe('G#7');
+    });
+
     it('handles complex suffixes', () => {
       expect(normalizeChord('Abmaj7(#11)')).toBe('G#maj7(#11)');
     });

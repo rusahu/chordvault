@@ -10,7 +10,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
-import { renderChordPro, songHasKey } from '../lib/chords';
+import { renderChordPro, songHasKey, autoFit } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction, SetlistListItem } from '../types';
 

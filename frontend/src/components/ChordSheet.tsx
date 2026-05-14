@@ -45,7 +45,7 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
     }
   }, [fitFontSize, autoFit, autoTwoCol, twoCol]);
 
-  // 2. Manual/Legacy Scaling Logic
+  // Manual/Legacy Scaling Logic
   const manualScale = fontScaleValue(fontSize || 0);
   
   // Decide which styling strategy to use:
