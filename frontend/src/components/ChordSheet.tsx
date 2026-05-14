@@ -56,7 +56,7 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit, renderKey }: Chord
         opacity: isFitting ? 0 : 1, 
         transition: isFitting ? 'none' : 'opacity 0.25s ease-out' 
       } 
-    : (manualScale ? { '--font-scale': String(manualScale) } as any : {});
+    : (manualScale ? { '--font-scale': String(manualScale) } as React.CSSProperties : {});
 
   const isTwoCol = twoCol || (autoFit && autoTwoCol);
   const cls = `chord-sheet-wrap${isTwoCol ? ' two-col' : ''}${autoFit ? ' fitted-mode' : ''}`;
