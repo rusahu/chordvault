@@ -51,7 +51,31 @@ export function updateDirective(content: string, name: string, value: string | n
   return lines.join('\n');
 }
 
-export function parseSongAutoWithFormat(content: string): { song: ChordSheetJS.Song; format: string | null } | null {
+export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJS.Song; format: string | null } | null {
+  // Pre-process content: force all chords to preferred enharmonic spellings (Sharps)
+  // and fix spacing issues in slash chords (e.g. [A / C#] -> [A/C#]) BEFORE parsing.
+  // This ensures transpose and Nashville work correctly.
+  let content = rawContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
+    // 1. Fix spaces around slashes
+    let cleaned = inner.replace(/\s*\/\s*/g, '/');
+    // 2. Normalize the chord to preferred sharps
+    cleaned = normalizeChord(cleaned);
+    return `[${cleaned}]`;
+  });
+
+  // Also normalize Chords-over-lyrics format (lines with only chords)
+  content = content.split('\n').map(line => {
+    const isChordLine = /^\s*[A-G][b#]?\S*(?:\s+[A-G][b#]?\S*)+\s*$/m.test(line);
+    if (isChordLine) {
+      return line.split(/(\s+)/).map(chunk => {
+        if (chunk.trim() === '') return chunk;
+        const cleaned = chunk.replace(/\s*\/\s*/g, '/');
+        return normalizeChord(cleaned);
+      }).join('');
+    }
+    return line;
+  }).join('\n');
+
   // Detect true ChordPro bracket chords — exclude section labels like [Chorus], [Bridge]
   const SECTION_LABEL = /^(?:Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*$/i;
   const bracketContents = (content.match(/\[([A-G][^\]]*)\]/g) || []).map(b => b.slice(1, -1));
