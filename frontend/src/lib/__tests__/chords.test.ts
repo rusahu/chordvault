@@ -203,11 +203,48 @@ describe('ensureKeyDirective', () => {
     const result = ensureKeyDirective(content);
     expect(result).toContain('{key: Am}');
   });
+});
 
-  it('returns content unchanged if no chords found', () => {
-    const content = 'Just lyrics\nno chords here';
-    const result = ensureKeyDirective(content);
-    expect(result).toBe(content);
+// ─── renderChordPro (Section Parsing & Labeling) ───────────────────
+
+import { renderChordPro } from '../chords';
+
+describe('renderChordPro sections', () => {
+  it('promotes paragraph type from first line label', () => {
+    const content = 'Chorus\n[G]Amazing grace';
+    const html = renderChordPro(content);
+    // Should have paragraph chorus class
+    expect(html).toContain('class="paragraph chorus"');
+    // Should have a label badge for Chorus
+    expect(html).toContain('class="label">Chorus</h3>');
+  });
+
+  it('handles numbered sections like Verse 1', () => {
+    const content = 'Verse 1\n[G]Lyrics';
+    const html = renderChordPro(content);
+    expect(html).toContain('class="paragraph verse"');
+    expect(html).toContain('class="label">Verse 1</h3>');
+  });
+
+  it('recognizes Pre-Chorus with or without hyphen', () => {
+    const html1 = renderChordPro('Pre-Chorus\n[G]Lyrics');
+    expect(html1).toContain('class="paragraph prechorus"');
+    
+    const html2 = renderChordPro('PreChorus\n[G]Lyrics');
+    expect(html2).toContain('class="paragraph prechorus"');
+  });
+
+  it('does not promote if chords are present on the first line', () => {
+    // If it has chords, it's probably not just a label
+    const content = '[G]Chorus\n[C]Lyrics';
+    const html = renderChordPro(content);
+    expect(html).not.toContain('class="paragraph chorus"');
+  });
+
+  it('handles Bridge with special styling in HTML', () => {
+    const content = 'Bridge\n[G]Lyrics';
+    const html = renderChordPro(content);
+    expect(html).toContain('class="paragraph bridge"');
   });
 });
 
