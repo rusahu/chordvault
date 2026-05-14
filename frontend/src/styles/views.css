@@ -531,14 +531,26 @@
 .setlist-play-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 54px); /* Full height minus main nav */
+  height: calc(100vh - 54px); /* Full viewport height minus main navbar */
   position: relative;
-  margin: -16px -12px; /* Negate #app padding to go edge-to-edge */
+  
+  /* Negate #app padding (32px 24px) to go truly edge-to-edge */
+  margin: -32px -24px; 
+  overflow: hidden; /* Prevent container-level scrollbars */
+
+  /* Force hidden scrollbars globally within this container */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-@media (min-width: 900px) {
+.setlist-play-container::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 900px) {
   .setlist-play-container {
-    margin: -24px;
+    /* Negate mobile app padding (16px 12px) */
+    margin: -16px -12px;
   }
 }
 
