@@ -346,7 +346,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
           fontSize={fontSize}
           onFontChange={changeFont}
           onFontReset={resetFont}
-          onAutoFit={doFit}
           onFitAll={fitAll}
           isFittingAll={isFittingAll}
         />

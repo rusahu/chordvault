@@ -8,7 +8,6 @@ interface SettingsPanelProps {
   fontSize: number;
   onFontChange: (delta: number) => void;
   onFontReset: () => void;
-  onAutoFit?: () => void;
   onFitAll?: () => void;
   isFittingAll?: boolean;
 }
@@ -23,7 +22,6 @@ export function SettingsPanel({
   fontSize,
   onFontChange,
   onFontReset,
-  onAutoFit,
   onFitAll,
   isFittingAll,
 }: SettingsPanelProps) {
@@ -66,12 +64,6 @@ export function SettingsPanel({
           </button>
         </div>
       </div>
-      {onAutoFit && (
-        <div className="sl-option">
-          <span>Auto-fit to screen</span>
-          <button className="btn btn-ghost btn-sm" onClick={onAutoFit}>Fit</button>
-        </div>
-      )}
       {onFitAll && (
         <div className="sl-option">
           <span>Bulk actions</span>
