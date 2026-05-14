@@ -337,18 +337,22 @@
   height: 36px;
 }
 
+.toolbar-spacer {
+  flex: 1;
+}
+
 .setlist-play-container .key-picker {
-  background: #222;
-  border-color: #444;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-lg);
 }
 .setlist-play-container .key-pill {
-  background: #333;
-  color: #eee;
-  border-color: #444;
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border);
 }
-.setlist-play-container .key-pill:hover { border-color: #f0a030; color: #f0a030; }
-.setlist-play-container .key-pill.active { background: #f0a030; color: #000; }
+.setlist-play-container .key-pill:hover { border-color: var(--accent); color: var(--accent); }
+.setlist-play-container .key-pill.active { background: var(--accent); color: #000; }
 .key-picker {
   display: flex;
   flex-wrap: wrap;
@@ -665,9 +669,8 @@
 .setlist-play-container .transpose-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 12px;
-  padding: 16px 32px 24px;
+  padding: 16px 24px;
   background: var(--bg);
   border: none;
   border-bottom: 2px solid var(--accent);

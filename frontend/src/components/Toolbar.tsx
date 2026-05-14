@@ -96,15 +96,15 @@ export function Toolbar({
             FIT
           </button>
         )}
-        {(onSaveOnline || onSaveLocal) && <span className="toolbar-divider" />}
+        <span className="toolbar-spacer" />
         {onSaveOnline && (
           <button
             className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
             onClick={onSaveOnline}
             disabled={!isModified}
-            title={isModified ? 'Save changes to cloud' : 'All changes saved to cloud'}
+            title={isModified ? 'Save key to cloud' : 'Key saved to cloud'}
           >
-            {isModified ? 'SAVE' : 'CLOUD'}
+            SAVE
           </button>
         )}
         {onSaveLocal && (
@@ -112,11 +112,12 @@ export function Toolbar({
             className={`transpose-btn font-btn save-btn${isModified ? ' active' : ''}`}
             onClick={onSaveLocal}
             disabled={!isModified}
-            title={isModified ? 'Save overrides to this browser' : 'All overrides synced to browser'}
+            title={isModified ? 'Save overrides to this browser' : 'Overrides saved to browser'}
           >
-            {isModified ? 'SYNC' : 'LOCAL'}
+            SYNC
           </button>
         )}
+        <span className="toolbar-divider" />
         {onExportPdf && (
           <button
             className="transpose-btn font-btn pdf-btn"
