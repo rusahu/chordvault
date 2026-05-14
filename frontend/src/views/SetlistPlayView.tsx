@@ -239,39 +239,40 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
 
   return (
     <div ref={containerRef} className="setlist-play-container">
-      {index > 0 && <div className="nav-zone nav-zone-left" onClick={prev} />}
-      {index < total - 1 && <div className="nav-zone nav-zone-right" onClick={next} />}
-
       <div className="setlist-play-header">
-        <button className="btn btn-ghost btn-sm" onClick={exit}>&#8592; {t('setlist.exit')}</button>
-        <span className="setlist-play-indicator">
-          {entry.title} ({index + 1}/{total})
+        <div className="setlist-play-header-left">
+          <button className="btn-exit" onClick={exit}>&#8592; {t('setlist.exit').toUpperCase()}</button>
+        </div>
+
+        <div className="setlist-play-center">
+          <button 
+            className={`nav-circle-btn${index === 0 ? ' disabled' : ''}`} 
+            onClick={index > 0 ? prev : undefined} 
+            title="Previous Song"
+          >
+            &lt;
+          </button>
+          
+          <span className="setlist-play-indicator">
+            {entry.title} ({index + 1}/{total})
+          </span>
+
+          <button 
+            className={`nav-circle-btn${index === total - 1 ? ' disabled' : ''}`} 
+            onClick={index < total - 1 ? next : undefined} 
+            title="Next Song"
+          >
+            &gt;
+          </button>
+        </div>
+
+        <div className="setlist-play-header-right">
           {entry.bpm && <span className="badge badge-bpm">{entry.bpm} bpm</span>}
-          {entry.language && <span className="badge badge-lang">{entry.language.toUpperCase()}</span>}
           {!hideYt && entry.youtube_url && (
             <a href={entry.youtube_url} target="_blank" rel="noopener" className="yt-link" title="Watch on YouTube">&#9654; YT</a>
           )}
-        </span>
-        <button className="btn btn-ghost btn-sm" onClick={handleExportAllPdf} disabled={exportingPdf} title="Export setlist as PDF">
-          {exportingPdf ? '...' : '\u{1F4C4} PDF'}
-        </button>
-        <button className={`btn btn-ghost btn-sm${slOptionsOpen ? ' active' : ''}`} onClick={() => setSlOptionsOpen((v) => !v)} title="Settings">&#9881;</button>
+        </div>
       </div>
-
-      {slOptionsOpen && (
-        <SettingsPanel
-          nashville={slNashville}
-          onNashvilleChange={(v) => { setSlNashville(v); setRenderKey((k) => k + 1); }}
-          hideYt={slHideYt}
-          onHideYtChange={(v) => { setSlHideYt(v); setRenderKey((k) => k + 1); }}
-          twoCol={twoCol}
-          onTwoColChange={changeTwoCol}
-          fontSize={fontSize}
-          onFontChange={changeFont}
-          onFontReset={resetFont}
-          onAutoFit={doFit}
-        />
-      )}
 
       <Toolbar
         currentKey={keyDisplay}
@@ -294,6 +295,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         autoFitActive={autoFitActive}
         onSaveOnline={isOwner ? () => saveOnline(false) : undefined}
         onSaveLocal={() => saveLocal(false)}
+        onExportPdf={handleExportAllPdf}
+        onToggleSettings={() => setSlOptionsOpen((v) => !v)}
+        settingsActive={slOptionsOpen}
         isModified={isModified}
         overrides={{
           num: entry._num != null,
@@ -301,6 +305,21 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
           font: entry._font != null,
         }}
       />
+
+      {slOptionsOpen && (
+        <SettingsPanel
+          nashville={slNashville}
+          onNashvilleChange={(v) => { setSlNashville(v); setRenderKey((k) => k + 1); }}
+          hideYt={slHideYt}
+          onHideYtChange={(v) => { setSlHideYt(v); setRenderKey((k) => k + 1); }}
+          twoCol={twoCol}
+          onTwoColChange={changeTwoCol}
+          fontSize={fontSize}
+          onFontChange={changeFont}
+          onFontReset={resetFont}
+          onAutoFit={doFit}
+        />
+      )}
 
       {editing ? (
         <div className="setlist-editor">

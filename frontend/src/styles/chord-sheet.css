@@ -143,11 +143,11 @@
 /* Verse Styles (Subtle) */
 .paragraph.verse .section-label,
 .paragraph.verse h3.label {
-  --badge-bg-top: transparent;
-  --badge-bg-bot: transparent;
+  --badge-bg-top: var(--surface2);
+  --badge-bg-bot: var(--surface2);
   --badge-text:   var(--muted);
   --badge-border: var(--border);
-  opacity: 0.8;
+  opacity: 1;
 }
 
 /* Section Highlighting */

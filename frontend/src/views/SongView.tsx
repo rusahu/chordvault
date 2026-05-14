@@ -188,9 +188,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
             <button className="btn btn-ghost btn-sm" onClick={showAddToSetlist}>
               &#43; {t('songView.addToSetlist')}
             </button>
-            <button className="btn btn-ghost btn-sm" onClick={handleExportPdf} disabled={exporting}>
-              {exporting ? '...' : '\u{1F4C4} PDF'}
-            </button>
           </div>
         </div>
         <h1 className="song-view-title">{song.title}</h1>
@@ -236,6 +233,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
         onPickKey={chord.pickKey}
         onAutoFit={() => setAutoFitActive(!autoFitActive)}
         autoFitActive={autoFitActive}
+        onExportPdf={handleExportPdf}
       />
 
       <ChordSheet 
