@@ -17,7 +17,7 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
   useEffect(() => {
     setAutoTwoCol(false);
     if (autoFit) setIsFitting(true);
-  }, [html, autoFit]);
+  }, [html, autoFit, twoCol]);
 
   const { fontSize: fitFontSize, ref } = useFitText({
     minFontSize: 40,
@@ -33,7 +33,13 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
   useEffect(() => {
     if (!autoFit) return;
     const size = parseInt(fitFontSize);
-    if (size <= 65 && !autoTwoCol && !twoCol) {
+    const isMobile = window.innerWidth < 900;
+
+    // Only try 2-column fallback if:
+    // 1. Font is too small (<= 65%)
+    // 2. We aren't already in 2-column mode
+    // 3. We are NOT on a mobile/narrow screen
+    if (size <= 65 && !autoTwoCol && !twoCol && !isMobile) {
       setAutoTwoCol(true);
       setIsFitting(true);
     }
