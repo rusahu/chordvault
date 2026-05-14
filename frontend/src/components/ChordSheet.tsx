@@ -10,18 +10,28 @@ interface ChordSheetProps {
 }
 
 export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps) {
-  // 1. Library Fit Logic (The professional fix)
   const [autoTwoCol, setAutoTwoCol] = useState(false);
+  const [isFitting, setIsFitting] = useState(autoFit);
 
-  // Reset autoTwoCol when content or mode changes
+  // Reset states when content or mode changes
   useEffect(() => {
     setAutoTwoCol(false);
+    if (autoFit) setIsFitting(true);
   }, [html, autoFit]);
 
   const { fontSize: fitFontSize, ref } = useFitText({
     minFontSize: 40,
     maxFontSize: 100, // Never grow larger than standard
+    onFinish: () => setIsFitting(false)
   });
+
+  // Fallback: If it reaches minFontSize, it might not trigger onFinish.
+  // We use an effect to ensure we stop "fitting" after the size settles.
+  useEffect(() => {
+    if (!autoFit || !isFitting) return;
+    const timer = setTimeout(() => setIsFitting(false), 500);
+    return () => clearTimeout(timer);
+  }, [fitFontSize, autoFit, isFitting]);
 
   // Smart Fallback: If font has to shrink too much, try 2-column
   useEffect(() => {
@@ -29,6 +39,7 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
     const size = parseInt(fitFontSize);
     if (size <= 65 && !autoTwoCol && !twoCol) {
       setAutoTwoCol(true);
+      setIsFitting(true); // Restart fitting for the new layout
     }
   }, [fitFontSize, autoFit, autoTwoCol, twoCol]);
 
@@ -36,9 +47,9 @@ export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps)
   const manualScale = fontScaleValue(fontSize || 0);
   
   // Decide which styling strategy to use:
-  const style = (manualScale && !autoFit) 
-    ? { '--font-scale': String(manualScale) } as React.CSSProperties
-    : (autoFit ? { fontSize: fitFontSize } : {});
+  const style: React.CSSProperties = autoFit 
+    ? { fontSize: fitFontSize, opacity: isFitting ? 0 : 1, transition: 'opacity 0.2s ease' } 
+    : (manualScale ? { '--font-scale': String(manualScale) } as any : {});
 
   const isTwoCol = twoCol || (autoFit && autoTwoCol);
   const cls = `chord-sheet-wrap${isTwoCol ? ' two-col' : ''}${autoFit ? ' fitted-mode' : ''}`;
