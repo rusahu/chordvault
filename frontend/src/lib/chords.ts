@@ -160,7 +160,7 @@ class ResponsiveHtmlFormatter {
   }
 
   private renderParagraph(p: ChordSheetJS.Paragraph): string {
-    const SECTION_RE = /^(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?$/i;
+    const SECTION_RE = /^\[?(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?\]?$/i;
     
     let content = p.lines.map(l => this.renderLine(l)).join('');
     let detectedType = p.type;
@@ -169,10 +169,13 @@ class ResponsiveHtmlFormatter {
     if (detectedType === 'none' || detectedType === 'indeterminate') {
       const firstLine = p.lines[0];
       const firstItem = firstLine?.items[0];
-      if (firstItem && 'lyrics' in firstItem && !firstItem.chords) {
+      if (firstItem && 'lyrics' in firstItem) {
         const lyrics = (firstItem.lyrics || '').trim();
-        if (SECTION_RE.test(lyrics)) {
-          detectedType = lyrics.split(/\s+/)[0].toLowerCase().replace('-', '');
+        const chords = (firstItem.chords || '').trim();
+        // Check lyrics for label or chords for bracketed label
+        const potentialLabel = lyrics || chords;
+        if (!lyrics !== !chords && SECTION_RE.test(potentialLabel)) {
+          detectedType = potentialLabel.replace(/[\[\]:]/g, '').split(/\s+/)[0].toLowerCase().replace('-', '');
         }
       }
     }
@@ -195,7 +198,7 @@ class ResponsiveHtmlFormatter {
   }
 
   private renderLine(l: ChordSheetJS.Line): string {
-    const SECTION_RE = /^(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?$/i;
+    const SECTION_RE = /^\[?(Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*:?\]?$/i;
 
     if (l.type === 'comment') {
       const firstItem = l.items[0];
@@ -203,17 +206,22 @@ class ResponsiveHtmlFormatter {
                      (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
       
       if (SECTION_RE.test(content.trim())) {
-        return `<div class="row"><h3 class="label">${escHtml(content.trim())}</h3></div>`;
+        const cleanLabel = content.trim().replace(/[\[\]:]/g, '');
+        return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
       return `<div class="comment">${escHtml(content)}</div>`;
     }
 
-    // Check for section labels on normal lyric lines
+    // Check for section labels on normal lyric lines or bracketed chords
     const firstItem = l.items[0];
     if (firstItem && 'lyrics' in firstItem) {
       const it = firstItem as ChordSheetJS.ChordLyricsPair;
-      if (!it.chords && it.lyrics && SECTION_RE.test(it.lyrics.trim())) {
-        return `<div class="row"><h3 class="label">${escHtml(it.lyrics.trim())}</h3></div>`;
+      const lyrics = (it.lyrics || '').trim();
+      const chords = (it.chords || '').trim();
+      // Only one of them should be present for a pure label line
+      if (!lyrics !== !chords && SECTION_RE.test(lyrics || chords)) {
+        const cleanLabel = (lyrics || chords).replace(/[\[\]:]/g, '');
+        return `<div class="row"><h3 class="label">${escHtml(cleanLabel)}</h3></div>`;
       }
     }
 

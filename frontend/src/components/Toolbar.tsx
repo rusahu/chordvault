@@ -16,8 +16,11 @@ interface ToolbarProps {
   autoFitActive?: boolean;
   onSaveOnline?: () => void;
   onSaveLocal?: () => void;
+  onExportPdf?: () => void;
+  onToggleSettings?: () => void;
   isModified?: boolean;
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
+  settingsActive?: boolean;
 }
 
 export function Toolbar({
@@ -35,8 +38,11 @@ export function Toolbar({
   autoFitActive,
   onSaveOnline,
   onSaveLocal,
+  onExportPdf,
+  onToggleSettings,
   isModified,
   overrides,
+  settingsActive,
 }: ToolbarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const ov = overrides || {};
@@ -50,7 +56,7 @@ export function Toolbar({
           id="key-display"
           onClick={() => setPickerOpen((v) => !v)}
         >
-          Key {currentKey || '?'}
+          KEY {currentKey || '?'}
         </button>
         <label className={`number-toggle${ov.num ? ' overridden' : ''}`} id="nashville-toggle">
           <input
@@ -87,7 +93,7 @@ export function Toolbar({
             onClick={onAutoFit}
             title={autoFitActive ? 'Auto-fit: ON (click to turn off)' : 'Auto-fit: adjust font and columns for this screen'}
           >
-            Fit
+            FIT
           </button>
         )}
         {(onSaveOnline || onSaveLocal) && <span className="toolbar-divider" />}
@@ -98,7 +104,7 @@ export function Toolbar({
             disabled={!isModified}
             title={isModified ? 'Update setlist for everyone' : 'Saved to cloud'}
           >
-            {isModified ? 'Save Online' : 'Cloud'}
+            {isModified ? 'SAVE ONLINE' : 'CLOUD'}
           </button>
         )}
         {onSaveLocal && (
@@ -108,7 +114,25 @@ export function Toolbar({
             disabled={!isModified}
             title={isModified ? 'Save to this browser only' : 'Saved locally'}
           >
-            {isModified ? 'Save Local' : 'Local'}
+            {isModified ? 'SAVE LOCAL' : 'LOCAL'}
+          </button>
+        )}
+        {onExportPdf && (
+          <button
+            className="transpose-btn font-btn pdf-btn"
+            onClick={onExportPdf}
+            title="Export as PDF"
+          >
+            PDF
+          </button>
+        )}
+        {onToggleSettings && (
+          <button
+            className={`transpose-btn font-btn gear-btn${settingsActive ? ' active' : ''}`}
+            onClick={onToggleSettings}
+            title="Settings"
+          >
+            &#9881;
           </button>
         )}
         <button
