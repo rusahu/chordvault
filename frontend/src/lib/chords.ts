@@ -204,6 +204,7 @@ class ResponsiveHtmlFormatter {
     if (l.type === 'comment') {
       const firstItem = l.items[0];
       const content = (firstItem && 'content' in firstItem ? (firstItem as ChordSheetJS.Comment).content : 
+                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                      (firstItem && 'lyrics' in firstItem ? (firstItem as any).lyrics : '')) || '';
       
       if (SECTION_RE.test(content.trim())) {
