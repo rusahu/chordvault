@@ -178,23 +178,23 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   background: var(--accent);
   color: #000;
   border: none;
-  border-radius: var(--radius);
+  border-radius: 8px; /* Slightly less rounded */
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans TC", sans-serif;
   font-size: 14px;
   font-weight: 600;
-  padding: 10px 22px;
+  padding: 8px 18px; /* Slightly tighter */
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   text-decoration: none;
-  box-shadow: var(--shadow-sm);
 }
-.btn:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
 .btn:active { transform: translateY(0); box-shadow: none; transition-duration: 0.06s; }
 
 .btn-ghost {
   background: var(--ghost-bg);
   border: 1px solid var(--border);
   color: var(--text);
+  border-radius: 8px;
   box-shadow: none;
 }
 .btn-ghost:hover { background: var(--surface2); border-color: var(--muted); color: var(--text); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
@@ -202,6 +202,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 .btn-danger {
   background: transparent;
   border: 1px solid var(--danger);
+  border-radius: 8px;
   color: var(--danger);
 }
 .btn-danger:hover { background: var(--danger); color: #fff; }

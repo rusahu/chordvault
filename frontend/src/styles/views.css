@@ -215,8 +215,8 @@
 .transpose-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: 6px;
+  padding: 8px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -231,33 +231,46 @@
   color: var(--accent);
   border: 1px solid rgba(var(--accent-rgb), 0.2);
   border-radius: 8px;
-  padding: 5px 12px;
-  font-size: 14px;
+  padding: 6px 14px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .key-current:hover { background: rgba(var(--accent-rgb), 0.2); border-color: var(--accent); }
 .key-current.disabled { opacity: 0.5; cursor: default; }
+
+.transpose-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 600;
+  margin-right: 4px;
+}
 
 .number-toggle {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 6px 12px;
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
+  font-weight: 500;
   color: var(--muted);
   transition: all 0.2s;
   user-select: none;
 }
 .number-toggle:hover { border-color: var(--accent-alt); color: var(--text); }
-.number-toggle.overridden { border-color: var(--accent); color: var(--accent); }
+.number-toggle.overridden { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
 .number-toggle input { display: none; }
 
 .transpose-btn {
@@ -265,8 +278,8 @@
   background: transparent;
   border: 1px solid transparent;
   color: var(--muted);
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -282,7 +295,7 @@
 .transpose-btn.overridden::after {
   content: '';
   position: absolute;
-  top: 4px; right: 4px;
+  top: 6px; right: 6px;
   width: 5px; height: 5px;
   background: var(--accent);
   border-radius: 50%;
@@ -290,23 +303,28 @@
 
 .transpose-btn.font-btn.autofit-btn {
   width: auto;
-  padding: 0 10px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .toolbar-divider {
   width: 1px;
-  height: 20px;
+  height: 24px;
   background: var(--border);
-  margin: 0 4px;
+  margin: 0 6px;
 }
 
 .save-btn {
   width: auto;
-  padding: 0 12px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 0 16px;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  height: 36px;
 }
 
 /* -- Key Picker -------------------------- */
@@ -426,38 +444,138 @@
 .user-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .user-card-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 
+/* -- Setlist Edit View --------------------- */
+.setlist-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.setlist-song-item {
+  padding: 12px 20px;
+  min-height: 72px;
+  transition: all 0.2s ease;
+}
+
+.setlist-song-pos {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-right: 16px;
+  width: 24px;
+  text-align: center;
+  opacity: 0.6;
+}
+
+.setlist-reorder {
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-right: 16px;
+  border: 1px solid var(--border);
+}
+
+.setlist-arrow-btn {
+  background: var(--surface2);
+  border: none;
+  color: var(--muted);
+  width: 28px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 10px;
+  transition: all 0.15s;
+}
+.setlist-arrow-btn:first-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.setlist-arrow-btn:hover:not(.disabled) {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.setlist-arrow-btn.disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.setlist-remove-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+.setlist-remove-btn:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
 /* -- Setlist Playback --------------------─ */
+.setlist-play-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 54px); /* Full height minus main nav */
+  position: relative;
+  margin: -16px -12px; /* Negate #app padding to go edge-to-edge */
+}
+
+@media (min-width: 900px) {
+  .setlist-play-container {
+    margin: -24px;
+  }
+}
+
 .setlist-play-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 24px;
-  padding: 12px 0;
-  position: sticky;
-  top: 56px;
-  z-index: 50;
-  background: var(--ui-header-bg);
+  padding: 12px 24px;
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
+  z-index: 50;
 }
 
 .setlist-play-indicator {
   font-family: var(--font-serif);
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 500;
   color: var(--text);
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   text-align: center;
 }
 
-.setlist-play-container {
-  position: relative;
-  min-height: calc(100vh - 56px);
+.setlist-play-indicator .badge {
+  transform: translateY(-1px);
 }
+
+.setlist-play-indicator .yt-link {
+  margin-left: 0;
+  padding: 3px 10px;
+}
+
 
 .nav-zone {
   position: fixed;

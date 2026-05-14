@@ -12,10 +12,16 @@
 
 /* -- Library Fit Mode ---------------------- */
 .chord-sheet-wrap.fitted-mode {
-  height: calc(100vh - 220px); 
-  padding: 20px;
-  display: block; /* Standard block flow for reliable scrolling */
-  overflow-y: scroll; /* Force scrollbar to prevent width-oscillation loops */
+  flex: 1;
+  min-height: 0; /* Important for flex children scrolling */
+  padding: 24px 32px;
+  display: block; 
+  overflow-y: auto; 
+  margin-top: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
 }
 
 .chord-sheet-wrap.fitted-mode #chord-output {
