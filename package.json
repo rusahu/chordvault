@@ -24,7 +24,7 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.9.0",
-    "chordsheetjs": "^14.6.0",
+    "chordsheetjs": "^15.1.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
