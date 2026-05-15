@@ -20,7 +20,7 @@
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.42.1",
     "@lezer/highlight": "^1.2.3",
-    "chordsheetjs": "^14.6.0",
+    "chordsheetjs": "^15.1.1",
     "codemirror": "^6.0.2",
     "dotenv": "^17.4.2",
     "html2canvas-pro": "^2.0.2",
