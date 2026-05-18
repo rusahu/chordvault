@@ -21,7 +21,7 @@ interface ToolbarProps {
   isModified?: boolean;
   overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
   settingsActive?: boolean;
-  renderKey?: any;
+  renderKey?: number | string;
 }
 
 export function Toolbar({
