@@ -333,6 +333,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   align-items: center;
   gap: 10px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .search-row input { flex: 3; min-width: 0; }

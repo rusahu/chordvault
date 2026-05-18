@@ -603,7 +603,8 @@
 .setlist-play-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 54px); /* Full viewport height minus main navbar */
+  height: 100vh;
+  height: 100dvh;
   position: relative;
   
   /* Negate #app padding (32px 24px) to go truly edge-to-edge */
@@ -620,7 +621,7 @@
   min-height: 0;
   overflow-y: auto;
   margin: 0;
-  padding: 40px 10%; /* Center the content area but keep background edge-to-edge */
+  padding: 40px 10% 120px 10%; /* Extra bottom padding for mobile nav bars */
   border-radius: 0;
   border: none;
   box-shadow: none;
@@ -865,12 +866,16 @@
   /* Hide side navigation zones on mobile and portrait tablets (Swipe handles it) */
   .nav-zone { display: none; }
 
-  #app { padding: 16px 12px; overflow-x: hidden; }
+  #app { padding: 16px 12px 100px 12px; overflow-x: hidden; }
   .song-view-title { font-size: 28px; }
   .chord-sheet-wrap { padding: 20px 16px; }
-  .setlist-play-header { top: 0; flex-wrap: wrap; gap: 4px 8px; }
+  .setlist-play-header { padding: 8px 12px; flex-wrap: wrap; gap: 4px 8px; }
+  .transpose-bar { margin: 8px 0; padding: 6px 8px; gap: 4px; }
   .setlist-play-indicator { font-size: 16px; }
   .admin-stats { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
   .search-row { flex-direction: column; align-items: stretch; }
   .search-filters { flex-direction: column; gap: 8px; margin-top: 0; }
   .search-filters .language-filter { max-width: none; }
