@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
+import { useSongEditor } from '../hooks/useSongEditor';
 import { TagPicker } from '../components/TagPicker';
 import { LanguagePicker } from '../components/LanguagePicker';
 import { OcrModal } from '../components/OcrModal';
@@ -23,42 +24,16 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const { t } = useI18n();
   const toast = useToast();
   const [song, setSong] = useState<Song | null>(null);
-  const [title, setTitle] = useState('');
-  const [artist, setArtist] = useState('');
-  const [content, setContent] = useState('');
-  const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [bpm, setBpm] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [language, setLanguage] = useState('');
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [preferredLanguages, setPreferredLanguages] = useState<string[]>([]);
-  const [formatBadge, setFormatBadge] = useState<{ text: string; cls: string } | null>(null);
   const [ocrOpen, setOcrOpen] = useState(false);
   const [hasGeminiKey, setHasGeminiKey] = useState(false);
   const { theme } = useTheme();
   const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
   const [forceRender, setForceRender] = useState(0);
-  const syncSource = useRef<'editor' | 'field' | null>(null);
-  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Extract all directives from content → update form fields (debounced for editor typing)
-  const syncContentToFields = useCallback((text: string) => {
-    setTitle(extractDirective(text, 'title') || '');
-    setArtist(extractDirective(text, 'artist') || '');
-    const tempo = extractDirective(text, 'tempo');
-    setBpm(tempo && /^\d+$/.test(tempo) ? tempo : '');
-    setYoutubeUrl(extractDirective(text, 'x_youtube') || '');
-    const tagStr = extractDirective(text, 'x_tags');
-    setTags(tagStr ? tagStr.split(',').map(t => t.trim()).filter(Boolean) : []);
-    setLanguage(extractDirective(text, 'x_language') || '');
-  }, []);
-
-  const updateBadge = useCallback((text: string) => {
-    const fmt = detectFormat(text);
-    if (fmt) setFormatBadge({ text: fmt, cls: 'format-ok' });
-    else if (text?.trim()) setFormatBadge({ text: 'No chords detected — add chords in [brackets] e.g. [G]lyrics', cls: 'format-warn' });
-    else setFormatBadge(null);
-  }, []);
+  const editor = useSongEditor();
+  const { state, handleContentChange, handleFieldChange, handleTagsChange, handleLanguageChange, setInitialContent } = editor;
 
   useEffect(() => {
     if (songId) {
@@ -66,7 +41,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         .then((s) => {
           setSong(s);
           setVisibility(s.visibility === 'private' ? 'private' : 'public');
-          updateBadge(s.content);
+          
           // Inject missing directives from DB columns into content for old songs
           let c = s.content;
           if (s.title && !extractDirective(c, 'title')) c = updateDirective(c, 'title', s.title);
@@ -75,12 +50,12 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           if (s.youtube_url && !extractDirective(c, 'x_youtube')) c = updateDirective(c, 'x_youtube', s.youtube_url);
           if (s.tags && !extractDirective(c, 'x_tags')) c = updateDirective(c, 'x_tags', s.tags);
           if (s.language && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', s.language);
-          setContent(c);
-          syncContentToFields(c);
+          
+          setInitialContent(c);
         })
         .catch((e) => { toast(e.message, 'error'); navigate('my-songs'); });
     }
-  }, [songId, apiCall, navigate, syncContentToFields, toast, updateBadge]);
+  }, [songId, apiCall, navigate, toast, setInitialContent]);
 
   useEffect(() => {
     if (user) {
@@ -93,46 +68,8 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
     }
   }, [apiCall, user]);
 
-  // Editor content changed → sync to form fields (debounced 150ms)
-  const handleContentChange = (text: string) => {
-    setContent(text);
-    updateBadge(text);
-    if (syncSource.current === 'field') return;
-    if (syncTimer.current) clearTimeout(syncTimer.current);
-    syncTimer.current = setTimeout(() => {
-      syncSource.current = 'editor';
-      syncContentToFields(text);
-      syncSource.current = null;
-    }, 150);
-  };
-
-  // Form field changed → update directive in content (instant)
-  const handleFieldChange = (directive: string, value: string, setter: (v: string) => void) => {
-    setter(value);
-    if (syncSource.current === 'editor') return;
-    syncSource.current = 'field';
-    setContent(prev => updateDirective(prev, directive, value || null));
-    syncSource.current = null;
-  };
-
-  const handleTagsChange = (newTags: string[]) => {
-    setTags(newTags);
-    if (syncSource.current === 'editor') return;
-    syncSource.current = 'field';
-    const val = newTags.length > 0 ? newTags.join(',') : null;
-    setContent(prev => updateDirective(prev, 'x_tags', val));
-    syncSource.current = null;
-  };
-
-  const handleLanguageChange = (lang: string) => {
-    setLanguage(lang);
-    if (syncSource.current === 'editor') return;
-    syncSource.current = 'field';
-    setContent(prev => updateDirective(prev, 'x_language', lang || null));
-    syncSource.current = null;
-  };
-
   const save = async () => {
+    const { content } = state;
     if (!extractDirective(content, 'title')?.trim()) { toast(t('songEdit.titleRequired'), 'error'); return; }
     if (!content.trim()) { toast(t('songEdit.contentRequired'), 'error'); return; }
     if (content.length > 100000) { toast(t('songEdit.contentTooLarge'), 'error'); return; }
@@ -181,6 +118,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const isOwner = !song || (user && song && user.id === song.user_id);
 
   const saveAsVersion = async () => {
+    const { content } = state;
     const targetId = songId || (song?.id);
     if (!targetId) return;
     if (!extractDirective(content, 'title')?.trim()) { toast(t('songEdit.titleRequired'), 'error'); return; }
@@ -226,28 +164,28 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       <div className="edit-cols">
         <div className="field">
           <label>{t('songEdit.titleLabel')}</label>
-          <input type="text" value={title} onChange={(e) => handleFieldChange('title', e.target.value, setTitle)} placeholder={t('songEdit.titlePlaceholder')} />
+          <input type="text" value={state.title} onChange={(e) => handleFieldChange('title', e.target.value, editor.setTitle)} placeholder={t('songEdit.titlePlaceholder')} />
         </div>
         <div className="field">
           <label>{t('songEdit.artistLabel')}</label>
-          <input type="text" value={artist} onChange={(e) => handleFieldChange('artist', e.target.value, setArtist)} placeholder={t('songEdit.artistPlaceholder')} />
+          <input type="text" value={state.artist} onChange={(e) => handleFieldChange('artist', e.target.value, editor.setArtist)} placeholder={t('songEdit.artistPlaceholder')} />
         </div>
         <div className="field">
           <label>Language</label>
-          <LanguagePicker value={language} onChange={handleLanguageChange} preferredLanguages={preferredLanguages} />
+          <LanguagePicker value={state.language} onChange={handleLanguageChange} preferredLanguages={preferredLanguages} />
         </div>
         <div className="field">
           <label>BPM</label>
-          <input type="number" value={bpm} onChange={(e) => handleFieldChange('tempo', e.target.value, setBpm)} placeholder="e.g. 120" min="1" max="300" />
+          <input type="number" value={state.bpm} onChange={(e) => handleFieldChange('tempo', e.target.value, editor.setBpm)} placeholder="e.g. 120" min="1" max="300" />
         </div>
       </div>
       <div className="field">
         <label>YouTube URL</label>
-        <input type="url" value={youtubeUrl} onChange={(e) => handleFieldChange('x_youtube', e.target.value, setYoutubeUrl)} placeholder="https://youtube.com/watch?v=..." />
+        <input type="url" value={state.youtubeUrl} onChange={(e) => handleFieldChange('x_youtube', e.target.value, editor.setYoutubeUrl)} placeholder="https://youtube.com/watch?v=..." />
       </div>
       <div className="field">
         <label>Tags</label>
-        <TagPicker selected={tags} onChange={handleTagsChange} />
+        <TagPicker selected={state.tags} onChange={handleTagsChange} />
       </div>
       <div className="field">
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
@@ -266,7 +204,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
       <div className="field">
         <div className="chordpro-hint-row">
           <p className="chordpro-hint" dangerouslySetInnerHTML={{ __html: t('songEdit.chordproHint') + ' You can also paste chords-over-lyrics or Ultimate Guitar format — it will be auto-converted.' }} />
-          {formatBadge && <span className={`format-badge ${formatBadge.cls}`}>{formatBadge.text}</span>}
+          {state.formatBadge && <span className={`format-badge ${state.formatBadge.cls}`}>{state.formatBadge.text}</span>}
         </div>
         {user && (
           <div className="ocr-row">
@@ -290,14 +228,14 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         <div className="editor-split">
           <div className={`cm-editor-wrap${editorTab === 'preview' ? ' editor-hidden' : ''}`} role="tabpanel">
             <CodeMirrorEditor
-              value={content}
+              value={state.content}
               onChange={handleContentChange}
               darkMode={theme === 'dark'}
               placeholder={'Paste any format:\n\nChordPro:  [G]Let it [D]be\n\nOr chords over lyrics:\n  G        D\n  Let it be'}
             />
           </div>
           <div className={`editor-preview-wrap${editorTab === 'edit' ? ' editor-hidden' : ''}`} role="tabpanel">
-            <EditorPreview content={content} forceRender={forceRender} />
+            <EditorPreview content={state.content} forceRender={forceRender} />
           </div>
         </div>
       </div>
@@ -313,9 +251,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
           onResult={(text, lang) => {
             let c = text;
             if (lang && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', lang);
-            setContent(c);
-            updateBadge(c);
-            syncContentToFields(c);
+            setInitialContent(c);
           }}
           onClose={() => setOcrOpen(false)}
         />
