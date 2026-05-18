@@ -196,7 +196,7 @@ export function App() {
   return (
     <>
       <DemoBanner />
-      <Nav view={route.view} navigate={navigate} />
+      {route.view !== 'setlist-play' && <Nav view={route.view} navigate={navigate} />}
       <main id="app" className={animClass}>
         {renderView()}
       </main>
