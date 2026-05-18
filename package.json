@@ -23,21 +23,21 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^12.9.0",
-    "chordsheetjs": "^15.1.1",
+    "better-sqlite3": "^12.10.0",
+    "chordsheetjs": "^15.2.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "opencc-js": "^1.0.5"
+    "opencc-js": "^1.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "concurrently": "^9.2.1",
-    "eslint": "^10.3.0",
+    "eslint": "^10.4.0",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.2",
-    "playwright": "^1.59.1",
+    "lint-staged": "^17.0.5",
+    "playwright": "^1.60.0",
     "prettier": "^3.8.3"
   },
   "lint-staged": {
