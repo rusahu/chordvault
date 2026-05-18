@@ -51,7 +51,31 @@ export function updateDirective(content: string, name: string, value: string | n
   return lines.join('\n');
 }
 
-export function parseSongAutoWithFormat(content: string): { song: ChordSheetJS.Song; format: string | null } | null {
+export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJS.Song; format: string | null } | null {
+  // Pre-process content: force all chords to preferred enharmonic spellings (Sharps)
+  // and fix spacing issues in slash chords (e.g. [A / C#] -> [A/C#]) BEFORE parsing.
+  // This ensures transpose and Nashville work correctly.
+  let content = rawContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
+    // 1. Fix spaces around slashes
+    let cleaned = inner.replace(/\s*\/\s*/g, '/');
+    // 2. Normalize the chord to preferred sharps
+    cleaned = normalizeChord(cleaned);
+    return `[${cleaned}]`;
+  });
+
+  // Also normalize Chords-over-lyrics format (lines with only chords)
+  content = content.split('\n').map(line => {
+    const isChordLine = /^\s*[A-G][b#]?\S*(?:\s+[A-G][b#]?\S*)+\s*$/m.test(line);
+    if (isChordLine) {
+      return line.split(/(\s+)/).map(chunk => {
+        if (chunk.trim() === '') return chunk;
+        const cleaned = chunk.replace(/\s*\/\s*/g, '/');
+        return normalizeChord(cleaned);
+      }).join('');
+    }
+    return line;
+  }).join('\n');
+
   // Detect true ChordPro bracket chords — exclude section labels like [Chorus], [Bridge]
   const SECTION_LABEL = /^(?:Verse|Chorus|Bridge|Intro|Outro|Interlude|Pre-?Chorus|Ending|Tag|Coda|Break|Solo|Instrumental|Refrain)\s*\d*$/i;
   const bracketContents = (content.match(/\[([A-G][^\]]*)\]/g) || []).map(b => b.slice(1, -1));
@@ -274,6 +298,10 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
     if (!song) throw new Error('parse failed');
 
     let transposed = semitones !== 0 ? song.transpose(semitones) : song;
+    
+    // Fix accidentals after transposition to preserve sharp preference and prevent auto-correction
+    fixChordAccidentals(transposed);
+
     const keyRaw = transposed.key || (transposed.getMetadataValue ? transposed.getMetadataValue('key') : null);
     const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
 
@@ -289,6 +317,19 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
   } catch {
     return `<pre style="font-family:'JetBrains Mono',monospace;font-size:13px;white-space:pre-wrap;color:var(--text)">${escHtml(content)}</pre>`;
   }
+}
+
+export function fixChordAccidentals(song: ChordSheetJS.Song): void {
+  song.paragraphs.forEach((p) => {
+    p.lines.forEach((line) => {
+      line.items.forEach((item) => {
+        const it = item as { chords?: string };
+        if (it.chords) {
+          it.chords = normalizeChord(it.chords);
+        }
+      });
+    });
+  });
 }
 
 export function convertToNashville(song: ChordSheetJS.Song, key: string): ChordSheetJS.Song {
