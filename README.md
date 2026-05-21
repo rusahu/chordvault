@@ -59,13 +59,13 @@
 - **Browse without an account:** all public songs and public setlists are readable by anyone
 
 ### Setlists & Display
-- **Build setlists:** ordered song lists with per-song key, number notation, and display overrides
+- **Build setlists:** ordered song lists with per-song key, number notation, and display overrides.
 - **Local browser setlists:** no account needed, stored in your browser
-- **Swipe playback:** swipe, tap side buttons, or use keyboard to navigate between songs
+- **Swipe playback:** swipe, tap side buttons, or use keyboard to navigate between songs. Transpose and notation changes are auto-saved.
 - **PDF export:** export a single song or an entire setlist as PDF. Auto-fits to one page per song using 2-column layout when needed. Theme-aware background.
 - **Settings panel:** global defaults (number notation, hide YouTube, multi-column, font size) with per-song overrides
 - **Multi-column layout:** split long chord sheets into columns for landscape or wide screens
-- **Font size A-/A+:** adjustable font scale with reset — great for tablets on a music stand
+- **Font size A-/A+ & Auto-Fit:** adjustable font scale with reset, or auto-fit to screen.
 - **Inline editing:** fix chords mid-session, save to the entry or as a new version
 
 ### Admin & Team
@@ -76,8 +76,9 @@
 
 ## Technical
 - **React + TypeScript frontend:** built with Vite, ESLint + Prettier enforced
+- **Node.js + Express backend:** modular API with robust validation and rate limiting
 - **CodeMirror 6 editor:** ChordPro syntax highlighting, bracket matching, dark/light theme, live preview pane
-- **Single-file database:** SQLite with WAL mode, no external DB server
+- **Single-file database:** SQLite via better-sqlite3 with WAL mode, no external DB server
 - **CI/CD:** GitHub Actions runs lint, typecheck, build, and smoke test on every push/PR
 - **Lightweight:** minimal CPU/RAM, runs on a Raspberry Pi
 
