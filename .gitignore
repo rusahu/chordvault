@@ -7,3 +7,16 @@ frontend/dist/
 test-results/
 public/assets/
 public/index.html
+
+# Logs
+*.log
+frontend/*.log
+
+# TypeScript build artifacts
+frontend/tsconfig.tsbuildinfo
+
+# Debug / scratch files
+frontend/src/lib/debug-*.ts
+frontend/src/lib/test.html
+scripts/test-*.mjs
+scripts/test-*.png
