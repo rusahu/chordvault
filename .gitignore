@@ -5,7 +5,6 @@ data/
 frontend/node_modules/
 frontend/dist/
 test-results/
-docs/superpowers/
 public/assets/
 public/index.html
 
