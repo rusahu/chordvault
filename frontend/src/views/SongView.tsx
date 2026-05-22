@@ -250,7 +250,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
         twoCol={twoColState.twoCol} 
         fontSize={fontScale.fontSize} 
         autoFit={autoFitActive} 
-        renderKey={songId}
       />
 
       {(song.tags || song.youtube_url) && (

@@ -6,13 +6,14 @@ import { useToast } from '../context/ToastContext';
 import { useSwipe } from '../hooks/useSwipe';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useSetlistPlayer } from '../hooks/useSetlistPlayer';
+import { useFontScale } from '../hooks/useFontScale';
+import { useTwoCol } from '../hooks/useTwoCol';
 import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
 import { renderChordPro, getSongKey, clampFontSize, songHasKey, slEffective, autoFit } from '../lib/chords';
 import { getTransposeDelta } from '../lib/keys';
-import { getStoredFontSize, setStoredFontSize, getStoredTwoCol, setStoredTwoCol } from '../lib/storage';
 import type { Setlist } from '../types';
 
 interface SetlistPlayViewProps {
@@ -38,12 +39,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const [slNashville, setSlNashville] = useState(false);
   const [slHideYt, setSlHideYt] = useState(false);
   const [slOptionsOpen, setSlOptionsOpen] = useState(false);
-  const [fontSize, setFontSize] = useState(() => getStoredFontSize());
-  const [twoCol, setTwoCol] = useState(() => getStoredTwoCol());
+  const fontScale = useFontScale();
+  const twoColState = useTwoCol();
   const [autoFitActive, setAutoFitActive] = useState(false);
-
-  // Render key for forcing re-render
-  const [_renderKey, setRenderKey] = useState(0);
 
   const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
@@ -54,7 +52,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     navigate,
     onNavigate: () => { 
       setEditing(false); 
-      setRenderKey((k) => k + 1); 
     },
   });
 
@@ -70,8 +67,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
 
   // Effective values for current entry
   const effNum = entry ? (slEffective(entry, 'num', slNashville) || entry.nashville) : false;
-  const effTwoCol = entry ? slEffective(entry, 'twoCol', twoCol) : twoCol;
-  const effFont = entry ? slEffective(entry, 'font', fontSize) : fontSize;
+  const effTwoCol = entry ? slEffective(entry, 'twoCol', twoColState.twoCol) : twoColState.twoCol;
+  const effFont = entry ? slEffective(entry, 'font', fontScale.fontSize) : fontScale.fontSize;
   const keyDisplay = entry ? getSongKey(content, entry.transpose) : '';
 
   const entryTranspose = entry?.transpose ?? 0;
@@ -84,7 +81,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const transpose = useCallback((delta: number) => {
     if (!setlist || !entry) return;
     updateEntry({ transpose: entry.transpose + delta });
-    setRenderKey((k) => k + 1);
   }, [setlist, entry, updateEntry]);
 
   // Per-song overrides
@@ -95,24 +91,21 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       _num: (checked === !!globalVal) ? null : (checked ? 1 : 0),
       nashville: checked ? 1 : 0,
     });
-    setRenderKey((k) => k + 1);
   }, [entry, slNashville, updateEntry]);
 
   const toggleEntryTwoCol = useCallback(() => {
     if (!entry) return;
-    const current = slEffective(entry, 'twoCol', twoCol);
+    const current = slEffective(entry, 'twoCol', twoColState.twoCol);
     const nextVal = !current;
-    updateEntry({ two_col: nextVal === (!!twoCol) ? null : (nextVal ? 1 : 0) });
-    setRenderKey((k) => k + 1);
-  }, [entry, twoCol, updateEntry]);
+    updateEntry({ two_col: nextVal === (!!twoColState.twoCol) ? null : (nextVal ? 1 : 0) });
+  }, [entry, twoColState.twoCol, updateEntry]);
 
   const changeEntryFont = useCallback((delta: number) => {
     if (!entry) return;
-    const current = slEffective(entry, 'font', fontSize) || 0;
+    const current = slEffective(entry, 'font', fontScale.fontSize) || 0;
     const nextVal = clampFontSize(current + delta);
-    updateEntry({ font: nextVal === fontSize ? null : nextVal });
-    setRenderKey((k) => k + 1);
-  }, [entry, fontSize, updateEntry]);
+    updateEntry({ font: nextVal === fontScale.fontSize ? null : nextVal });
+  }, [entry, fontScale.fontSize, updateEntry]);
 
   // Key picker
   const pickKey = useCallback((targetKey: string) => {
@@ -137,7 +130,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, { content_override: editContent });
       updateEntry({ content_override: editContent });
       setEditing(false);
-      setRenderKey((k) => k + 1);
       toast(t('setlist.editSaved'), 'success');
     } catch (e) { toast((e as Error).message, 'error'); }
   };
@@ -149,7 +141,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, { content_override: editContent });
       updateEntry({ content_override: editContent });
       setEditing(false);
-      setRenderKey((k) => k + 1);
       toast(t('setlist.versionCreated'), 'success');
     } catch (e) { toast((e as Error).message, 'error'); }
   };
@@ -172,25 +163,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
 
   useKeyboardShortcuts(shortcuts, !!setlist);
 
-  // Global settings changes
-  const changeTwoCol = (val: boolean) => {
-    setTwoCol(val);
-    setStoredTwoCol(val);
-    setRenderKey((k) => k + 1);
-  };
-  const changeFont = (delta: number) => {
-    setFontSize((prev) => {
-      const n = clampFontSize(prev + delta);
-      setStoredFontSize(n);
-      return n;
-    });
-    setRenderKey((k) => k + 1);
-  };
   const resetFont = () => {
-    setFontSize(0);
-    setStoredFontSize(0);
+    fontScale.resetFontSize();
     if (entry) updateEntry({ font: null });
-    setRenderKey((k) => k + 1);
   };
 
   const handleExportAllPdf = async () => {
@@ -198,7 +173,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     setExportingPdf(true);
     try {
       const { exportSetlistPdf } = await import('../lib/pdf-export');
-      await exportSetlistPdf(setlist, { nashville: slNashville, fontSize });
+      await exportSetlistPdf(setlist, { nashville: slNashville, fontSize: fontScale.fontSize });
       toast('Setlist PDF exported', 'success');
     } catch (e) {
       toast((e as Error).message || 'PDF export failed', 'error');
@@ -213,8 +188,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     setTimeout(() => {
       const result = autoFit();
       updateEntry({ 
-        font: result.fontSize === fontSize ? null : result.fontSize,
-        two_col: result.twoCol === !!twoCol ? null : (result.twoCol ? 1 : 0)
+        font: result.fontSize === fontScale.fontSize ? null : result.fontSize,
+        two_col: result.twoCol === !!twoColState.twoCol ? null : (result.twoCol ? 1 : 0)
       });
       setAutoFitActive(false);
     }, 100);
@@ -274,7 +249,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         onReset={() => {
           if (entry) { updateEntry({ font: null, two_col: null }); }
           setAutoFitActive(false);
-          setRenderKey((k) => k + 1);
         }}
         onPickKey={pickKey}
         onAutoFit={doFit}
@@ -296,13 +270,13 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
       {slOptionsOpen && (
         <SettingsPanel
           nashville={slNashville}
-          onNashvilleChange={(v) => { setSlNashville(v); setRenderKey((k) => k + 1); }}
+          onNashvilleChange={setSlNashville}
           hideYt={slHideYt}
-          onHideYtChange={(v) => { setSlHideYt(v); setRenderKey((k) => k + 1); }}
-          twoCol={twoCol}
-          onTwoColChange={changeTwoCol}
-          fontSize={fontSize}
-          onFontChange={changeFont}
+          onHideYtChange={setSlHideYt}
+          twoCol={twoColState.twoCol}
+          onTwoColChange={twoColState.setTwoColTo}
+          fontSize={fontScale.fontSize}
+          onFontChange={fontScale.changeFontSize}
           onFontReset={resetFont}
         />
       )}
@@ -335,7 +309,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
               twoCol={!!effTwoCol} 
               fontSize={effFont || 0} 
               autoFit={autoFitActive} 
-              renderKey={_renderKey}
             />
           )}
         </>

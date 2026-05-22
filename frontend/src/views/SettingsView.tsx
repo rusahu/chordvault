@@ -147,38 +147,38 @@ export function SettingsView() {
       <div className="settings-section">
         <h3 className="admin-section-title">Change Password</h3>
         {demoMode ? (
-          <div style={{ color: 'var(--muted)', fontSize: 13 }}>Disabled in demo mode</div>
+          <div className="muted-text">Disabled in demo mode</div>
         ) : (
           <div className="auth-card" style={{ maxWidth: 400 }}>
             <div className="field"><label>Current Password</label><input type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} autoComplete="current-password" /></div>
             <div className="field"><label>New Password</label><input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" /></div>
             <div className="field"><label>Confirm New Password</label><input type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} autoComplete="new-password" /></div>
             <button className="btn" onClick={changePassword}>Change Password</button>
-            {pwMsg && <div style={{ fontSize: 13, marginTop: 12, color: pwMsg.color }}>{pwMsg.text}</div>}
+            {pwMsg && <div className="field-message" style={{ color: pwMsg.color }}>{pwMsg.text}</div>}
           </div>
         )}
       </div>
 
       <div className="settings-section">
         <h3 className="admin-section-title">OCR Settings</h3>
-        <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>
+        <p className="muted-hint">
           Smart OCR uses Google Gemini to extract chords from photos with higher accuracy. Get a free API key at{' '}
           <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style={{ color: 'var(--accent)' }}>aistudio.google.com/apikey</a>
         </p>
         <div className="auth-card" style={{ maxWidth: 400 }}>
-          <div style={{ fontSize: 13, marginBottom: 12, color: 'var(--muted)' }}>{geminiStatus}</div>
+          <div className="muted-hint" style={{ marginBottom: 12 }}>{geminiStatus}</div>
           <div className="field"><label>Gemini API Key</label><input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="Paste your Gemini API key here" autoComplete="off" /></div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="flex-row">
             <button className="btn btn-sm" onClick={saveGeminiKey}>Save Key</button>
             <button className="btn btn-danger btn-sm" onClick={removeGeminiKey}>Remove Key</button>
           </div>
-          {geminiMsg && <div style={{ fontSize: 13, marginTop: 12, color: geminiMsg.color }}>{geminiMsg.text}</div>}
+          {geminiMsg && <div className="field-message" style={{ color: geminiMsg.color }}>{geminiMsg.text}</div>}
         </div>
       </div>
 
       <div className="settings-section">
         <h3 className="admin-section-title">OCR Model</h3>
-        <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>
+        <p className="muted-hint">
           Choose which Gemini model to use for OCR. You can also change this per-extraction in the OCR modal.
         </p>
         <div className="auth-card" style={{ maxWidth: 400 }}>
@@ -193,13 +193,13 @@ export function SettingsView() {
               ))}
             </select>
           </div>
-          {modelMsg && <div style={{ fontSize: 13, marginTop: 4, color: modelMsg.color }}>{modelMsg.text}</div>}
+          {modelMsg && <div className="field-message" style={{ marginTop: 4, color: modelMsg.color }}>{modelMsg.text}</div>}
         </div>
       </div>
 
       <div className="settings-section">
         <h3 className="admin-section-title">OCR Prompt</h3>
-        <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>
+        <p className="muted-hint">
           Customize the instructions sent to Gemini when extracting chords from photos.
           {hasCustomPrompt ? ' You are using a custom prompt.' : ' Using the default prompt.'}
         </p>
@@ -213,11 +213,11 @@ export function SettingsView() {
               maxLength={MAX_OCR_PROMPT}
               style={{ fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }}
             />
-            <div style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'right', marginTop: 4 }}>
+            <div className="muted-text" style={{ fontSize: 11, textAlign: 'right', marginTop: 4 }}>
               {ocrPrompt.length} / {MAX_OCR_PROMPT}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div className="flex-row" style={{ flexWrap: 'wrap' }}>
             <button className="btn btn-sm" onClick={saveOcrPrompt}>Save Prompt</button>
             {!ocrPrompt && (
               <button className="btn btn-sm" style={{ background: 'var(--surface-alt, var(--surface))' }} onClick={() => setOcrPrompt(defaultPrompt)}>
@@ -228,23 +228,23 @@ export function SettingsView() {
               <button className="btn btn-danger btn-sm" onClick={resetOcrPrompt}>Reset to Default</button>
             )}
           </div>
-          {promptMsg && <div style={{ fontSize: 13, marginTop: 12, color: promptMsg.color }}>{promptMsg.text}</div>}
+          {promptMsg && <div className="field-message" style={{ color: promptMsg.color }}>{promptMsg.text}</div>}
         </div>
       </div>
 
       <div className="settings-section">
         <h3 className="admin-section-title">My Languages</h3>
-        <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>
+        <p className="muted-hint">
           Your preferred languages appear at the top of the language picker when creating songs.
         </p>
         <div className="auth-card" style={{ maxWidth: 400 }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+          <div className="flex-row" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
             {preferredLangs.map(code => (
               <span key={code} className="badge badge-tag" style={{ cursor: 'pointer' }} onClick={() => removeLang(code)}>
                 {languageName(code)} ✕
               </span>
             ))}
-            {preferredLangs.length === 0 && <span style={{ color: 'var(--muted)', fontSize: 13 }}>No languages set</span>}
+            {preferredLangs.length === 0 && <span className="muted-text">No languages set</span>}
           </div>
           {preferredLangs.length < MAX_PREFERRED_LANGUAGES && (
             <div className="field">
@@ -269,7 +269,7 @@ export function SettingsView() {
               )}
             </div>
           )}
-          {langMsg && <div style={{ fontSize: 13, marginTop: 12, color: langMsg.color }}>{langMsg.text}</div>}
+          {langMsg && <div className="field-message" style={{ color: langMsg.color }}>{langMsg.text}</div>}
         </div>
       </div>
     </>

@@ -143,7 +143,7 @@ export function AdminView({ navigate }: AdminViewProps) {
       )}
 
       <h3 className="admin-section-title">{t('admin.inviteUsers')}</h3>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px 20px', marginBottom: 20 }}>
+      <div className="ocr-invite-card">
         <div style={{ marginBottom: 14 }}>
           <label className="sl-option">
             <span>Open Registration</span>
@@ -152,29 +152,29 @@ export function AdminView({ navigate }: AdminViewProps) {
               <span className="toggle-slider" />
             </span>
           </label>
-          <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
+          <div className="muted-text" style={{ marginTop: 4 }}>
             {config.allowRegistration ? 'Anyone can create an account — no email verification, so open to spam. Use invite codes instead.' : 'Registration is closed. Use invite codes to add new users.'}
           </div>
-          {demoMode && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>Disabled in demo mode</div>}
+          {demoMode && <div className="muted-text" style={{ fontSize: 12, marginTop: 4 }}>Disabled in demo mode</div>}
         </div>
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div className="flex-align-center" style={{ gap: 12, flexWrap: 'wrap' }}>
             <button className="btn" onClick={generateInvite} disabled={demoMode} title={demoMode ? 'Disabled in demo mode' : ''}>{t('admin.generateInvite')}</button>
             {inviteCode && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="flex-align-center">
                 <code style={{ fontSize: 18, fontWeight: 600, padding: '6px 14px', background: 'var(--accent-bg)', borderRadius: 8, userSelect: 'all' as const, letterSpacing: '0.08em' }}>{inviteCode}</code>
                 <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(inviteCode); toast(t('admin.codeCopied'), 'success'); }}>{t('admin.copy')}</button>
               </div>
             )}
           </div>
-          <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 8 }}>Generate a single-use code and share it. The person enters it on the sign-in page to create their account.</div>
+          <div className="muted-text" style={{ marginTop: 8 }}>Generate a single-use code and share it. The person enters it on the sign-in page to create their account.</div>
           {pending.length > 0 && (
             <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>{t('admin.pendingInvites')}</div>
+              <div className="muted-text" style={{ fontSize: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>{t('admin.pendingInvites')}</div>
               {pending.map((inv) => (
-                <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <div key={inv.id} className="flex-align-center" style={{ marginBottom: 4 }}>
                   <code style={{ fontSize: 13 }}>{inv.code}</code>
-                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>{new Date(inv.created_at).toLocaleDateString()}</span>
+                  <span className="muted-text" style={{ fontSize: 12 }}>{new Date(inv.created_at).toLocaleDateString()}</span>
                   <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '2px 6px' }} onClick={() => deleteInvite(inv.id)} disabled={demoMode}>&#10005;</button>
                 </div>
               ))}
@@ -196,7 +196,7 @@ export function AdminView({ navigate }: AdminViewProps) {
             <div key={u.id} className="user-card">
               <div className="user-card-top">
                 <div className="user-card-info">
-                  <div className="song-card-title">@{u.username}{isSelf && <span style={{ color: 'var(--muted)', fontSize: 13 }}> {t('admin.you')}</span>}</div>
+                  <div className="song-card-title">@{u.username}{isSelf && <span className="muted-text"> {t('admin.you')}</span>}</div>
                   <div className="song-card-meta">{u.song_count} {u.song_count !== 1 ? t('admin.songPlural') : t('admin.song')} &middot; {t('admin.joined')} {new Date(u.created_at).toLocaleDateString()}</div>
                 </div>
                 <div className="user-card-badges">

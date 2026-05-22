@@ -582,3 +582,35 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border);
   background: var(--surface); color: var(--text); font-size: 14px;
 }
+
+/* -- General Utility Classes -- */
+.muted-hint {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.muted-text {
+  color: var(--muted);
+  font-size: 13px;
+}
+.flex-row {
+  display: flex;
+  gap: 8px;
+}
+.flex-align-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.field-message {
+  font-size: 13px;
+  margin-top: 12px;
+}
+.ocr-invite-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+

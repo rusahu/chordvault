@@ -6,7 +6,6 @@ interface ChordSheetProps {
   twoCol?: boolean;
   fontSize?: number;
   autoFit?: boolean; // Kept for class naming if needed
-  renderKey?: number;
 }
 
 export function ChordSheet({ html, twoCol, fontSize, autoFit }: ChordSheetProps) {

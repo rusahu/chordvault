@@ -148,7 +148,7 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
             {preview && (
               <div style={{ marginBottom: 14 }}>
                 {isPdf ? (
-                  <div style={{ padding: 12, background: 'var(--surface2)', borderRadius: 8, fontSize: 13, color: 'var(--muted)' }}>
+                  <div className="muted-text" style={{ padding: 12, background: 'var(--surface2)', borderRadius: 8 }}>
                     &#128196; {preview}
                   </div>
                 ) : (
@@ -157,7 +157,7 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
               </div>
             )}
             {!hasGeminiKey && (
-              <div style={{ marginBottom: 12, padding: 10, background: 'var(--surface)', borderRadius: 8, fontSize: 13, color: 'var(--muted)' }}>
+              <div className="muted-text" style={{ marginBottom: 12, padding: 10, background: 'var(--surface)', borderRadius: 8 }}>
                 Requires a Gemini API key. Set one up in Settings.
               </div>
             )}
@@ -203,13 +203,13 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
               </div>
             )}
 
-            <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <label className="muted-text flex-align-center" style={{ fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>
               {hasCorrections ? 'Corrected result' : 'Extracted text'}
               {hasCorrections && <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 400, textTransform: 'none' }}>({chatHistory.filter(m => m.role === 'user').length} fix{chatHistory.filter(m => m.role === 'user').length > 1 ? 'es' : ''} applied)</span>}
             </label>
             <textarea className="ocr-result" readOnly value={resultText} />
             {detectedLang && (
-              <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>
+              <div className="muted-text" style={{ marginTop: 6 }}>
                 Detected language: <strong>{detectedLang}</strong>
               </div>
             )}
@@ -246,12 +246,12 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
                 {refining ? '...' : 'Fix'}
               </button>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
+            <div className="muted-text" style={{ fontSize: 12, marginTop: 4 }}>
               e.g. "move the G chord to the next word" or "verse 2 should be Am not Em"
             </div>
 
             {/* Action buttons */}
-            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <div className="flex-row" style={{ marginTop: 12 }}>
               <button className="btn" onClick={useResult}>Use this</button>
               <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
             </div>
