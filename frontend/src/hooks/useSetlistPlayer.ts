@@ -45,6 +45,9 @@ export function useSetlistPlayer({
           return {
             ...en,
             transpose,
+            font: null,
+            two_col: null,
+            nashville: 0,
           };
         });
         setSetlist({
@@ -70,7 +73,6 @@ export function useSetlistPlayer({
               const entries = results
                 .map((song, i) => {
                   if (!song) return null;
-                  const e = sl.entries[i];
                   return {
                     song_id: song.id,
                     entry_id: `local_${i}`,
@@ -78,8 +80,10 @@ export function useSetlistPlayer({
                     artist: song.artist || '',
                     content: song.content,
                     content_override: null,
-                    transpose: e.transpose || 0,
-                    nashville: e.nashville || 0,
+                    transpose: 0,
+                    nashville: 0,
+                    font: null,
+                    two_col: null,
                     bpm: song.bpm || null,
                     youtube_url: song.youtube_url || null,
                     language: song.language || 'en',
@@ -105,6 +109,9 @@ export function useSetlistPlayer({
                 return {
                   ...en,
                   transpose,
+                  font: null,
+                  two_col: null,
+                  nashville: 0,
                 };
               });
 
@@ -133,6 +140,9 @@ export function useSetlistPlayer({
           return {
             ...en,
             transpose,
+            font: null,
+            two_col: null,
+            nashville: 0,
           };
         });
 

@@ -66,7 +66,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   const isOwner = setlist?.user_id && user && setlist.user_id === user.id;
 
   // Effective values for current entry
-  const effNum = entry ? (slEffective(entry, 'num', slNashville) || entry.nashville) : false;
+  const effNum = entry ? slEffective(entry, 'num', slNashville) : false;
   const effTwoCol = entry ? slEffective(entry, 'twoCol', twoColState.twoCol) : twoColState.twoCol;
   const effFont = entry ? slEffective(entry, 'font', fontScale.fontSize) : fontScale.fontSize;
   const keyDisplay = entry ? getSongKey(content, entry.transpose) : '';
@@ -86,10 +86,9 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
   // Per-song overrides
   const toggleEntryNum = useCallback((checked: boolean) => {
     if (!entry) return;
-    const globalVal = slNashville || entry.nashville;
+    const globalVal = slNashville;
     updateEntry({
       _num: (checked === !!globalVal) ? null : (checked ? 1 : 0),
-      nashville: checked ? 1 : 0,
     });
   }, [entry, slNashville, updateEntry]);
 
@@ -97,14 +96,14 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     if (!entry) return;
     const current = slEffective(entry, 'twoCol', twoColState.twoCol);
     const nextVal = !current;
-    updateEntry({ two_col: nextVal === (!!twoColState.twoCol) ? null : (nextVal ? 1 : 0) });
+    updateEntry({ _twoCol: nextVal === (!!twoColState.twoCol) ? null : nextVal });
   }, [entry, twoColState.twoCol, updateEntry]);
 
   const changeEntryFont = useCallback((delta: number) => {
     if (!entry) return;
     const current = slEffective(entry, 'font', fontScale.fontSize) || 0;
     const nextVal = clampFontSize(current + delta);
-    updateEntry({ font: nextVal === fontScale.fontSize ? null : nextVal });
+    updateEntry({ _font: nextVal === fontScale.fontSize ? null : nextVal });
   }, [entry, fontScale.fontSize, updateEntry]);
 
   // Key picker
@@ -165,7 +164,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
 
   const resetFont = () => {
     fontScale.resetFontSize();
-    if (entry) updateEntry({ font: null });
+    if (entry) updateEntry({ _font: null });
   };
 
   const handleExportAllPdf = async () => {
@@ -188,8 +187,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
     setTimeout(() => {
       const result = autoFit();
       updateEntry({ 
-        font: result.fontSize === fontScale.fontSize ? null : result.fontSize,
-        two_col: result.twoCol === !!twoColState.twoCol ? null : (result.twoCol ? 1 : 0)
+        _font: result.fontSize === fontScale.fontSize ? null : result.fontSize,
+        _twoCol: result.twoCol === !!twoColState.twoCol ? null : result.twoCol
       });
       setAutoFitActive(false);
     }, 100);
@@ -247,7 +246,7 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         fontSize={effFont || 0}
         onFontChange={changeEntryFont}
         onReset={() => {
-          if (entry) { updateEntry({ font: null, two_col: null }); }
+          if (entry) { updateEntry({ _font: null, _twoCol: null }); }
           setAutoFitActive(false);
         }}
         onPickKey={pickKey}
@@ -262,8 +261,8 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
         renderKey={index}
         overrides={{
           num: entry._num != null,
-          twoCol: entry.two_col != null,
-          font: entry.font != null,
+          twoCol: entry._twoCol != null,
+          font: entry._font != null,
         }}
       />
 

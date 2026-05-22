@@ -76,7 +76,7 @@ describe('SetlistPlayView Auto-Fit', () => {
     // After timeout it should be back to OFF
     await waitFor(() => expect(fitBtn).not.toHaveClass('active'), { timeout: 2000 });
     expect(mockUpdateEntry).toHaveBeenCalledWith(expect.objectContaining({
-      font: expect.any(Number),
+      _font: expect.any(Number),
     }));
   });
 });
