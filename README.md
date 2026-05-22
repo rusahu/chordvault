@@ -59,11 +59,11 @@
 - **Browse without an account:** all public songs and public setlists are readable by anyone
 
 ### Setlists & Display
-- **Build setlists:** ordered song lists with per-song key, number notation, and display overrides.
+- **Build setlists:** ordered song lists with per-song key transpositions and session-level display overrides.
 - **Local browser setlists:** no account needed, stored in your browser
-- **Swipe playback:** swipe, tap side buttons, or use keyboard to navigate between songs. Transpose and notation changes are auto-saved.
+- **Swipe playback:** swipe, tap side buttons, or use keyboard to navigate between songs. Key transpositions can be saved online or locally.
 - **PDF export:** export a single song or an entire setlist as PDF. Auto-fits to one page per song using 2-column layout when needed. Theme-aware background.
-- **Settings panel:** global defaults (number notation, hide YouTube, multi-column, font size) with per-song overrides
+- **Settings panel:** global defaults (number notation, hide YouTube, multi-column, font size) with session-level per-song overrides
 - **Multi-column layout:** split long chord sheets into columns for landscape or wide screens
 - **Font size A-/A+ & Auto-Fit:** adjustable font scale with reset, or auto-fit to screen.
 - **Inline editing:** fix chords mid-session, save to the entry or as a new version
