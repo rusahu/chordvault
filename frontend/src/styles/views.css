@@ -592,34 +592,26 @@
 
 /* -- Setlist Playback --------------------─ */
 :root:has(.setlist-play-container) {
-  overflow: hidden !important;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-:root:has(.setlist-play-container) body {
-  overflow: hidden !important;
-  height: 100vh;
+:root:has(.setlist-play-container)::webkit-scrollbar {
+  display: none;
 }
 
 .setlist-play-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
   
   /* Negate #app padding (32px 24px) to go truly edge-to-edge */
-  margin: -32px -24px; 
-  overflow: hidden;
-
-  /* Force hidden scrollbars globally within this container */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  margin: -32px -24px;
 }
 
 .setlist-play-container .chord-sheet-wrap {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   margin: 0;
   padding: 40px 10% 120px 10%; /* Extra bottom padding for mobile nav bars */
   border-radius: 0;
@@ -642,28 +634,12 @@
 }
 
 @media (max-width: 900px) {
-  :root:has(.setlist-play-container) {
-    overflow: auto !important;
-  }
-
-  :root:has(.setlist-play-container) body {
-    overflow: auto !important;
-    height: auto !important;
-  }
-
   .setlist-play-container {
     /* Negate mobile app padding (16px 12px) */
     margin: -16px -12px;
-    height: auto;
-    min-height: 100vh;
-    min-height: 100dvh;
-    overflow: visible;
   }
 
   .setlist-play-container .chord-sheet-wrap {
-    flex: none;
-    min-height: auto;
-    overflow-y: visible;
     padding: 20px 16px 120px 16px;
   }
 
