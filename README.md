@@ -294,8 +294,8 @@ A live format badge in the editor shows which format was detected. The editor it
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/api/songs` | Yes | List your songs |
-| GET | `/api/songs/public` | No | Browse public songs (`?q=`, `?language=`) |
+| GET | `/api/songs` | Yes | List your songs (`?q=`, `?language=`) |
+| GET | `/api/songs/public` | No | Browse public songs (`?q=`, `?language=`, max 100) |
 | GET | `/api/users/:username/songs` | No | Public songs by username |
 | GET | `/api/songs/:id` | Optional | Get song (public or your own) |
 | POST | `/api/songs` | Yes | Create song |
@@ -323,9 +323,9 @@ A live format badge in the editor shows which format was detected. The editor it
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/api/setlists` | Yes | List your setlists |
+| GET | `/api/setlists` | Yes | List your setlists (`?q=`, `?date_from=`, `?date_to=`) |
 | POST | `/api/setlists` | Yes | Create setlist |
-| GET | `/api/setlists/public` | No | Browse public setlists (`?q=`, `?date=`) |
+| GET | `/api/setlists/public` | No | Browse public setlists (`?q=`, `?date_from=`, `?date_to=`) |
 | GET | `/api/setlists/public/:id` | No | View a public setlist |
 | GET | `/api/setlists/:id` | Yes | Get setlist with entries |
 | PUT | `/api/setlists/:id` | Yes | Update setlist (name, visibility, date) |
@@ -359,6 +359,8 @@ A live format badge in the editor shows which format was detected. The editor it
 | DELETE | `/api/settings/ocr-prompt` | Yes | Reset to default OCR prompt |
 | GET | `/api/settings/ocr-model` | Yes | Get preferred model + available models |
 | PUT | `/api/settings/ocr-model` | Yes | Save default OCR model preference |
+| GET | `/api/settings/languages` | Yes | Get preferred languages |
+| PUT | `/api/settings/languages` | Yes | Save preferred languages |
 
 ### Admin
 
@@ -376,6 +378,8 @@ A live format badge in the editor shows which format was detected. The editor it
 | POST | `/api/admin/invites` | Admin | Generate invite code |
 | GET | `/api/admin/invites` | Admin | List invites |
 | DELETE | `/api/admin/invites/:id` | Admin | Revoke unused invite |
+| GET | `/api/admin/config` | Admin | Get registration configuration |
+| PUT | `/api/admin/config` | Admin | Update registration configuration |
 
 </details>
 
