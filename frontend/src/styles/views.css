@@ -642,9 +642,36 @@
 }
 
 @media (max-width: 900px) {
+  :root:has(.setlist-play-container) {
+    overflow: auto !important;
+  }
+
+  :root:has(.setlist-play-container) body {
+    overflow: auto !important;
+    height: auto !important;
+  }
+
   .setlist-play-container {
     /* Negate mobile app padding (16px 12px) */
     margin: -16px -12px;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .setlist-play-container .chord-sheet-wrap {
+    flex: none;
+    min-height: auto;
+    overflow-y: visible;
+    padding: 20px 16px 120px 16px;
+  }
+
+  .sl-options-panel {
+    right: 12px;
+    left: 12px;
+    width: auto;
+    top: 110px;
   }
 }
 
