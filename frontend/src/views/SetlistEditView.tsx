@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
+import { ApiError } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
 import { SongPicker } from '../components/SongPicker';
@@ -10,12 +12,12 @@ import type { Setlist, SongListItem } from '../types';
 
 interface SetlistEditViewProps {
   setlistId: number;
-  isPublic?: boolean;
   navigate: (view: string, params?: Record<string, string>) => void;
 }
 
-export function SetlistEditView({ setlistId, isPublic, navigate }: SetlistEditViewProps) {
+export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
   const apiCall = useApi();
+  const { user } = useAuth();
   const { t } = useI18n();
   const toast = useToast();
   const [setlist, setSetlist] = useState<Setlist | null>(null);
@@ -23,15 +25,27 @@ export function SetlistEditView({ setlistId, isPublic, navigate }: SetlistEditVi
 
   const load = useCallback(async () => {
     try {
-      const endpoint = isPublic ? `/api/setlists/public/${setlistId}` : `/api/setlists/${setlistId}`;
-      const sl = await apiCall<Setlist>('GET', endpoint);
+      let sl: Setlist;
+      if (user) {
+        try {
+          sl = await apiCall<Setlist>('GET', `/api/setlists/${setlistId}`);
+        } catch (err) {
+          if (err instanceof ApiError && (err.status === 404 || err.status === 403)) {
+            sl = await apiCall<Setlist>('GET', `/api/setlists/public/${setlistId}`);
+          } else {
+            throw err;
+          }
+        }
+      } else {
+        sl = await apiCall<Setlist>('GET', `/api/setlists/public/${setlistId}`);
+      }
       setSetlist(sl);
-      location.hash = isPublic ? `#setlist/${setlistId}/public` : `#setlist/${setlistId}`;
+      location.hash = `#setlist/${setlistId}`;
     } catch (e) {
       toast((e as Error).message, 'error');
-      navigate(isPublic ? 'public-setlists' : 'setlists');
+      navigate(user ? 'setlists' : 'public-setlists');
     }
-  }, [apiCall, toast, navigate, setlistId, isPublic]);
+  }, [apiCall, toast, navigate, setlistId, user]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -86,22 +100,34 @@ export function SetlistEditView({ setlistId, isPublic, navigate }: SetlistEditVi
     } catch (e) { toast((e as Error).message, 'error'); }
   };
 
+  const copyShareLink = () => {
+    const url = window.location.origin + window.location.pathname + `#setlist/${setlistId}`;
+    navigator.clipboard.writeText(url)
+      .then(() => toast(t('setlist.linkCopied') || 'Link copied to clipboard', 'success'))
+      .catch(() => toast('Failed to copy link', 'error'));
+  };
+
+  const isEditable = setlist?.user_id != null && user != null && setlist.user_id === user.id;
+
   if (!setlist) return <Loading />;
 
   return (
     <>
       <div className="song-view-header">
         <div className="song-view-nav">
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate(isPublic ? 'public-setlists' : 'setlists')}>&#8592; {t('songView.back')}</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => navigate(isEditable ? 'setlists' : 'public-setlists')}>&#8592; {t('songView.back')}</button>
           <div style={{ display: 'flex', gap: 8 }}>
             {setlist.entries.length > 0 && (
-              <button className="btn btn-sm" onClick={() => navigate('setlist-play', { id: String(setlistId), ...(isPublic ? { public: '1' } : {}) })}>{t('setlist.play')}</button>
+              <button className="btn btn-sm" onClick={() => navigate('setlist-play', { id: String(setlistId) })}>{t('setlist.play')}</button>
             )}
-            {!isPublic && <button className="btn btn-danger btn-sm" onClick={deleteSetlist}>{t('admin.delete')}</button>}
+            {setlist.visibility === 'public' && (
+              <button className="btn btn-ghost btn-sm" onClick={copyShareLink}>{t('setlist.share')}</button>
+            )}
+            {isEditable && <button className="btn btn-danger btn-sm" onClick={deleteSetlist}>{t('admin.delete')}</button>}
           </div>
         </div>
         <div className="setlist-name-row">
-          {isPublic ? (
+          {!isEditable ? (
             <div className="setlist-name-input" style={{ border: 'none', background: 'none', padding: 0 }}>{setlist.name}</div>
           ) : (
             <input
@@ -115,7 +141,7 @@ export function SetlistEditView({ setlistId, isPublic, navigate }: SetlistEditVi
           )}
         </div>
         <div className="setlist-meta-row">
-          {isPublic ? (
+          {!isEditable ? (
             <>
               {setlist.username && <span style={{ fontSize: 13, color: 'var(--muted)' }}>By @{setlist.username}</span>}
               {setlist.event_date && <span style={{ fontSize: 13, color: 'var(--muted)', marginLeft: 8 }}>Date: {setlist.event_date}</span>}
@@ -145,8 +171,8 @@ export function SetlistEditView({ setlistId, isPublic, navigate }: SetlistEditVi
           {setlist.entries.map((entry, idx) => {
             const keyDisplay = getSongKey(entry.content_override || entry.content, entry.transpose);
             return (
-              <div key={entry.entry_id} className="song-card setlist-song-item" onClick={() => navigate('setlist-play', { id: String(setlistId), index: String(idx), ...(isPublic ? { public: '1' } : {}) })}>
-                {!isPublic && (
+              <div key={entry.entry_id} className="song-card setlist-song-item" onClick={() => navigate('setlist-play', { id: String(setlistId), index: String(idx) })}>
+                {isEditable && (
                   <div className="setlist-reorder" onClick={(e) => e.stopPropagation()}>
                     {idx > 0 ? (
                       <button className="setlist-arrow-btn" onClick={() => moveEntry(idx, -1)} title="Move up">&#9650;</button>
@@ -161,13 +187,13 @@ export function SetlistEditView({ setlistId, isPublic, navigate }: SetlistEditVi
                   <div className="song-card-title">
                     {entry.title}
                     {entry.visibility === 'private' && <span className="badge badge-private" title="Private">&#128274;</span>}
-                    {!isPublic && entry.content_override && <span className="badge badge-edited">{t('setlist.edited')}</span>}
+                    {isEditable && entry.content_override && <span className="badge badge-edited">{t('setlist.edited')}</span>}
                   </div>
                   <div className="song-card-meta">
                     {entry.artist ? `${entry.artist} · ` : ''}{keyDisplay}
                   </div>
                 </div>
-                {!isPublic && (
+                {isEditable && (
                   <button
                     className="setlist-remove-btn"
                     onClick={(e) => { e.stopPropagation(); removeEntry(entry.entry_id); }}
@@ -182,7 +208,7 @@ export function SetlistEditView({ setlistId, isPublic, navigate }: SetlistEditVi
         </div>
       )}
 
-      {!isPublic && (
+      {isEditable && (
         <div style={{ marginTop: 20, textAlign: 'center' }}>
           <button className="btn" onClick={() => setPickerOpen(true)}>{t('setlist.addSongs')}</button>
         </div>

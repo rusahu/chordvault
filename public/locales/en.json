@@ -138,5 +138,7 @@
   "setlist.searchPlaceholder": "Search setlists...",
   "setlist.noPublicSetlists": "No public setlists found",
   "setlist.browseSetlists": "Setlists",
+  "setlist.share": "Share",
+  "setlist.linkCopied": "Link copied to clipboard",
   "nav.mySetlists": "My Sets"
 }

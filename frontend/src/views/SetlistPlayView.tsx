@@ -18,14 +18,13 @@ import type { Setlist } from '../types';
 
 interface SetlistPlayViewProps {
   setlistId: number | string;
-  isPublic?: boolean;
   isLocal?: boolean;
   initialSetlist?: Setlist;
   initialIndex?: number;
   navigate: (view: string, params?: Record<string, string>) => void;
 }
 
-export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initialSetlist, initialIndex, navigate }: SetlistPlayViewProps) {
+export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, initialIndex, navigate }: SetlistPlayViewProps) {
   const apiCall = useApi();
   const { t } = useI18n();
   const toast = useToast();
@@ -45,7 +44,6 @@ export function SetlistPlayView({ setlistId, isPublic, isLocal: _isLocal, initia
 
   const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
-    isPublic,
     isLocal: _isLocal,
     initialSetlist,
     initialIndex,

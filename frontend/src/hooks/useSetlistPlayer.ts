@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useApi } from './useApi';
+import { ApiError } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getSetlistOverrides, saveSetlistOverride } from '../lib/storage';
@@ -7,7 +8,6 @@ import type { Setlist, SetlistEntry, Song } from '../types';
 
 interface UseSetlistPlayerOptions {
   setlistId: number | string;
-  isPublic?: boolean;
   isLocal?: boolean;
   initialSetlist?: Setlist;
   initialIndex?: number;
@@ -17,7 +17,6 @@ interface UseSetlistPlayerOptions {
 
 export function useSetlistPlayer({
   setlistId,
-  isPublic,
   isLocal,
   initialSetlist,
   initialIndex,
@@ -127,9 +126,23 @@ export function useSetlistPlayer({
       return;
     }
 
-    const endpoint = isPublic ? `/api/setlists/public/${setlistId}` : `/api/setlists/${setlistId}`;
-    apiCall<Setlist>('GET', endpoint)
-      .then((sl) => {
+    const loadSetlist = async () => {
+      try {
+        let sl: Setlist;
+        if (user) {
+          try {
+            sl = await apiCall<Setlist>('GET', `/api/setlists/${setlistId}`);
+          } catch (err) {
+            if (err instanceof ApiError && (err.status === 404 || err.status === 403)) {
+              sl = await apiCall<Setlist>('GET', `/api/setlists/public/${setlistId}`);
+            } else {
+              throw err;
+            }
+          }
+        } else {
+          sl = await apiCall<Setlist>('GET', `/api/setlists/public/${setlistId}`);
+        }
+
         // Merge local overrides
         const overrides = getSetlistOverrides(sl.id);
         const transposes: Record<string, number> = {};
@@ -148,9 +161,14 @@ export function useSetlistPlayer({
 
         setSetlist(sl);
         setSavedTransposes(transposes);
-      })
-      .catch((e) => { toast(e.message, 'error'); navigate(user ? 'setlists' : 'browse'); });
-  }, [setlistId, apiCall, isPublic, isLocal, initialSetlist, navigate, toast, user]);
+      } catch (e) {
+        toast((e as Error).message, 'error');
+        navigate(user ? 'setlists' : 'browse');
+      }
+    };
+
+    loadSetlist();
+  }, [setlistId, apiCall, isLocal, initialSetlist, navigate, toast, user]);
 
   const entry: SetlistEntry | null = setlist?.entries[index] || null;
   const total = setlist?.entries.length || 0;
@@ -201,7 +219,6 @@ export function useSetlistPlayer({
       // Revert URL to current valid index
       if (!setlist.isLocal) {
         let h = `#setlist/${setlistId}/play`;
-        if (isPublic) h += '/public';
         if (index > 0) h += `/${index}`;
         history.replaceState(null, '', location.pathname + location.search + h);
       }
@@ -213,7 +230,6 @@ export function useSetlistPlayer({
 
     if (!setlist.isLocal) {
       let h = `#setlist/${setlistId}/play`;
-      if (isPublic) h += '/public';
       if (newIdx > 0) h += `/${newIdx}`;
       history.replaceState(null, '', location.pathname + location.search + h);
     }
@@ -225,11 +241,11 @@ export function useSetlistPlayer({
       const output = document.querySelector('.chord-sheet-wrap');
       if (output) output.scrollTo(0, 0);
     }, 40);
-  }, [setlist, onNavigate, setlistId, isPublic, index]);
+  }, [setlist, onNavigate, setlistId, index]);
 
   useEffect(() => {
     const onHash = () => {
-      const match = location.hash.match(/^#setlist\/\d+\/play(?:\/public)?(?:\/(\d+))?$/);
+      const match = location.hash.match(/^#setlist\/\d+\/play(?:\/(\d+))?$/);
       if (match) {
         const urlIdx = match[1] ? parseInt(match[1]) : 0;
         if (urlIdx !== index) {
@@ -255,9 +271,8 @@ export function useSetlistPlayer({
 
   const exit = useCallback(() => {
     if (setlist?.isLocal) { location.hash = ''; navigate('local-setlists'); }
-    else if (setlist?.user_id && user && setlist.user_id === user.id) { navigate('setlist-edit', { id: String(setlist.id) }); }
-    else { location.hash = ''; navigate(user ? 'setlists' : 'browse'); }
-  }, [setlist, navigate, user]);
+    else if (setlist) { navigate('setlist-edit', { id: String(setlist.id) }); }
+  }, [setlist, navigate]);
 
   return { setlist, entry, index, total, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal };
 }
