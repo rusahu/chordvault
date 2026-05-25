@@ -1,7 +1,7 @@
 const express = require('express');
 const { requireAuth, optionalAuth, isAdminRole } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
-const { parseId, validateSetlistInput, validateTranspose } = require('../lib/validation');
+const { parseId, validateSetlistInput, validateTranspose, parsePaginationParams } = require('../lib/validation');
 const Setlist = require('../lib/models/setlist');
 const Song = require('../lib/models/song');
 
@@ -18,8 +18,9 @@ function createSetlistsRouter() {
   const router = express.Router();
 
   router.get('/setlists', requireAuth, (req, res) => {
-    const { q, date_from, date_to } = req.query;
-    res.json(Setlist.listForUser(req.user.id, { q, dateFrom: date_from, dateTo: date_to }));
+    const { q, date_from, date_to, page, limit } = req.query;
+    const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
+    res.json(Setlist.listForUser(req.user.id, { q, dateFrom: date_from, dateTo: date_to, page: pageNum, limit: limitNum }));
   });
 
   router.post('/setlists', requireAuth, (req, res) => {
@@ -32,8 +33,9 @@ function createSetlistsRouter() {
   });
 
   router.get('/setlists/public', (req, res) => {
-    const { q, date_from, date_to } = req.query;
-    res.json(Setlist.listPublic({ q, dateFrom: date_from, dateTo: date_to }));
+    const { q, date_from, date_to, page, limit } = req.query;
+    const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
+    res.json(Setlist.listPublic({ q, dateFrom: date_from, dateTo: date_to, page: pageNum, limit: limitNum }));
   });
 
   router.get('/setlists/public/:id', optionalAuth, (req, res) => {

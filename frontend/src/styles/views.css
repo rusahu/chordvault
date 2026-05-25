@@ -927,3 +927,18 @@
 @keyframes cv-spin {
   to { transform: rotate(360deg); }
 }
+
+/* Pagination */
+.pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+.pagination-info {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+}

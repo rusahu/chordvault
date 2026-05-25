@@ -4,6 +4,7 @@ import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
 import { SetlistCard } from '../components/SetlistCard';
 import { EmptyState } from '../components/EmptyState';
+import { Pagination } from '../components/Pagination';
 import type { SetlistListItem } from '../types';
 
 interface SetlistsViewProps {
@@ -22,22 +23,35 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [showDates, setShowDates] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const nameRef = useRef<HTMLInputElement>(null);
 
-  const load = useCallback(async (q = '', from = '', to = '') => {
+  const load = useCallback(async (q = '', from = '', to = '', targetPage = 1) => {
     const params: string[] = [];
     if (q) params.push(`q=${encodeURIComponent(q)}`);
     if (from) params.push(`date_from=${encodeURIComponent(from)}`);
     if (to) params.push(`date_to=${encodeURIComponent(to)}`);
+    params.push(`page=${targetPage}`);
+    params.push(`limit=20`);
     const qs = params.length > 0 ? `?${params.join('&')}` : '';
     try {
-      const data = await apiCall<SetlistListItem[]>('GET', `/api/setlists${qs}`);
-      setSetlists(data);
+      interface PaginatedSetlistsResponse {
+        setlists: SetlistListItem[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }
+      const data = await apiCall<PaginatedSetlistsResponse>('GET', `/api/setlists${qs}`);
+      setSetlists(data.setlists);
+      setPage(data.page);
+      setTotalPages(data.totalPages);
       setLoaded(true);
     } catch (e) { toast((e as Error).message, 'error'); }
   }, [apiCall, toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load('', '', '', 1); }, [load]);
 
   useEffect(() => { if (showNew && nameRef.current) nameRef.current.focus(); }, [showNew]);
 
@@ -48,6 +62,11 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
       toast(t('setlist.created'), 'success');
       navigate('setlist-edit', { id: String(result.id) });
     } catch (e) { toast((e as Error).message, 'error'); }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    load(query, dateFrom, dateTo, newPage);
+    window.scrollTo(0, 0);
   };
 
   return (
@@ -80,10 +99,10 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
           placeholder={t('setlist.searchPlaceholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') load(query, dateFrom, dateTo); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') load(query, dateFrom, dateTo, 1); }}
         />
         <button className="btn btn-ghost btn-sm" onClick={() => setShowDates((v) => !v)}>&#128197; Date</button>
-        <button className="btn btn-ghost btn-sm" onClick={() => load(query, dateFrom, dateTo)}>{t('songs.search')}</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => load(query, dateFrom, dateTo, 1)}>{t('songs.search')}</button>
       </div>
       {showDates && (
         <div className="search-row" style={{ marginTop: -10 }}>
@@ -107,6 +126,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
           ))
         )}
       </div>
+      <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
     </>
   );
 }

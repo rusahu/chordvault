@@ -4,6 +4,7 @@ import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
 import { SongCard } from '../components/SongCard';
 import { EmptyState } from '../components/EmptyState';
+import { Pagination } from '../components/Pagination';
 import type { SongListItem } from '../types';
 
 interface MySongsViewProps {
@@ -17,19 +18,43 @@ export function MySongsView({ navigate }: MySongsViewProps) {
   const [songs, setSongs] = useState<SongListItem[]>([]);
   const [query, setQuery] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const load = useCallback((q = '') => {
+  const load = useCallback((q = '', targetPage = 1) => {
     let url = '/api/songs';
-    if (q.trim()) url += `?q=${encodeURIComponent(q.trim())}`;
+    const params: string[] = [];
+    if (q.trim()) params.push(`q=${encodeURIComponent(q.trim())}`);
+    params.push(`page=${targetPage}`);
+    params.push(`limit=20`);
+    url += '?' + params.join('&');
     
-    api<SongListItem[]>('GET', url)
-      .then((data) => { setSongs(data); setLoaded(true); })
+    interface PaginatedSongsResponse {
+      songs: SongListItem[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }
+
+    api<PaginatedSongsResponse>('GET', url)
+      .then((data) => {
+        setSongs(data.songs);
+        setPage(data.page);
+        setTotalPages(data.totalPages);
+        setLoaded(true);
+      })
       .catch((e) => toast(e.message, 'error'));
   }, [api, toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load('', 1); }, [load]);
 
-  const doSearch = () => load(query);
+  const doSearch = () => load(query, 1);
+
+  const handlePageChange = (newPage: number) => {
+    load(query, newPage);
+    window.scrollTo(0, 0);
+  };
 
   return (
     <>
@@ -66,6 +91,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
           ))
         )}
       </div>
+      <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
     </>
   );
 }

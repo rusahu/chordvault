@@ -5,6 +5,7 @@ import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
 import { SongCard } from '../components/SongCard';
 import { EmptyState } from '../components/EmptyState';
+import { Pagination } from '../components/Pagination';
 import type { SongListItem } from '../types';
 import { LANGUAGES } from '../lib/languages';
 
@@ -22,25 +23,44 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   const [langFilter, setLangFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const load = useCallback(async (q = '', lang = '') => {
+  const load = useCallback(async (q = '', lang = '', targetPage = 1) => {
     try {
       let url = '/api/songs/public';
       const params: string[] = [];
       if (q) params.push(`q=${encodeURIComponent(q)}`);
       if (lang) params.push(`language=${encodeURIComponent(lang)}`);
-      if (params.length) url += '?' + params.join('&');
-      const data = await api<SongListItem[]>('GET', url);
-      setSongs(data);
+      params.push(`page=${targetPage}`);
+      params.push(`limit=20`);
+      url += '?' + params.join('&');
+      
+      interface PaginatedSongsResponse {
+        songs: SongListItem[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }
+      const data = await api<PaginatedSongsResponse>('GET', url);
+      setSongs(data.songs);
+      setPage(data.page);
+      setTotalPages(data.totalPages);
       setLoaded(true);
     } catch (e) { toast((e as Error).message, 'error'); }
   }, [api, toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load('', '', 1); }, [load]);
 
-  const doSearch = () => load(query, langFilter);
+  const doSearch = () => load(query, langFilter, 1);
 
-  const showHero = !user && !query && !langFilter && loaded && songs.length === 0;
+  const handlePageChange = (newPage: number) => {
+    load(query, langFilter, newPage);
+    window.scrollTo(0, 0);
+  };
+
+  const showHero = !user && !query && !langFilter && loaded && songs.length === 0 && page === 1;
 
   return (
     <>
@@ -81,7 +101,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               <select
                 className="language-filter"
                 value={langFilter}
-                onChange={(e) => { setLangFilter(e.target.value); load(query, e.target.value); }}
+                onChange={(e) => { setLangFilter(e.target.value); load(query, e.target.value, 1); }}
               >
                 <option value="">All languages</option>
                 {LANGUAGES.map(l => (
@@ -105,6 +125,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               ))
             )}
           </div>
+          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </>
       )}
     </>

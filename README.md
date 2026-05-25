@@ -294,9 +294,9 @@ A live format badge in the editor shows which format was detected. The editor it
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/api/songs` | Yes | List your songs (`?q=`, `?language=`) |
-| GET | `/api/songs/public` | No | Browse public songs (`?q=`, `?language=`, max 100) |
-| GET | `/api/users/:username/songs` | No | Public songs by username |
+| GET | `/api/songs` | Yes | List your songs (`?q=`, `?language=`, `?page=`, `?limit=`) |
+| GET | `/api/songs/public` | No | Browse public songs (`?q=`, `?language=`, `?page=`, `?limit=`) |
+| GET | `/api/users/:username/songs` | No | Public songs by username (`?page=`, `?limit=`) |
 | GET | `/api/songs/:id` | Optional | Get song (public or your own) |
 | POST | `/api/songs` | Yes | Create song |
 | POST | `/api/songs/import` | Yes | Bulk import songs (max 500) |
@@ -323,9 +323,9 @@ A live format badge in the editor shows which format was detected. The editor it
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/api/setlists` | Yes | List your setlists (`?q=`, `?date_from=`, `?date_to=`) |
+| GET | `/api/setlists` | Yes | List your setlists (`?q=`, `?date_from=`, `?date_to=`, `?page=`, `?limit=`) |
 | POST | `/api/setlists` | Yes | Create setlist |
-| GET | `/api/setlists/public` | No | Browse public setlists (`?q=`, `?date_from=`, `?date_to=`) |
+| GET | `/api/setlists/public` | No | Browse public setlists (`?q=`, `?date_from=`, `?date_to=`, `?page=`, `?limit=`) |
 | GET | `/api/setlists/public/:id` | No | View a public setlist |
 | GET | `/api/setlists/:id` | Yes | Get setlist with entries |
 | PUT | `/api/setlists/:id` | Yes | Update setlist (name, visibility, date) |
