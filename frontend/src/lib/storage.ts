@@ -4,7 +4,6 @@ const KEYS = {
   user: 'cv_user',
   theme: 'cv_theme',
   fontsize: 'cv_fontsize',
-  twocol: 'cv_twocol',
   localSetlists: 'cv_local_setlists',
   setlistOverrides: 'cv_setlist_overrides',
 } as const;
@@ -38,14 +37,6 @@ export function getStoredFontSize(): number {
 
 export function setStoredFontSize(size: number): void {
   localStorage.setItem(KEYS.fontsize, String(size));
-}
-
-export function getStoredTwoCol(): boolean {
-  return localStorage.getItem(KEYS.twocol) === '1';
-}
-
-export function setStoredTwoCol(val: boolean): void {
-  localStorage.setItem(KEYS.twocol, val ? '1' : '0');
 }
 
 export function getLocalSetlists(): LocalSetlist[] {
