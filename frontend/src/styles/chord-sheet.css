@@ -35,15 +35,17 @@
 }
 /* ------------------------------------------ */
 
-.chord-sheet-wrap.two-col > #chord-output {
-  column-count: 2;
-  column-gap: 56px;
-  column-rule: 1px solid var(--border);
-  /* height: 100% removed to allow vertical overflow detection */
-}
+@media (min-width: 640px) {
+  .chord-sheet-wrap.two-col > #chord-output {
+    column-count: 2;
+    column-gap: 56px;
+    column-rule: 1px solid var(--border);
+    /* height: 100% removed to allow vertical overflow detection */
+  }
 
-.chord-sheet-wrap.two-col .paragraph {
-  break-inside: avoid;
+  .chord-sheet-wrap.two-col .paragraph {
+    break-inside: avoid;
+  }
 }
 
 /* ChordSheetJS output styles */
