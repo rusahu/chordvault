@@ -1,7 +1,9 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { db, stmts, isRegistrationAllowed } = require('../lib/db');
+const { isRegistrationAllowed } = require('../lib/db');
+const User = require('../lib/models/user');
+const Invite = require('../lib/models/invite');
 const { requireAuth, hashPassword } = require('../lib/auth');
 const { validateUserCredentials } = require('../lib/validation');
 const { ROLES, LIMITS } = require('../lib/constants');
@@ -27,13 +29,13 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
   const router = express.Router();
 
   router.get('/config', (req, res) => {
-    const userCount = stmts.countUsers.get().count;
-    const hasInvites = db.prepare("SELECT COUNT(*) as count FROM invites WHERE used_at IS NULL").get().count > 0;
+    const userCount = User.count().count;
+    const hasInvites = Invite.countPending() > 0;
     res.json({ allowRegistration: isRegistrationAllowed() || userCount === 0, invitesEnabled: hasInvites, turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || null, demoMode: DEMO_MODE });
   });
 
   router.post('/register', withSkipGlobal(registerLimiter), async (req, res) => {
-    const userCount = stmts.countUsers.get().count;
+    const userCount = User.count().count;
     if (DEMO_MODE && userCount > 0) {
       return res.status(403).json({ error: 'Disabled in demo mode' });
     }
@@ -52,7 +54,7 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     const role = isFirstUser ? ROLES.OWNER : ROLES.USER;
     const hash = await hashPassword(password);
     try {
-      const result = db.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)').run(username.trim(), hash, role);
+      const result = User.create(username.trim(), hash, role);
       const token = jwt.sign({ id: result.lastInsertRowid, username: username.trim() }, JWT_SECRET, { expiresIn: '30d' });
       res.json({ token, id: result.lastInsertRowid, username: username.trim(), role });
     } catch (e) {
@@ -63,7 +65,7 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
 
   router.post('/login', withSkipGlobal(authLimiter), async (req, res) => {
     const { username, password } = req.body;
-    const user = stmts.getUserByUsername.get(username?.trim());
+    const user = User.findByUsername(username?.trim());
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
@@ -83,13 +85,12 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     const credentialsErr = validateUserCredentials(username, password);
     if (credentialsErr) return res.status(400).json({ error: credentialsErr });
 
-    const invite = db.prepare("SELECT * FROM invites WHERE code = ? AND used_at IS NULL").get(code.trim());
+    const invite = Invite.findByCode(code.trim());
     if (!invite) return res.status(400).json({ error: 'Invalid or already used invite code' });
 
     const hash = await hashPassword(password);
     try {
-      const result = db.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)').run(username.trim(), hash, ROLES.USER);
-      db.prepare('UPDATE invites SET used_by = ?, used_at = CURRENT_TIMESTAMP WHERE id = ?').run(result.lastInsertRowid, invite.id);
+      const result = Invite.redeem(code.trim(), username.trim(), hash);
       const token = jwt.sign({ id: result.lastInsertRowid, username: username.trim() }, JWT_SECRET, { expiresIn: '30d' });
       res.json({ token, id: result.lastInsertRowid, username: username.trim(), role: ROLES.USER });
     } catch (e) {
@@ -102,13 +103,13 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     const { current_password, new_password } = req.body;
     if (!current_password || !new_password) return res.status(400).json({ error: 'Current password and new password are required' });
     if (new_password.length < LIMITS.PASSWORD_MIN) return res.status(400).json({ error: `New password must be at least ${LIMITS.PASSWORD_MIN} characters` });
-    const user = stmts.getFullUserById.get(req.user.id);
+    const user = User.getFullById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
     if (!(await bcrypt.compare(current_password, user.password_hash))) {
       return res.status(401).json({ error: 'Current password is incorrect' });
     }
     const hash = await hashPassword(new_password);
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.user.id);
+    User.updatePassword(req.user.id, hash);
     res.json({ success: true });
   });
 

@@ -1,16 +1,19 @@
 const express = require('express');
 const crypto = require('crypto');
-const { db, stmts, setSetting, isRegistrationAllowed, deleteUserTransaction } = require('../lib/db');
+const { setSetting, isRegistrationAllowed } = require('../lib/db');
+const User = require('../lib/models/user');
+const Song = require('../lib/models/song');
+const Invite = require('../lib/models/invite');
 const { requireAuth, requireAdmin, hashPassword } = require('../lib/auth');
 const { parseId, validateUserCredentials } = require('../lib/validation');
 const { handleDbError } = require('../lib/errors');
-const { ROLES, STATUS, LIMITS } = require('../lib/constants');
+const { ROLES, LIMITS } = require('../lib/constants');
 const { blockInDemo } = require('../lib/demo');
 
 function resolveAdminTarget(req, res) {
   const targetId = parseId(req.params.id);
   if (!targetId) { res.status(400).json({ error: 'Invalid user ID' }); return null; }
-  const target = stmts.getFullUserById.get(targetId);
+  const target = User.getFullById(targetId);
   if (!target) { res.status(404).json({ error: 'User not found' }); return null; }
   if (target.role === ROLES.OWNER) { res.status(403).json({ error: 'Cannot modify the owner' }); return null; }
   if (target.role === ROLES.ADMIN && req.user.role !== ROLES.OWNER) {
@@ -25,30 +28,18 @@ function createAdminRouter() {
   const router = express.Router();
 
   router.get('/admin/stats', requireAuth, requireAdmin, (req, res) => {
-    const userCount = stmts.countUsers.get().count;
-    const songCount = db.prepare('SELECT COUNT(*) as count FROM songs').get().count;
-    const pendingCount = db.prepare('SELECT COUNT(*) as count FROM songs WHERE status = ?').get(STATUS.PENDING).count;
-    const recentUsers = db.prepare('SELECT id, username, role, disabled, created_at FROM users ORDER BY created_at DESC LIMIT 5').all();
-    const recentSongs = db.prepare(`
-      SELECT s.id, s.title, s.artist, s.visibility, s.created_at, u.username
-      FROM songs s JOIN users u ON s.user_id = u.id
-      ORDER BY s.created_at DESC LIMIT 5
-    `).all();
-    const noFormatCount = db.prepare('SELECT COUNT(*) as count FROM songs WHERE format_detected IS NULL AND content != \'\' AND status = ?').get(STATUS.ACTIVE).count;
-    const languageDistribution = db.prepare(
-      "SELECT language, COUNT(*) as count FROM songs WHERE status = ? AND language != '' GROUP BY language ORDER BY count DESC"
-    ).all(STATUS.ACTIVE);
+    const userCount = User.count().count;
+    const songCount = Song.count();
+    const pendingCount = Song.countPending();
+    const recentUsers = User.getRecent(5);
+    const recentSongs = Song.getRecent(5);
+    const noFormatCount = Song.countNoFormat();
+    const languageDistribution = Song.getLanguageDistribution();
     res.json({ userCount, songCount, pendingCount, noFormatCount, languageDistribution, recentUsers, recentSongs });
   });
 
   router.get('/admin/users', requireAuth, requireAdmin, (req, res) => {
-    const users = db.prepare(`
-      SELECT u.id, u.username, u.role, u.disabled, u.created_at,
-             COUNT(s.id) as song_count
-      FROM users u LEFT JOIN songs s ON u.id = s.user_id
-      GROUP BY u.id
-      ORDER BY u.created_at ASC
-    `).all();
+    const users = User.listWithSongCount();
     res.json(users);
   });
 
@@ -64,7 +55,7 @@ function createAdminRouter() {
       return res.status(400).json({ error: 'Role must be "user" or "admin"' });
     }
 
-    db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, resolved.targetId);
+    User.updateRole(resolved.targetId, role);
     res.json({ success: true });
   });
 
@@ -73,7 +64,7 @@ function createAdminRouter() {
     const resolved = resolveAdminTarget(req, res);
     if (!resolved) return;
 
-    db.prepare('UPDATE users SET disabled = ? WHERE id = ?').run(disabled ? 1 : 0, resolved.targetId);
+    User.updateDisabled(resolved.targetId, disabled);
     res.json({ success: true });
   });
 
@@ -87,7 +78,7 @@ function createAdminRouter() {
     }
 
     const hash = await hashPassword(password);
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, resolved.targetId);
+    User.updatePassword(resolved.targetId, hash);
     res.json({ success: true });
   });
 
@@ -97,7 +88,7 @@ function createAdminRouter() {
     if (credentialsErr) return res.status(400).json({ error: credentialsErr });
     const hash = await hashPassword(password);
     try {
-      const result = db.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)').run(username.trim(), hash, ROLES.USER);
+      const result = User.create(username.trim(), hash, ROLES.USER);
       res.json({ id: result.lastInsertRowid, username: username.trim() });
     } catch (e) {
       const appErr = handleDbError(e, { uniqueMessage: 'Username already taken' });
@@ -109,51 +100,39 @@ function createAdminRouter() {
     const resolved = resolveAdminTarget(req, res);
     if (!resolved) return;
 
-    deleteUserTransaction(resolved.targetId);
+    User.delete(resolved.targetId);
     res.json({ success: true });
   });
 
   router.delete('/admin/songs/:id', requireAuth, requireAdmin, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
-    const result = db.prepare('DELETE FROM songs WHERE id = ?').run(id);
+    const result = Song.delete(id);
     if (!result.changes) return res.status(404).json({ error: 'Song not found' });
     res.json({ success: true });
   });
 
   router.post('/admin/invites', requireAuth, requireAdmin, blockInDemo, (req, res) => {
     const code = crypto.randomBytes(8).toString('hex');
-    db.prepare('INSERT INTO invites (code, created_by) VALUES (?, ?)').run(code, req.user.id);
+    Invite.create(code, req.user.id);
     res.json({ code });
   });
 
   router.get('/admin/invites', requireAuth, requireAdmin, (req, res) => {
-    const invites = db.prepare(`
-      SELECT i.id, i.code, i.created_at, i.used_at, u.username as created_by_username,
-             u2.username as used_by_username
-      FROM invites i
-      JOIN users u ON i.created_by = u.id
-      LEFT JOIN users u2 ON i.used_by = u2.id
-      ORDER BY i.created_at DESC LIMIT 50
-    `).all();
+    const invites = Invite.list();
     res.json(invites);
   });
 
   router.delete('/admin/invites/:id', requireAuth, requireAdmin, blockInDemo, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid invite ID' });
-    const result = db.prepare('DELETE FROM invites WHERE id = ? AND used_at IS NULL').run(id);
+    const result = Invite.deleteUnused(id);
     if (!result.changes) return res.status(404).json({ error: 'Invite not found or already used' });
     res.json({ success: true });
   });
 
   router.get('/admin/corrections', requireAuth, requireAdmin, (req, res) => {
-    const corrections = db.prepare(`
-      SELECT c.id, c.title, c.created_at, c.parent_id, u.username as submitter
-      FROM songs c JOIN users u ON c.user_id = u.id
-      WHERE c.status = ?
-      ORDER BY c.created_at ASC
-    `).all(STATUS.PENDING);
+    const corrections = Song.getPendingCorrections();
     res.json(corrections);
   });
 

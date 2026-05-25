@@ -1,6 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
-const { db, stmts } = require('../lib/db');
+const User = require('../lib/models/user');
 const { requireAuth } = require('../lib/auth');
 const { LIMITS, GEMINI_MODELS, DEFAULT_GEMINI_MODEL } = require('../lib/constants');
 const { validatePreferredLanguages } = require('../lib/validation');
@@ -136,22 +136,22 @@ function createSettingsRouter() {
       return res.status(400).json({ error: 'Invalid Gemini API key format' });
     }
     const encrypted = encryptApiKey(api_key);
-    db.prepare('UPDATE users SET gemini_api_key = ? WHERE id = ?').run(encrypted, req.user.id);
+    User.updateGeminiApiKey(req.user.id, encrypted);
     res.json({ success: true });
   });
 
   router.delete('/settings/gemini-key', requireAuth, (req, res) => {
-    db.prepare('UPDATE users SET gemini_api_key = NULL WHERE id = ?').run(req.user.id);
+    User.updateGeminiApiKey(req.user.id, null);
     res.json({ success: true });
   });
 
   router.get('/settings/gemini-key', requireAuth, (req, res) => {
-    const user = stmts.getFullUserById.get(req.user.id);
+    const user = User.getFullById(req.user.id);
     res.json({ hasKey: !!user?.gemini_api_key });
   });
 
   router.get('/settings/ocr-prompt', requireAuth, (req, res) => {
-    const user = stmts.getFullUserById.get(req.user.id);
+    const user = User.getFullById(req.user.id);
     res.json({ prompt: user?.gemini_prompt || null, defaultPrompt: DEFAULT_OCR_PROMPT });
   });
 
@@ -163,17 +163,17 @@ function createSettingsRouter() {
     if (prompt.length > LIMITS.MAX_OCR_PROMPT) {
       return res.status(400).json({ error: `Prompt must be under ${LIMITS.MAX_OCR_PROMPT} characters` });
     }
-    db.prepare('UPDATE users SET gemini_prompt = ? WHERE id = ?').run(prompt.trim(), req.user.id);
+    User.updateGeminiPrompt(req.user.id, prompt.trim());
     res.json({ success: true });
   });
 
   router.delete('/settings/ocr-prompt', requireAuth, (req, res) => {
-    db.prepare('UPDATE users SET gemini_prompt = NULL WHERE id = ?').run(req.user.id);
+    User.updateGeminiPrompt(req.user.id, null);
     res.json({ success: true });
   });
 
   router.get('/settings/languages', requireAuth, (req, res) => {
-    const user = stmts.getFullUserById.get(req.user.id);
+    const user = User.getFullById(req.user.id);
     const languages = user?.preferred_languages ? user.preferred_languages.split(',').filter(Boolean) : [];
     res.json({ languages });
   });
@@ -183,12 +183,12 @@ function createSettingsRouter() {
     const error = validatePreferredLanguages(languages || []);
     if (error) return res.status(400).json({ error });
     const value = languages.length > 0 ? languages.join(',') : null;
-    db.prepare('UPDATE users SET preferred_languages = ? WHERE id = ?').run(value, req.user.id);
+    User.updatePreferredLanguages(req.user.id, value);
     res.json({ success: true });
   });
 
   router.get('/settings/ocr-model', requireAuth, (req, res) => {
-    const user = stmts.getFullUserById.get(req.user.id);
+    const user = User.getFullById(req.user.id);
     res.json({
       model: user?.gemini_model || DEFAULT_GEMINI_MODEL,
       models: GEMINI_MODELS,
@@ -200,7 +200,7 @@ function createSettingsRouter() {
     if (!model || !GEMINI_MODELS.some(m => m.id === model)) {
       return res.status(400).json({ error: 'Invalid model' });
     }
-    db.prepare('UPDATE users SET gemini_model = ? WHERE id = ?').run(model, req.user.id);
+    User.updateGeminiModel(req.user.id, model);
     res.json({ success: true });
   });
 
@@ -211,7 +211,7 @@ function createSettingsRouter() {
     const sizeEstimate = (image.length * 3) / 4;
     if (sizeEstimate > LIMITS.MAX_OCR_IMAGE) return res.status(400).json({ error: 'File too large (max 18MB)' });
 
-    const user = stmts.getFullUserById.get(req.user.id);
+    const user = User.getFullById(req.user.id);
     if (!user?.gemini_api_key) return res.status(400).json({ error: 'No Gemini API key configured. Add one in Settings.' });
 
     let apiKey;
@@ -316,7 +316,7 @@ function createSettingsRouter() {
     if (message.length > 2000) return res.status(400).json({ error: 'Message too long (max 2000 chars)' });
     if (history.length > 20) return res.status(400).json({ error: 'Conversation too long. Start a new extraction.' });
 
-    const user = stmts.getFullUserById.get(req.user.id);
+    const user = User.getFullById(req.user.id);
     if (!user?.gemini_api_key) return res.status(400).json({ error: 'No Gemini API key configured.' });
 
     let apiKey;

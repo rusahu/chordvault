@@ -1,10 +1,10 @@
 const express = require('express');
-const { db } = require('../lib/db');
 const { requireAuth, optionalAuth, isAdminRole } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
 const { parseId, validateSongInput, validateVisibility, validateLanguage } = require('../lib/validation');
 const { LANGUAGE_CODES } = require('../lib/languages');
-const { getFtsSearch } = require('../lib/searchUtils');
+const Song = require('../lib/models/song');
+const User = require('../lib/models/user');
 
 function extractDirective(content, name) {
   const re = new RegExp(`\\{${name}:\\s*([^}]*)\\}`, 'i');
@@ -31,11 +31,11 @@ function extractMetadata(content) {
 function resolveCorrectionWithAuth(req, res) {
   const id = parseId(req.params.id);
   if (!id) { res.status(400).json({ error: 'Invalid correction ID' }); return null; }
-  const correction = db.prepare('SELECT * FROM songs WHERE id = ? AND status = ?').get(id, STATUS.PENDING);
-  if (!correction) { res.status(404).json({ error: 'Pending correction not found' }); return null; }
+  const correction = Song.findById(id);
+  if (!correction || correction.status !== STATUS.PENDING) { res.status(404).json({ error: 'Pending correction not found' }); return null; }
   const originalId = correction.parent_id;
   if (!originalId) { res.status(400).json({ error: 'Correction has no parent song' }); return null; }
-  const original = db.prepare('SELECT * FROM songs WHERE id = ?').get(originalId);
+  const original = Song.findById(originalId);
   if (!original) { res.status(404).json({ error: 'Original song not found' }); return null; }
   const isOwner = original.user_id === req.user.id;
   if (!isOwner && !isAdminRole(req.user.role)) {
@@ -51,88 +51,30 @@ function createSongsRouter() {
   router.get('/songs', requireAuth, (req, res) => {
     const { q, language } = req.query;
     const userId = req.user.id;
-    let query = `
-      SELECT s.id, s.title, s.artist, s.key, s.bpm, s.tags, s.language, s.visibility, s.created_at, s.updated_at,
-             (SELECT COUNT(*) FROM songs v WHERE COALESCE(v.parent_id, v.id) = COALESCE(s.parent_id, s.id) AND v.status = ? AND (v.visibility = ? OR v.user_id = ?)) as version_count
-      FROM songs s
-    `;
-    const params = [STATUS.ACTIVE, VISIBILITY.PUBLIC, userId];
-
-    if (q?.trim()) {
-      query += ' JOIN songs_search ss ON s.id = ss.rowid';
-    }
-
-    query += ' WHERE s.user_id = ? AND s.status = ?';
-    params.push(userId, STATUS.ACTIVE);
-
-    if (q?.trim()) {
-      const search = getFtsSearch(q);
-      query += search.sql;
-      params.push(...search.params);
-    }
-
-    if (language?.trim()) {
-      query += ' AND s.language = ?';
-      params.push(language.trim());
-    }
-
-    query += ' GROUP BY COALESCE(s.parent_id, s.id) ORDER BY MAX(s.updated_at) DESC';
-    res.json(db.prepare(query).all(...params));
+    res.json(Song.listForUser(userId, { q, language }));
   });
 
   router.get('/songs/public', (req, res) => {
     const { q, language } = req.query;
     const userId = req.user ? req.user.id : 0;
-    let query = `
-      SELECT s.id, s.title, s.artist, s.key, s.bpm, s.tags, s.language, s.visibility, s.updated_at, u.username,
-             (SELECT COUNT(*) FROM songs v WHERE COALESCE(v.parent_id, v.id) = COALESCE(s.parent_id, s.id) AND v.status = ? AND (v.visibility = ? OR v.user_id = ?)) as version_count
-      FROM songs s JOIN users u ON s.user_id = u.id
-    `;
-    const params = [STATUS.ACTIVE, VISIBILITY.PUBLIC, userId, VISIBILITY.PUBLIC, STATUS.ACTIVE];
-
-    if (q?.trim()) {
-      query += ' JOIN songs_search ss ON s.id = ss.rowid';
-    }
-
-    query += ' WHERE s.visibility = ? AND s.status = ?';
-
-    if (q?.trim()) {
-      const search = getFtsSearch(q);
-      query += search.sql;
-      params.push(...search.params);
-    }
-
-    if (language?.trim()) {
-      query += ' AND s.language = ?';
-      params.push(language.trim());
-    }
-
-    query += ' GROUP BY COALESCE(s.parent_id, s.id) ORDER BY MAX(s.updated_at) DESC LIMIT 100';
-    res.json(db.prepare(query).all(...params));
+    res.json(Song.listPublic({ q, language, userId }));
   });
 
   router.get('/users/:username/songs', (req, res) => {
-    const user = db.prepare('SELECT id FROM users WHERE username = ?').get(req.params.username);
+    const user = User.findByUsername(req.params.username);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    const songs = db.prepare(`
-      SELECT s.id, s.title, s.artist, s.key, s.bpm, s.tags, s.language, s.updated_at,
-             (SELECT COUNT(*) FROM songs v WHERE COALESCE(v.parent_id, v.id) = COALESCE(s.parent_id, s.id) AND v.status = ? AND v.visibility = ?) as version_count
-      FROM songs s
-      WHERE s.user_id = ? AND s.visibility = ? AND s.status = ?
-      GROUP BY COALESCE(s.parent_id, s.id)
-      ORDER BY MAX(s.updated_at) DESC
-    `).all(STATUS.ACTIVE, VISIBILITY.PUBLIC, user.id, VISIBILITY.PUBLIC, STATUS.ACTIVE);
+    const songs = Song.listByUser(user.id);
     res.json(songs);
   });
 
   router.get('/songs/:id', optionalAuth, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
-    const song = db.prepare('SELECT s.*, u.username FROM songs s JOIN users u ON s.user_id = u.id WHERE s.id = ?').get(id);
+    const song = Song.findById(id);
     if (!song) return res.status(404).json({ error: 'Song not found' });
     if (song.status === STATUS.PENDING) {
       const isSubmitter = req.user && req.user.id === song.user_id;
-      const isOriginalOwner = req.user && song.parent_id && db.prepare('SELECT user_id FROM songs WHERE id = ?').get(song.parent_id)?.user_id === req.user.id;
+      const isOriginalOwner = req.user && song.parent_id && Song.findById(song.parent_id)?.user_id === req.user.id;
       const isAdmin = req.user && isAdminRole(req.user.role);
       if (!isSubmitter && !isOriginalOwner && !isAdmin) {
         return res.status(404).json({ error: 'Song not found' });
@@ -147,10 +89,7 @@ function createSongsRouter() {
     }
     // Include version_count for single song view
     const userId = req.user ? req.user.id : 0;
-    const versionCount = db.prepare(`
-      SELECT COUNT(*) as count FROM songs 
-      WHERE COALESCE(parent_id, id) = COALESCE(?, ?) AND status = ? AND (visibility = ? OR user_id = ?)
-    `).get(song.parent_id, song.id, STATUS.ACTIVE, VISIBILITY.PUBLIC, userId).count;
+    const versionCount = Song.getVersionCount(song.parent_id, song.id, userId);
     res.json({ ...song, version_count: versionCount });
   });
 
@@ -170,9 +109,7 @@ function createSongsRouter() {
 
     const fmt = format_detected?.trim() || null;
     const finalVisibility = visibility === VISIBILITY.PRIVATE ? VISIBILITY.PRIVATE : VISIBILITY.PUBLIC;
-    const result = db.prepare(
-      'INSERT INTO songs (user_id, title, artist, key, content, visibility, youtube_url, format_detected, bpm, tags, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(req.user.id, meta.title, meta.artist, meta.key, content.trim(), finalVisibility, meta.youtube_url, fmt, meta.bpm, meta.tags, meta.language);
+    const result = Song.create(req.user.id, meta, content, finalVisibility, fmt);
     res.json({ id: result.lastInsertRowid });
   });
 
@@ -199,17 +136,8 @@ function createSongsRouter() {
       });
     });
 
-    const insertSong = db.prepare(
-      'INSERT INTO songs (user_id, title, artist, key, content, visibility, youtube_url, bpm, tags, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    );
-    const importAll = db.transaction((rows) => {
-      for (const r of rows) {
-        insertSong.run(req.user.id, r.title, r.artist, r.key, r.content, r.visibility, r.youtube_url, r.bpm, r.tags, r.language);
-      }
-    });
-
     try {
-      importAll(valid);
+      Song.importSongs(req.user.id, valid);
       res.json({ imported: valid.length, errors });
     } catch (e) {
       console.error('Import failed:', e.message);
@@ -220,7 +148,7 @@ function createSongsRouter() {
   router.put('/songs/:id', requireAuth, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
-    const existing = db.prepare('SELECT * FROM songs WHERE id = ? AND user_id = ?').get(id, req.user.id);
+    const existing = Song.findById(id);
     if (!existing) return res.status(404).json({ error: 'Song not found or not yours' });
     const { content, format_detected, visibility } = req.body;
     const finalContent = content?.trim() || existing.content;
@@ -237,9 +165,7 @@ function createSongsRouter() {
 
     const fmt = format_detected !== undefined ? (format_detected?.trim() || null) : existing.format_detected;
     const finalVisibility = visibility !== undefined ? (visibility === VISIBILITY.PRIVATE ? VISIBILITY.PRIVATE : VISIBILITY.PUBLIC) : existing.visibility;
-    db.prepare(
-      'UPDATE songs SET title=?, artist=?, key=?, content=?, visibility=?, youtube_url=?, format_detected=?, bpm=?, tags=?, language=?, updated_at=CURRENT_TIMESTAMP WHERE id=?'
-    ).run(meta.title, meta.artist, meta.key, finalContent, finalVisibility, meta.youtube_url, fmt, meta.bpm, meta.tags, meta.language, id);
+    Song.update(id, meta, finalContent, finalVisibility, fmt);
     res.json({ success: true });
   });
 
@@ -247,11 +173,7 @@ function createSongsRouter() {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
     const isAdmin = isAdminRole(req.user.role);
-    const query = isAdmin
-      ? 'DELETE FROM songs WHERE id = ?'
-      : 'DELETE FROM songs WHERE id = ? AND user_id = ?';
-    const params = isAdmin ? [id] : [id, req.user.id];
-    const result = db.prepare(query).run(...params);
+    const result = Song.delete(id, isAdmin ? null : req.user.id);
     if (!result.changes) return res.status(404).json({ error: 'Song not found or not yours' });
     res.json({ success: true });
   });
@@ -259,7 +181,7 @@ function createSongsRouter() {
   router.post('/songs/:id/version', requireAuth, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
-    const original = db.prepare('SELECT * FROM songs WHERE id = ?').get(id);
+    const original = Song.findById(id);
     if (!original || original.status !== STATUS.ACTIVE) return res.status(404).json({ error: 'Song not found' });
     
     const isOwner = original.user_id === req.user.id;
@@ -273,17 +195,15 @@ function createSongsRouter() {
 
     const parentId = original.parent_id || original.id;
     const meta = extractMetadata(content);
-    const result = db.prepare(
-      'INSERT INTO songs (user_id, title, artist, key, content, visibility, parent_id, youtube_url, bpm, tags, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(req.user.id, meta.title || original.title, meta.artist || original.artist, meta.key || original.key, content.trim(), original.visibility, parentId, meta.youtube_url || original.youtube_url, meta.bpm || original.bpm, meta.tags || original.tags, meta.language || original.language);
+    const result = Song.createVersion(req.user.id, parentId, meta, content, original.visibility);
     res.json({ id: result.lastInsertRowid });
   });
 
   router.get('/songs/:id/versions', optionalAuth, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
-    const song = db.prepare('SELECT * FROM songs WHERE id = ? AND status = ?').get(id, STATUS.ACTIVE);
-    if (!song) return res.status(404).json({ error: 'Song not found' });
+    const song = Song.findById(id);
+    if (!song || song.status !== STATUS.ACTIVE) return res.status(404).json({ error: 'Song not found' });
     if (song.visibility === VISIBILITY.PRIVATE) {
       const isOwner = req.user && req.user.id === song.user_id;
       const isAdmin = req.user && isAdminRole(req.user.role);
@@ -293,19 +213,14 @@ function createSongsRouter() {
     }
     const rootId = song.parent_id || song.id;
     const userId = req.user ? req.user.id : 0;
-    const versions = db.prepare(`
-      SELECT s.id, s.title, s.artist, s.key, s.created_at, s.updated_at, s.parent_id, s.youtube_url, u.username
-      FROM songs s JOIN users u ON s.user_id = u.id
-      WHERE (s.id = ? OR s.parent_id = ?) AND s.status = ? AND (s.user_id = ? OR s.visibility = ?)
-      ORDER BY s.created_at ASC
-    `).all(rootId, rootId, STATUS.ACTIVE, userId, VISIBILITY.PUBLIC);
+    const versions = Song.getVersions(rootId, userId);
     res.json(versions);
   });
 
   router.post('/songs/:id/correction', requireAuth, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
-    const original = db.prepare('SELECT * FROM songs WHERE id = ?').get(id);
+    const original = Song.findById(id);
     if (!original) return res.status(404).json({ error: 'Song not found' });
     if (original.status === STATUS.PENDING) return res.status(400).json({ error: 'Cannot correct a pending correction' });
     if (original.visibility === VISIBILITY.PRIVATE && req.user.id !== original.user_id) {
@@ -317,28 +232,21 @@ function createSongsRouter() {
 
     const parentId = original.parent_id || original.id;
     const meta = extractMetadata(content);
-    const result = db.prepare(
-      'INSERT INTO songs (user_id, title, artist, key, content, visibility, parent_id, youtube_url, bpm, tags, status, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(req.user.id, meta.title || original.title, meta.artist || original.artist, meta.key || original.key, content.trim(), VISIBILITY.PUBLIC, parentId, meta.youtube_url || original.youtube_url, meta.bpm || original.bpm, meta.tags || original.tags, STATUS.PENDING, meta.language || original.language);
+    const result = Song.createCorrection(req.user.id, parentId, meta, content);
     res.json({ id: result.lastInsertRowid });
   });
 
   router.get('/songs/:id/corrections', requireAuth, (req, res) => {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
-    const song = db.prepare('SELECT * FROM songs WHERE id = ?').get(id);
+    const song = Song.findById(id);
     if (!song) return res.status(404).json({ error: 'Song not found' });
     const isOwner = song.user_id === req.user.id;
     if (!isOwner && !isAdminRole(req.user.role)) {
       return res.status(403).json({ error: 'Only the song owner or admins can view corrections' });
     }
     const rootId = song.parent_id || song.id;
-    const corrections = db.prepare(`
-      SELECT c.id, c.content, c.youtube_url, c.created_at, u.username
-      FROM songs c JOIN users u ON c.user_id = u.id
-      WHERE c.parent_id = ? AND c.status = ?
-      ORDER BY c.created_at ASC
-    `).all(rootId, STATUS.PENDING);
+    const corrections = Song.getCorrections(rootId);
     res.json(corrections);
   });
 
@@ -346,18 +254,14 @@ function createSongsRouter() {
     const resolved = resolveCorrectionWithAuth(req, res);
     if (!resolved) return;
     const { correction, originalId } = resolved;
-    const tx = db.transaction(() => {
-      db.prepare('UPDATE songs SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(correction.content, originalId);
-      db.prepare('DELETE FROM songs WHERE id = ?').run(correction.id);
-    });
-    tx();
+    Song.approveCorrection(correction.id, originalId, correction.content);
     res.json({ success: true });
   });
 
   router.delete('/corrections/:id', requireAuth, (req, res) => {
     const resolved = resolveCorrectionWithAuth(req, res);
     if (!resolved) return;
-    db.prepare('DELETE FROM songs WHERE id = ?').run(resolved.correction.id);
+    Song.deleteCorrection(resolved.correction.id);
     res.json({ success: true });
   });
 
