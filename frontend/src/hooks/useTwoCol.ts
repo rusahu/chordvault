@@ -1,25 +1,21 @@
 import { useState, useCallback } from 'react';
-import { getStoredTwoCol, setStoredTwoCol } from '../lib/storage';
 
 export function useTwoCol() {
   const [twoCol, setTwoCol] = useState(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 640) {
-      return false;
-    }
-    return getStoredTwoCol();
+    if (typeof window === 'undefined') return false;
+    const isWide = window.innerWidth >= 1024;
+    const isLandscapeTablet = window.innerWidth >= 768 &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(orientation: landscape)').matches;
+    return isWide || isLandscapeTablet;
   });
 
   const toggleTwoCol = useCallback(() => {
-    setTwoCol((prev) => {
-      const next = !prev;
-      setStoredTwoCol(next);
-      return next;
-    });
+    setTwoCol((prev) => !prev);
   }, []);
 
   const setTwoColTo = useCallback((val: boolean) => {
     setTwoCol(val);
-    setStoredTwoCol(val);
   }, []);
 
   return { twoCol, toggleTwoCol, setTwoCol, setTwoColTo };
