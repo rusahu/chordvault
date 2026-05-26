@@ -44,3 +44,20 @@ export function enrichLocalEntry(e: LocalSetlistEntry, song: Song | null, idx: n
     language: song.language || 'en',
   };
 }
+
+/**
+ * Asynchronously fetches full song details for the entries of a local setlist
+ * and returns the list of enriched SetlistEntry objects.
+ */
+export async function enrichLocalSetlistSongs(
+  entries: LocalSetlistEntry[],
+  apiCall: <T>(method: string, path: string) => Promise<T>
+): Promise<SetlistEntry[]> {
+  const fetches = entries.map((e) =>
+    apiCall<Song>('GET', `/api/songs/${e.song_id}`).catch(() => null)
+  );
+  const results = await Promise.all(fetches);
+  return results
+    .map((song, i) => enrichLocalEntry(entries[i], song, i))
+    .filter(Boolean) as SetlistEntry[];
+}

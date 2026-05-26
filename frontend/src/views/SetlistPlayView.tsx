@@ -12,7 +12,8 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
-import { renderChordPro, getSongKey, clampFontSize, songHasKey, slEffective, autoFit } from '../lib/chords';
+import { renderChordPro, getSongKey, clampFontSize, songHasKey, resolveEffectivePreferences, autoFit } from '../lib/chords';
+import { useSetlistPreferences } from '../hooks/useSetlistPreferences';
 import { getTransposeDelta } from '../lib/keys';
 import type { Setlist } from '../types';
 
@@ -64,9 +65,18 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const isOwner = setlist?.user_id && user && setlist.user_id === user.id;
 
   // Effective values for current entry
-  const effNum = entry ? slEffective(entry, 'num', slNashville) : false;
-  const effTwoCol = entry ? slEffective(entry, 'twoCol', twoColState.twoCol) : twoColState.twoCol;
-  const effFont = entry ? slEffective(entry, 'font', fontScale.fontSize) : fontScale.fontSize;
+  const globalPrefs = useMemo(() => ({
+    nashville: slNashville,
+    twoCol: twoColState.twoCol,
+    fontSize: fontScale.fontSize,
+    hideYt: slHideYt,
+  }), [slNashville, twoColState.twoCol, fontScale.fontSize, slHideYt]);
+
+  const effectivePrefs = useSetlistPreferences(entry, globalPrefs);
+  const effNum = effectivePrefs.nashville;
+  const effTwoCol = effectivePrefs.twoCol;
+  const effFont = effectivePrefs.fontSize;
+  const hideYt = effectivePrefs.hideYt;
   const keyDisplay = entry ? getSongKey(content, entry.transpose) : '';
 
   const entryTranspose = entry?.transpose ?? 0;
@@ -92,17 +102,27 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
 
   const toggleEntryTwoCol = useCallback(() => {
     if (!entry) return;
-    const current = slEffective(entry, 'twoCol', twoColState.twoCol);
-    const nextVal = !current;
+    const prefs = resolveEffectivePreferences(entry, {
+      nashville: slNashville,
+      twoCol: twoColState.twoCol,
+      fontSize: fontScale.fontSize,
+      hideYt: slHideYt,
+    });
+    const nextVal = !prefs.twoCol;
     updateEntry({ _twoCol: nextVal === (!!twoColState.twoCol) ? null : nextVal });
-  }, [entry, twoColState.twoCol, updateEntry]);
+  }, [entry, slNashville, twoColState.twoCol, fontScale.fontSize, slHideYt, updateEntry]);
 
   const changeEntryFont = useCallback((delta: number) => {
     if (!entry) return;
-    const current = slEffective(entry, 'font', fontScale.fontSize) || 0;
-    const nextVal = clampFontSize(current + delta);
+    const prefs = resolveEffectivePreferences(entry, {
+      nashville: slNashville,
+      twoCol: twoColState.twoCol,
+      fontSize: fontScale.fontSize,
+      hideYt: slHideYt,
+    });
+    const nextVal = clampFontSize(prefs.fontSize + delta);
     updateEntry({ _font: nextVal === fontScale.fontSize ? null : nextVal });
-  }, [entry, fontScale.fontSize, updateEntry]);
+  }, [entry, slNashville, twoColState.twoCol, fontScale.fontSize, slHideYt, updateEntry]);
 
   // Key picker
   const pickKey = useCallback((targetKey: string) => {
@@ -195,7 +215,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   if (!setlist) return <Loading />;
   if (!entry) return <div className="empty"><div className="empty-text">{t('setlist.noSongsYet')}</div></div>;
 
-  const hideYt = slEffective(entry, 'hideYt', slHideYt);
+  // hideYt resolved in effectivePrefs above
 
   return (
     <div ref={containerRef} className="setlist-play-container">

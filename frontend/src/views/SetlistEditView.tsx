@@ -5,12 +5,12 @@ import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
 import { useLocalSetlists } from '../hooks/useLocalSetlists';
-import { formatLocalEntry, enrichLocalEntry } from '../lib/setlists';
+import { formatLocalEntry, enrichLocalSetlistSongs } from '../lib/setlists';
 import { SongPicker } from '../components/SongPicker';
 import { Loading } from '../components/Loading';
 import { EmptyState } from '../components/EmptyState';
-import { getSongKey } from '../lib/chords';
-import type { Setlist, SetlistEntry, SongListItem, Song } from '../types';
+import { SetlistEntryCard } from '../components/SetlistEntryCard';
+import type { Setlist, SongListItem } from '../types';
 
 interface SetlistEditViewProps {
   setlistId: number | string;
@@ -204,14 +204,12 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     const sl = ls.getOne(String(setlistId));
     if (!sl || sl.entries.length === 0) return;
     try {
-      const fetches = sl.entries.map((e) => apiCall<Song>('GET', `/api/songs/${e.song_id}`).catch(() => null));
-      const results = await Promise.all(fetches);
-      const entries = results.map((song, i) => enrichLocalEntry(sl.entries[i], song, i)).filter(Boolean) as SetlistEntry[];
+      const entries = await enrichLocalSetlistSongs(sl.entries, apiCall);
       if (entries.length === 0) { toast('No songs could be loaded', 'error'); return; }
       const enrichedSetlist: Setlist = {
         id: String(setlistId),
         name: sl.name,
-        entries: entries as SetlistEntry[],
+        entries,
         isLocal: true,
         visibility: 'private',
         event_date: null
@@ -303,49 +301,21 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         <EmptyState icon="&#127926;" text={t('setlist.noSongsYet')} />
       ) : (
         <div className="setlist-entries" id="setlist-entries">
-          {setlist.entries.map((entry, idx) => {
-            const keyDisplay = getSongKey(entry.content_override || entry.content, entry.transpose);
-            return (
-              <div key={entry.entry_id} className="song-card setlist-song-item" onClick={() => handleItemClick(idx)}>
-                {isEditable && (
-                  <div className="setlist-reorder" onClick={(e) => e.stopPropagation()}>
-                    {idx > 0 ? (
-                      <button className="setlist-arrow-btn" onClick={() => moveEntry(idx, -1)} title="Move up">&#9650;</button>
-                    ) : <span className="setlist-arrow-btn disabled" />}
-                    {idx < setlist.entries.length - 1 ? (
-                      <button className="setlist-arrow-btn" onClick={() => moveEntry(idx, 1)} title="Move down">&#9660;</button>
-                    ) : <span className="setlist-arrow-btn disabled" />}
-                  </div>
-                )}
-                <div className="setlist-song-pos">{idx + 1}</div>
-                <div className="song-card-info">
-                  <div className="song-card-title">
-                    {entry.title}
-                    {entry.visibility === 'private' && <span className="badge badge-private" title="Private">&#128274;</span>}
-                    {!isLocal && isEditable && entry.content_override && <span className="badge badge-edited">{t('setlist.edited')}</span>}
-                  </div>
-                  <div className="song-card-meta">
-                    {entry.artist ? `${entry.artist} · ` : ''}{keyDisplay}
-                  </div>
-                </div>
-                {isEditable && (
-                  <div className="setlist-entry-controls" onClick={(e) => e.stopPropagation()}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => handleTransposeEntry(entry.entry_id, idx, -1)}>&#9837;</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => handleTransposeEntry(entry.entry_id, idx, 1)}>&#9839;</button>
-                  </div>
-                )}
-                {isEditable && (
-                  <button
-                    className="setlist-remove-btn"
-                    onClick={(e) => { e.stopPropagation(); removeEntry(entry.entry_id, idx); }}
-                    title="Remove"
-                  >
-                    &#10005;
-                  </button>
-                )}
-              </div>
-            );
-          })}
+          {setlist.entries.map((entry, idx) => (
+            <SetlistEntryCard
+              key={entry.entry_id}
+              entry={entry}
+              idx={idx}
+              totalCount={setlist.entries.length}
+              isEditable={isEditable}
+              isLocal={isLocal}
+              onMove={moveEntry}
+              onRemove={removeEntry}
+              onTranspose={handleTransposeEntry}
+              onClick={handleItemClick}
+              t={t}
+            />
+          ))}
         </div>
       )}
 

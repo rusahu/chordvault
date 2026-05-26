@@ -4,8 +4,8 @@ import { ApiError } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getSetlistOverrides, saveSetlistOverride } from '../lib/storage';
-import { enrichLocalEntry } from '../lib/setlists';
-import type { Setlist, SetlistEntry, Song } from '../types';
+import { enrichLocalSetlistSongs } from '../lib/setlists';
+import type { Setlist, SetlistEntry } from '../types';
 
 interface UseSetlistPlayerOptions {
   setlistId: number | string;
@@ -65,14 +65,8 @@ export function useSetlistPlayer({
             navigate('setlists', { tab: 'local' });
             return;
           }
-          const fetches = sl.entries.map((e) =>
-            apiCall<Song>('GET', `/api/songs/${e.song_id}`).catch(() => null)
-          );
-          Promise.all(fetches)
-            .then((results) => {
-              const entries = results
-                .map((song, i) => enrichLocalEntry(sl.entries[i], song, i))
-                .filter(Boolean) as SetlistEntry[];
+          enrichLocalSetlistSongs(sl.entries, apiCall)
+            .then((entries) => {
 
               const enriched: Setlist = {
                 id: setlistId,

@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas-pro';
-import { fontScaleValue, getSongKey, renderChordPro, slEffective } from './chords';
+import { fontScaleValue, getSongKey, renderChordPro, resolveEffectivePreferences } from './chords';
 import type { Setlist } from '../types/setlist';
 
 // Letter page dimensions in points (jsPDF units)
@@ -336,8 +336,14 @@ export async function exportSetlistPdf(
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
-    const effNash = slEffective(entry, 'num', globalSettings.nashville ? 1 : 0);
-    const effFont = slEffective(entry, 'font', globalSettings.fontSize) as number;
+    const prefs = resolveEffectivePreferences(entry, {
+      nashville: !!globalSettings.nashville,
+      twoCol: false,
+      fontSize: globalSettings.fontSize,
+      hideYt: false,
+    });
+    const effNash = prefs.nashville ? 1 : 0;
+    const effFont = prefs.fontSize;
     const content = entry.content_override || entry.content;
     const html = renderChordPro(content, entry.transpose, !!effNash);
 

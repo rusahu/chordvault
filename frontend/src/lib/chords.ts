@@ -1,7 +1,7 @@
 import * as ChordSheetJS from 'chordsheetjs';
 import { escHtml } from './util';
 import { normalizeKey, normalizeChord } from './keys';
-import type { SetlistEntry } from '../types';
+import type { SetlistEntry, SetlistPreferences } from '../types';
 
 const PARSER_NAMES = [
   { cls: 'ChordProParser', label: 'ChordPro' },
@@ -463,29 +463,15 @@ export function autoFit(): { fontSize: number; twoCol: boolean } {
 }
 
 
-export function slEffective<T>(
-  entry: SetlistEntry,
-  key: 'num' | 'twoCol' | 'font' | 'hideYt',
-  globalVal: T
-): T {
-  if (key === 'font') {
-    // Priority: session _font > db font > globalVal
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (entry._font !== undefined && entry._font !== null) return entry._font as any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (entry.font !== undefined && entry.font !== null) return entry.font as any;
-    return globalVal;
-  }
-  if (key === 'twoCol') {
-    // Priority: session _twoCol > db two_col > globalVal
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (entry._twoCol !== undefined && entry._twoCol !== null) return entry._twoCol as any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (entry.two_col !== undefined && entry.two_col !== null) return (!!entry.two_col) as any;
-    return globalVal;
-  }
-  const keyMap = { num: '_num', hideYt: '_hideYt' } as const;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ov = (entry as any)[keyMap[key as 'num' | 'hideYt']];
-  return (ov != null ? ov : globalVal) as T;
+export function resolveEffectivePreferences(
+  entry: SetlistEntry | null | undefined,
+  global: SetlistPreferences
+): SetlistPreferences {
+  if (!entry) return global;
+  return {
+    nashville: entry._num != null ? !!entry._num : global.nashville,
+    twoCol: entry._twoCol != null ? entry._twoCol : (entry.two_col != null ? !!entry.two_col : global.twoCol),
+    fontSize: entry._font != null ? entry._font : (entry.font != null ? entry.font : global.fontSize),
+    hideYt: entry._hideYt != null ? entry._hideYt : global.hideYt,
+  };
 }

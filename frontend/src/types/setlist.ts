@@ -59,3 +59,10 @@ export interface LocalSetlist {
   name: string;
   entries: LocalSetlistEntry[];
 }
+
+export interface SetlistPreferences {
+  nashville: boolean;
+  twoCol: boolean;
+  fontSize: number;
+  hideYt: boolean;
+}
