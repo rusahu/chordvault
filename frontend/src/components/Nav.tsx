@@ -28,7 +28,7 @@ export function Nav({ view, navigate }: NavProps) {
   const themeIconHtml = theme === 'light' ? '&#9790;' : '&#9788;';
 
   const songsBtnActive = view === 'browse' ? ' active' : '';
-  const setlistBtnActive = ['setlists', 'setlist-edit', 'setlist-play', 'public-setlists', 'local-setlists', 'local-setlist-edit'].includes(view) ? ' active' : '';
+  const setlistBtnActive = ['setlists', 'setlist-edit', 'setlist-play', 'public-setlists'].includes(view) ? ' active' : '';
 
   return (
     <nav id="nav">

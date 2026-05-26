@@ -70,7 +70,7 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
         {user ? (
           <button className="setlist-tab" onClick={() => navigate('setlists')}>My Setlists</button>
         ) : (
-          <button className="setlist-tab" onClick={() => navigate('local-setlists')}>My Setlists</button>
+          <button className="setlist-tab" onClick={() => navigate('setlists', { tab: 'local' })}>My Setlists</button>
         )}
         <button className="setlist-tab active">Public Setlists</button>
       </div>

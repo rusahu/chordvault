@@ -15,8 +15,6 @@ import { SetlistsView } from './views/SetlistsView';
 import { PublicSetlistsView } from './views/PublicSetlistsView';
 import { SetlistEditView } from './views/SetlistEditView';
 import { SetlistPlayView } from './views/SetlistPlayView';
-import { LocalSetlistsView } from './views/LocalSetlistsView';
-import { LocalSetlistEditView } from './views/LocalSetlistEditView';
 import { AdminView } from './views/AdminView';
 import { SettingsView } from './views/SettingsView';
 import { AboutView } from './views/AboutView';
@@ -36,20 +34,21 @@ function parseHash(): Route {
   const songMatch = hash.match(/^song\/(\d+)$/);
   if (songMatch) return { view: 'song-view', params: { id: songMatch[1] } };
 
-  // #setlist/42/play or #setlist/42/play/2
-  const playMatch = hash.match(/^setlist\/(\d+)\/play(?:\/(\d+))?$/);
+  // #setlist/42/play or #setlist/local_123/play
+  const playMatch = hash.match(/^setlist\/(local_\w+|\d+)\/play(?:\/(\d+))?$/);
   if (playMatch) {
     return {
       view: 'setlist-play',
       params: {
         id: playMatch[1],
+        ...(playMatch[1].startsWith('local_') ? { local: '1' } : {}),
         ...(playMatch[2] ? { index: playMatch[2] } : {}),
       },
     };
   }
 
-  // #setlist/42
-  const setlistMatch = hash.match(/^setlist\/(\d+)$/);
+  // #setlist/42 or #setlist/local_123
+  const setlistMatch = hash.match(/^setlist\/(local_\w+|\d+)$/);
   if (setlistMatch) {
     return {
       view: 'setlist-edit',
@@ -110,12 +109,12 @@ export function App() {
     else if (view === 'setlist-edit' && params.id) {
       location.hash = `#setlist/${params.id}`;
     }
-    else if (view === 'setlist-play' && params.id && !params.local) {
+    else if (view === 'setlist-play' && params.id) {
       let h = `#setlist/${params.id}/play`;
       if (params.index && params.index !== '0') h += `/${params.index}`;
       location.hash = h;
     }
-    else if (['browse', 'my-songs', 'setlists', 'admin', 'settings', 'auth', 'about', 'public-setlists', 'local-setlists'].includes(view)) {
+    else if (['browse', 'my-songs', 'setlists', 'admin', 'settings', 'auth', 'about', 'public-setlists'].includes(view)) {
       // Use replaceState to clear hash without triggering hashchange (which would race with the rAF setRoute above)
       history.replaceState(null, '', location.pathname + location.search);
     }
@@ -140,11 +139,16 @@ export function App() {
       case 'auth':
         return <AuthView navigate={navigate} />;
       case 'setlists':
-        return user ? <SetlistsView navigate={navigate} /> : <BrowseView navigate={navigate} />;
+        return <SetlistsView navigate={navigate} initialTab={params.tab} />;
       case 'public-setlists':
         return <PublicSetlistsView navigate={navigate} />;
       case 'setlist-edit':
-        return params.id ? <SetlistEditView setlistId={parseInt(params.id)} navigate={navigate} /> : <SetlistsView navigate={navigate} />;
+        return params.id ? (
+          <SetlistEditView
+            setlistId={params.id.startsWith('local_') ? params.id : parseInt(params.id)}
+            navigate={navigate}
+          />
+        ) : <SetlistsView navigate={navigate} />;
       case 'setlist-play': {
         if (params._setlist) {
           // Local setlist play with pre-loaded data
@@ -157,17 +161,13 @@ export function App() {
         const initialIdx = params.index ? parseInt(params.index) : undefined;
         return params.id ? (
           <SetlistPlayView
-            setlistId={params.local ? params.id : parseInt(params.id)}
-            isLocal={!!params.local}
+            setlistId={params.id.startsWith('local_') ? params.id : parseInt(params.id)}
+            isLocal={!!params.local || params.id.startsWith('local_')}
             initialIndex={initialIdx}
             navigate={navigate}
           />
         ) : <SetlistsView navigate={navigate} />;
       }
-      case 'local-setlists':
-        return <LocalSetlistsView navigate={navigate} />;
-      case 'local-setlist-edit':
-        return params.id ? <LocalSetlistEditView setlistId={params.id} navigate={navigate} /> : <LocalSetlistsView navigate={navigate} />;
       case 'admin':
         return <AdminView navigate={navigate} />;
       case 'settings':

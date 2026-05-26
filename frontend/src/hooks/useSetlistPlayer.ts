@@ -61,7 +61,7 @@ export function useSetlistPlayer({
           const sl = getLocalSetlists().find((s) => s.id === setlistId);
           if (!sl) {
             toast('Local setlist not found', 'error');
-            navigate('local-setlists');
+            navigate('setlists', { tab: 'local' });
             return;
           }
           const fetches = sl.entries.map((e) =>
@@ -119,7 +119,7 @@ export function useSetlistPlayer({
             })
             .catch((err) => {
               toast(err.message, 'error');
-              navigate('local-setlists');
+              navigate('setlists', { tab: 'local' });
             });
         });
       }
@@ -245,7 +245,7 @@ export function useSetlistPlayer({
 
   useEffect(() => {
     const onHash = () => {
-      const match = location.hash.match(/^#setlist\/\d+\/play(?:\/(\d+))?$/);
+      const match = location.hash.match(/^#setlist\/(?:local_\w+|\d+)\/play(?:\/(\d+))?$/);
       if (match) {
         const urlIdx = match[1] ? parseInt(match[1]) : 0;
         if (urlIdx !== index) {
@@ -270,7 +270,7 @@ export function useSetlistPlayer({
   }, [index]);
 
   const exit = useCallback(() => {
-    if (setlist?.isLocal) { location.hash = ''; navigate('local-setlists'); }
+    if (setlist?.isLocal) { location.hash = ''; navigate('setlists', { tab: 'local' }); }
     else if (setlist) { navigate('setlist-edit', { id: String(setlist.id) }); }
   }, [setlist, navigate]);
 

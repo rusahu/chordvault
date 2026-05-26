@@ -36,7 +36,7 @@ export interface Setlist {
 }
 
 export interface SetlistListItem {
-  id: number;
+  id: number | string;
   name: string;
   visibility: string;
   event_date: string | null;

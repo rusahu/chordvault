@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
+import { useLocalSetlists } from '../hooks/useLocalSetlists';
 import { useChordRenderer } from '../hooks/useChordRenderer';
 import { useFontScale } from '../hooks/useFontScale';
 import { useTwoCol } from '../hooks/useTwoCol';
@@ -24,6 +25,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const { user } = useAuth();
   const { t } = useI18n();
   const toast = useToast();
+  const ls = useLocalSetlists();
   const [song, setSong] = useState<Song | null>(null);
   const [versions, setVersions] = useState<SongVersion[]>([]);
   const [corrections, setCorrections] = useState<Correction[]>([]);
@@ -118,17 +120,42 @@ export function SongView({ songId, navigate }: SongViewProps) {
         const sls = await apiCall<SetlistListItem[]>('GET', '/api/setlists');
         setUserSetlists(sls);
       } catch { /* ignore */ }
+    } else {
+      const formatted = ls.setlists.map((sl) => ({
+        id: sl.id,
+        name: sl.name,
+        song_count: sl.entries.length,
+        visibility: 'private',
+        event_date: null,
+      }));
+      setUserSetlists(formatted);
     }
     setAddToSetlistOpen(true);
   };
 
-  const addToExisting = async (setlistId: number) => {
-    const targetSetlist = userSetlists.find((sl) => sl.id === setlistId);
+  const addToExisting = async (targetId: number | string) => {
+    const targetSetlist = userSetlists.find((sl) => sl.id === targetId);
+    if (!user) {
+      const added = ls.addEntry(String(targetId), {
+        song_id: songId,
+        title: song?.title || '',
+        artist: song?.artist || '',
+        transpose: chord.transpose,
+        nashville: chord.nashville ? 1 : 0
+      });
+      if (added) {
+        setAddToSetlistOpen(false);
+        toast(t('setlist.songAdded'), 'success');
+      } else {
+        toast('Failed to add song', 'error');
+      }
+      return;
+    }
     if (song?.visibility === 'private' && targetSetlist?.visibility === 'public') {
       if (!confirm('This song is private. Other viewers of this public setlist will see it as "[Private Song]". Continue?')) return;
     }
     try {
-      await apiCall('POST', `/api/setlists/${setlistId}/songs`, {
+      await apiCall('POST', `/api/setlists/${targetId}/songs`, {
         song_id: songId, transpose: chord.transpose, nashville: chord.nashville
       });
       setAddToSetlistOpen(false);
@@ -139,6 +166,20 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const createAndAdd = async () => {
     const name = prompt(t('setlist.enterName'));
     if (!name?.trim()) return;
+    if (!user) {
+      const sl = ls.create(name.trim());
+      if (!sl) { toast('Max 50 setlists', 'error'); return; }
+      ls.addEntry(sl.id, {
+        song_id: songId,
+        title: song?.title || '',
+        artist: song?.artist || '',
+        transpose: chord.transpose,
+        nashville: chord.nashville ? 1 : 0
+      });
+      setAddToSetlistOpen(false);
+      toast(t('setlist.songAdded'), 'success');
+      return;
+    }
     try {
       const result = await apiCall<{ id: number }>('POST', '/api/setlists', { name: name.trim() });
       await apiCall('POST', `/api/setlists/${result.id}/songs`, {
