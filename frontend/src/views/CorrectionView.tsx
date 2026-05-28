@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
+import { useTheme } from '../context/ThemeContext';
+import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
 import { detectFormat, toChordPro, ensureKeyDirective } from '../lib/chords';
 import type { Song } from '../types';
 
@@ -12,6 +14,7 @@ interface CorrectionViewProps {
 export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
   const apiCall = useApi();
   const toast = useToast();
+  const { theme } = useTheme();
   const [content, setContent] = useState('');
 
   useEffect(() => {
@@ -45,7 +48,14 @@ export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
         Edit the chords below. Your correction will be reviewed by the song owner before being applied.
       </p>
       <div className="field">
-        <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Corrected chord sheet..." />
+        <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+          <CodeMirrorEditor
+            value={content}
+            onChange={setContent}
+            darkMode={theme === 'dark'}
+            placeholder="Corrected chord sheet..."
+          />
+        </div>
       </div>
     </>
   );

@@ -53,11 +53,21 @@ export async function enrichLocalSetlistSongs(
   entries: LocalSetlistEntry[],
   apiCall: <T>(method: string, path: string) => Promise<T>
 ): Promise<SetlistEntry[]> {
-  const fetches = entries.map((e) =>
-    apiCall<Song>('GET', `/api/songs/${e.song_id}`).catch(() => null)
+  const uniqueSongIds = Array.from(new Set(entries.map((e) => e.song_id)));
+  const cache: Record<number, Song | null> = {};
+
+  const fetches = uniqueSongIds.map((id) =>
+    apiCall<Song>('GET', `/api/songs/${id}`)
+      .then((song) => {
+        cache[id] = song;
+      })
+      .catch(() => {
+        cache[id] = null;
+      })
   );
-  const results = await Promise.all(fetches);
-  return results
-    .map((song, i) => enrichLocalEntry(entries[i], song, i))
+  await Promise.all(fetches);
+
+  return entries
+    .map((e, i) => enrichLocalEntry(e, cache[e.song_id], i))
     .filter(Boolean) as SetlistEntry[];
 }

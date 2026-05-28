@@ -91,7 +91,17 @@ export function App() {
 
   // Listen for hash changes
   useEffect(() => {
-    const onHashChange = () => setRoute(parseHash());
+    const onHashChange = () => {
+      const newRoute = parseHash();
+      setRoute((prev) => {
+        const isSameView = prev.view === newRoute.view;
+        const isSameParams =
+          Object.keys(prev.params).length === Object.keys(newRoute.params).length &&
+          Object.keys(prev.params).every((k) => prev.params[k] === newRoute.params[k]);
+
+        return isSameView && isSameParams ? prev : newRoute;
+      });
+    };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);

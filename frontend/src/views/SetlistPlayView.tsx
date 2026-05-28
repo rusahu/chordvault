@@ -136,10 +136,10 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
 
   // Inline editor
   const openEditor = useCallback(() => {
-    if (!entry) return;
+    if (!entry || setlist?.isLocal) return;
     setEditContent(entry.content_override || entry.content);
     setEditing(true);
-  }, [entry]);
+  }, [entry, setlist]);
 
   const saveEditorToSetlist = async () => {
     if (!setlist || !entry) return;
