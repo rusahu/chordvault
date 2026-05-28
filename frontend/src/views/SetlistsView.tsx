@@ -14,17 +14,14 @@ interface SetlistsViewProps {
   initialTab?: string;
 }
 
-export function SetlistsView({ navigate, initialTab }: SetlistsViewProps) {
+export function SetlistsView({ navigate }: SetlistsViewProps) {
   const apiCall = useApi();
   const { user } = useAuth();
   const { t } = useI18n();
   const toast = useToast();
   const ls = useLocalSetlists();
 
-  const [activeTab, setActiveTab] = useState<'cloud' | 'local'>(() => {
-    if (initialTab === 'local' || !user) return 'local';
-    return 'cloud';
-  });
+  const activeTab = user ? 'cloud' : 'local';
 
   const [setlists, setSetlists] = useState<SetlistListItem[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -115,23 +112,10 @@ export function SetlistsView({ navigate, initialTab }: SetlistsViewProps) {
         <button className="btn btn-sm" onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</button>
       </div>
       <div className="setlist-tabs">
-        {user && (
-          <button
-            className={`setlist-tab${activeTab === 'cloud' ? ' active' : ''}`}
-            onClick={() => { setActiveTab('cloud'); setQuery(''); }}
-          >
-            Cloud Setlists
-          </button>
-        )}
-        <button
-          className={`setlist-tab${activeTab === 'local' ? ' active' : ''}`}
-          onClick={() => { setActiveTab('local'); setQuery(''); }}
-        >
-          Local Setlists
-        </button>
+        <button className="setlist-tab active">My Setlists</button>
         <button className="setlist-tab" onClick={() => navigate('public-setlists')}>Public Setlists</button>
       </div>
-      {activeTab === 'local' && !user && (
+      {!user && (
         <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 16 }}>
           These setlists are saved in your browser. Sign in to create server-synced setlists.
         </p>

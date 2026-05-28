@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
-import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
 import { SetlistCard } from '../components/SetlistCard';
@@ -14,7 +13,6 @@ interface PublicSetlistsViewProps {
 
 export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
   const apiCall = useApi();
-  const { user } = useAuth();
   const { t } = useI18n();
   const toast = useToast();
   const [setlists, setSetlists] = useState<SetlistListItem[]>([]);
@@ -67,11 +65,7 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
         <h2 className="view-title">{t('setlist.browseSetlists')}</h2>
       </div>
       <div className="setlist-tabs">
-        {user ? (
-          <button className="setlist-tab" onClick={() => navigate('setlists')}>My Setlists</button>
-        ) : (
-          <button className="setlist-tab" onClick={() => navigate('setlists', { tab: 'local' })}>My Setlists</button>
-        )}
+        <button className="setlist-tab" onClick={() => navigate('setlists')}>My Setlists</button>
         <button className="setlist-tab active">Public Setlists</button>
       </div>
       {showSearch && (

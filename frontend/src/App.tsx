@@ -149,7 +149,7 @@ export function App() {
       case 'auth':
         return <AuthView navigate={navigate} />;
       case 'setlists':
-        return <SetlistsView navigate={navigate} initialTab={params.tab} />;
+        return <SetlistsView navigate={navigate} />;
       case 'public-setlists':
         return <PublicSetlistsView navigate={navigate} />;
       case 'setlist-edit':

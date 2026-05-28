@@ -62,7 +62,7 @@ export function useSetlistPlayer({
           const sl = getLocalSetlists().find((s) => s.id === setlistId);
           if (!sl) {
             toast('Local setlist not found', 'error');
-            navigate('setlists', { tab: 'local' });
+            navigate('setlists');
             return;
           }
           enrichLocalSetlistSongs(sl.entries, apiCall)
@@ -97,7 +97,7 @@ export function useSetlistPlayer({
             })
             .catch((err) => {
               toast(err.message, 'error');
-              navigate('setlists', { tab: 'local' });
+              navigate('setlists');
             });
         });
       }
