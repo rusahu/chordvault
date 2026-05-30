@@ -141,25 +141,29 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
 
   return (
     <>
-      <div className="edit-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
-        <button className="btn btn-ghost btn-sm" onClick={cancel}>&#8592; {t('songEdit.cancel')}</button>
-        <h2 style={{ minWidth: '200px' }}>{songId ? (isOwner ? t('songEdit.editSong') : 'Create Version') : t('songEdit.newSong')}</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {isOwner && (
-            <button className="btn btn-sm" onClick={save}>
-              {t('songEdit.save')}
-            </button>
-          )}
-          {songId && (
-            <button 
-              className="btn btn-sm" 
-              style={{ background: 'var(--accent)', color: 'black', border: 'none' }} 
-              onClick={saveAsVersion}
-            >
-              {isOwner ? 'Save as New Version' : 'Save as My Version'}
-            </button>
-          )}
+      <div className="song-view-header">
+        <div className="song-view-nav">
+          <button className="btn btn-ghost btn-sm" onClick={cancel}>&#8592; {t('songEdit.cancel')}</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {isOwner && (
+              <button className="btn btn-sm" onClick={save}>
+                {t('songEdit.save')}
+              </button>
+            )}
+            {songId && (
+              <button 
+                className="btn btn-sm" 
+                style={{ background: 'var(--accent)', color: 'black', border: 'none' }} 
+                onClick={saveAsVersion}
+              >
+                {isOwner ? 'Save as New Version' : 'Save as My Version'}
+              </button>
+            )}
+          </div>
         </div>
+        <h1 className="song-view-title">
+          {songId ? (isOwner ? t('songEdit.editSong') : 'Create Version') : t('songEdit.newSong')}
+        </h1>
       </div>
       <div className="edit-cols">
         <div className="field">
