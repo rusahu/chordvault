@@ -98,7 +98,12 @@ export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJ
       const song = new ParserClass({ preserveWhitespace: false }).parse(content);
       const hasChords = song.paragraphs.some((par) =>
         par.lines.some((l) =>
-          l.items.some((it) => !!(it as { chords?: string }).chords)
+          l.items.some((it) => {
+            const chords = (it as { chords?: string }).chords;
+            if (!chords) return false;
+            if (p.label === 'ChordPro' && SECTION_LABEL.test(chords)) return false;
+            return true;
+          })
         )
       );
       if (hasChords) return { song, format: p.label };
