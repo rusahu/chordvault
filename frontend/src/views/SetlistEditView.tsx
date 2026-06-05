@@ -11,6 +11,7 @@ import { Loading } from '../components/Loading';
 import { EmptyState } from '../components/EmptyState';
 import { SetlistEntryCard } from '../components/SetlistEntryCard';
 import type { Setlist, SongListItem } from '../types';
+import { useDragReorder } from '../hooks/useDragReorder';
 
 interface SetlistEditViewProps {
   setlistId: number | string;
@@ -26,10 +27,10 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     getOne,
     rename,
     remove,
-    moveEntry: lsMoveEntry,
     removeEntry: lsRemoveEntry,
     addEntry: lsAddEntry,
     updateEntry: lsUpdateEntry,
+    reorderEntries: lsReorderEntries,
   } = useLocalSetlists();
   
   const isLocal = typeof setlistId === 'string' && setlistId.startsWith('local_');
@@ -79,6 +80,41 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
 
   useEffect(() => { load(); }, [load]);
 
+  const {
+    items: reorderedEntries,
+    dragProps,
+    handleProps,
+    draggedIdx,
+  } = useDragReorder(
+    setlist?.entries || [],
+    async (newEntries) => {
+      if (!setlist) return;
+
+      // Update React state first
+      setSetlist((prev) => prev ? { ...prev, entries: newEntries } : null);
+
+      if (isLocal) {
+        const localEntries = newEntries.map((e) => ({
+          song_id: e.song_id,
+          title: e.title,
+          artist: e.artist,
+          transpose: e.transpose,
+          nashville: e.nashville,
+        }));
+        lsReorderEntries(String(setlistId), localEntries);
+      } else {
+        try {
+          await apiCall('PUT', `/api/setlists/${setlistId}/reorder`, {
+            entry_ids: newEntries.map((e) => e.entry_id),
+          });
+        } catch (e) {
+          toast((e as Error).message, 'error');
+          load();
+        }
+      }
+    }
+  );
+
   const saveMeta = async () => {
     if (!setlist) return;
     const nameInput = (document.getElementById('setlist-name-input') as HTMLInputElement)?.value.trim();
@@ -116,29 +152,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     }
   };
 
-  const moveEntry = async (idx: number, dir: number) => {
-    if (!setlist) return;
-
-    if (isLocal) {
-      lsMoveEntry(String(setlistId), idx, dir);
-      const sl = getOne(String(setlistId));
-      if (sl) {
-        setSetlist((prev) => prev ? {
-          ...prev,
-          entries: sl.entries.map((e, idx) => formatLocalEntry(e, idx)),
-        } : null);
-      }
-    } else {
-      const entries = [...setlist.entries];
-      const newIdx = idx + dir;
-      if (newIdx < 0 || newIdx >= entries.length) return;
-      [entries[idx], entries[newIdx]] = [entries[newIdx], entries[idx]];
-      setSetlist({ ...setlist, entries });
-      try {
-        await apiCall('PUT', `/api/setlists/${setlistId}/reorder`, { entry_ids: entries.map((e) => e.entry_id) });
-      } catch (e) { toast((e as Error).message, 'error'); }
-    }
-  };
+  // Reordering is handled by useDragReorder hook
 
   const removeEntry = async (entryId: number | string, idx: number) => {
     if (isLocal) {
@@ -182,7 +196,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
 
   const handleTransposeEntry = async (entryId: number | string, idx: number, delta: number) => {
     if (!setlist) return;
-    const entry = setlist.entries[idx];
+    const entry = reorderedEntries[idx];
     const newTranspose = (entry.transpose ?? 0) + delta;
 
     if (isLocal) {
@@ -309,18 +323,19 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         <EmptyState icon="&#127926;" text={t('setlist.noSongsYet')} />
       ) : (
         <div className="setlist-entries" id="setlist-entries">
-          {setlist.entries.map((entry, idx) => (
+          {reorderedEntries.map((entry, idx) => (
             <SetlistEntryCard
               key={entry.entry_id}
               entry={entry}
               idx={idx}
-              totalCount={setlist.entries.length}
               isEditable={isEditable}
               isLocal={isLocal}
-              onMove={moveEntry}
               onRemove={removeEntry}
               onTranspose={handleTransposeEntry}
               onClick={handleItemClick}
+              dragProps={dragProps(idx)}
+              handleProps={handleProps(idx)}
+              isDragging={draggedIdx === idx}
               t={t}
             />
           ))}

@@ -4,48 +4,46 @@ import type { SetlistEntry } from '../types';
 interface SetlistEntryCardProps {
   entry: SetlistEntry;
   idx: number;
-  totalCount: number;
   isEditable: boolean;
   isLocal: boolean;
-  onMove: (idx: number, dir: number) => void;
   onRemove: (entryId: number | string, idx: number) => void;
   onTranspose: (entryId: number | string, idx: number, delta: number) => void;
   onClick: (idx: number) => void;
   t: (key: string) => string;
+  dragProps?: React.HTMLProps<HTMLDivElement>;
+  handleProps?: React.HTMLProps<HTMLDivElement>;
+  isDragging?: boolean;
 }
 
 export function SetlistEntryCard({
   entry,
   idx,
-  totalCount,
   isEditable,
   isLocal,
-  onMove,
   onRemove,
   onTranspose,
   onClick,
   t,
+  dragProps,
+  handleProps,
+  isDragging,
 }: SetlistEntryCardProps) {
   const keyDisplay = getSongKey(entry.content_override || entry.content, entry.transpose);
 
   return (
-    <div className="song-card setlist-song-item" onClick={() => onClick(idx)}>
+    <div
+      className={`song-card setlist-song-item ${isDragging ? 'dragging' : ''}`}
+      onClick={() => onClick(idx)}
+      {...dragProps}
+    >
       {isEditable && (
-        <div className="setlist-reorder" onClick={(e) => e.stopPropagation()}>
-          {idx > 0 ? (
-            <button className="setlist-arrow-btn" onClick={() => onMove(idx, -1)} title="Move up">
-              &#9650;
-            </button>
-          ) : (
-            <span className="setlist-arrow-btn disabled" />
-          )}
-          {idx < totalCount - 1 ? (
-            <button className="setlist-arrow-btn" onClick={() => onMove(idx, 1)} title="Move down">
-              &#9660;
-            </button>
-          ) : (
-            <span className="setlist-arrow-btn disabled" />
-          )}
+        <div
+          className="setlist-drag-handle"
+          onClick={(e) => e.stopPropagation()}
+          {...handleProps}
+          title="Drag to reorder"
+        >
+          &#9776;
         </div>
       )}
       <div className="setlist-song-pos">{idx + 1}</div>
@@ -91,3 +89,4 @@ export function SetlistEntryCard({
     </div>
   );
 }
+
