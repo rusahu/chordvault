@@ -75,5 +75,16 @@ export function useLocalSetlists() {
     }
   }, []);
 
-  return { setlists, refresh, create, remove, rename, getOne, addEntry, removeEntry, moveEntry, updateEntry };
+  const reorderEntries = useCallback((id: string, newEntries: LocalSetlistEntry[]) => {
+    const all = getLocalSetlists();
+    const sl = all.find((s) => s.id === id);
+    if (sl) {
+      sl.entries = newEntries;
+      saveLocalSetlists(all);
+      setSetlists([...all]);
+    }
+  }, []);
+
+  return { setlists, refresh, create, remove, rename, getOne, addEntry, removeEntry, moveEntry, updateEntry, reorderEntries };
 }
+

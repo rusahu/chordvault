@@ -532,41 +532,34 @@
   opacity: 0.6;
 }
 
-.setlist-reorder {
-  display: flex;
-  flex-direction: column;
-  background: transparent;
-  border-radius: 6px;
-  overflow: hidden;
-  margin-right: 16px;
-  border: 1px solid var(--border);
-}
-
-.setlist-arrow-btn {
-  background: var(--surface2);
-  border: none;
-  color: var(--muted);
-  width: 28px;
-  height: 24px;
+.setlist-drag-handle {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-size: 10px;
-  transition: all 0.15s;
-}
-.setlist-arrow-btn:first-child {
-  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  width: 28px;
+  height: 32px;
+  cursor: grab;
+  font-size: 18px;
+  margin-right: 16px;
+  user-select: none;
+  touch-action: none;
+  transition: color 0.15s;
 }
 
-.setlist-arrow-btn:hover:not(.disabled) {
-  background: var(--accent-bg);
+.setlist-drag-handle:hover {
   color: var(--accent);
 }
 
-.setlist-arrow-btn.disabled {
-  opacity: 0.3;
-  cursor: default;
+.setlist-drag-handle:active {
+  cursor: grabbing;
+}
+
+.song-card.setlist-song-item.dragging {
+  opacity: 0.4;
+  border-style: dashed;
+  border-color: var(--accent);
+  transform: scale(0.99);
 }
 
 .setlist-remove-btn {
