@@ -50,7 +50,7 @@
 
 /* ChordSheetJS output styles */
 .chord-sheet .paragraph {
-  margin-bottom: 1.5em;
+  margin-bottom: 0.4em;
 }
 
 .chord-sheet .row {
@@ -93,6 +93,12 @@
   display: block;
 }
 
+/* Chord-only rows (intros, instrumental breaks) emit empty lyric lines —
+   collapse them so they don't reserve a full blank line of height. */
+.chord-sheet .lyrics:empty {
+  min-height: 0;
+}
+
 .chord-sheet .comment,
 .chord-sheet .tag {
   color: var(--muted);
@@ -130,7 +136,7 @@
   border: 1px solid var(--badge-border) !important;
   
   display: inline-block !important;
-  margin: 24px 0 8px !important;
+  margin: 6px 0 4px !important;
 }
 
 /* Chorus Styles */
