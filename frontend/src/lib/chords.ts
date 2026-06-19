@@ -263,10 +263,13 @@ class ResponsiveHtmlFormatter {
   private renderItem(it: ChordSheetJS.ChordLyricsPair): string {
     const lyrics = it.lyrics || '';
 
-    // If no lyrics, just render the chord column
-    if (!lyrics) {
-      const chords = it.chords ? `<span class="chord">${escHtml(it.chords)}</span>` : '<span class="chord"></span>';
-      return `<span class="column">${chords}<span class="lyrics"></span></span>`;
+    // No lyrics, or whitespace-only lyrics (chord-only rows like intros and
+    // instrumental breaks). Render an empty lyric span so CSS (.lyrics:empty)
+    // collapses the otherwise-blank line. The chord sets the column width, so
+    // horizontal spacing between chords is preserved.
+    if (!lyrics.trim()) {
+      const chord = it.chords ? normalizeChord(it.chords) : '';
+      return `<span class="column"><span class="chord">${escHtml(chord)}</span><span class="lyrics"></span></span>`;
     }
 
     // Split lyrics by whitespace chunks. We treat any sequence of spaces as one unit

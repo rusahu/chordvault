@@ -93,6 +93,12 @@
   display: block;
 }
 
+/* Chord-only rows (intros, instrumental breaks) emit empty lyric lines —
+   collapse them so they don't reserve a full blank line of height. */
+.chord-sheet .lyrics:empty {
+  min-height: 0;
+}
+
 .chord-sheet .comment,
 .chord-sheet .tag {
   color: var(--muted);
