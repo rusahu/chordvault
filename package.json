@@ -24,7 +24,7 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.11.1",
-    "chordsheetjs": "^15.4.0",
+    "chordsheetjs": "^15.5.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.2.0",
@@ -36,8 +36,8 @@
     "concurrently": "^10.0.3",
     "eslint": "^10.5.0",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.7",
-    "playwright": "^1.61.0",
+    "lint-staged": "^17.0.8",
+    "playwright": "^1.61.1",
     "prettier": "^3.8.4"
   },
   "lint-staged": {
