@@ -97,6 +97,8 @@
   "admin.resetPassword": "Reset Password",
   "admin.resetPasswordPrompt": "Enter new password for @{username}:",
   "admin.passwordReset": "Password reset successfully",
+  "admin.importSongs": "Import Songs",
+  "admin.importDescription": "Bulk-import ChordPro files. Duplicates already in your library are skipped.",
 
   "common.loading": "Loading...",
 

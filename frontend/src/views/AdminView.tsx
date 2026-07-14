@@ -7,6 +7,7 @@ import { Loading } from '../components/Loading';
 import type { AdminStats, AdminUser, InviteCode, AdminConfig, Correction } from '../types';
 import { useDemo } from '../context/DemoContext';
 import { languageName } from '../lib/languages';
+import { ImportModal } from '../components/ImportModal';
 
 interface AdminViewProps {
   navigate: (view: string, params?: Record<string, string>) => void;
@@ -24,6 +25,7 @@ export function AdminView({ navigate }: AdminViewProps) {
   const [config, setConfig] = useState<AdminConfig>({ allowRegistration: true });
   const [invites, setInvites] = useState<InviteCode[]>([]);
   const [inviteCode, setInviteCode] = useState('');
+  const [showImport, setShowImport] = useState(false);
 
   const loadInvites = useCallback(async () => {
     try {
@@ -220,6 +222,16 @@ export function AdminView({ navigate }: AdminViewProps) {
           );
         })}
       </div>
+
+      <h3 className="admin-section-title">{t('admin.importSongs')}</h3>
+      <p className="muted-text">{t('admin.importDescription')}</p>
+      <button className="btn btn-primary" onClick={() => setShowImport(true)}>{t('admin.importSongs')}</button>
+      {showImport && (
+        <ImportModal
+          onClose={() => setShowImport(false)}
+          onDone={() => load()}
+        />
+      )}
 
       {stats.recentSongs.length > 0 && (
         <>
