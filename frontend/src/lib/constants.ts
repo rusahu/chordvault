@@ -13,3 +13,9 @@ export const MAX_PREFERRED_LANGUAGES = 10;
 export const MAX_OCR_PROMPT = 5000;
 
 export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash';
+
+export const IMPORT_MAX_BATCH = 500;
+export const IMPORT_MAX_BATCH_BYTES = 12_000_000;
+export const IMPORT_CONFIRM_FILE_COUNT = 5000;
+export const DEMO_MAX_IMPORT = 20;
+export const IMPORT_ACCEPT = '.cho,.chopro,.pro,.chordpro,.crd,.txt';
