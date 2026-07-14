@@ -10,6 +10,7 @@ test('inserts songs not already present', () => {
   assert.equal(toInsert.length, 2);
   assert.equal(skipped.length, 0);
   assert.match(toInsert[0].content_hash, /^[0-9a-f]{64}$/);
+  assert.equal(toInsert[0].title, 'T');
 });
 
 test('skips songs whose hash is already in the library', () => {

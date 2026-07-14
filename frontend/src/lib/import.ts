@@ -17,7 +17,7 @@ export function chunkSongs(songs: { content: string }[]): { content: string }[][
   let current: { content: string }[] = [];
   let bytes = 0;
   for (const song of songs) {
-    const size = song.content.length;
+    const size = new Blob([song.content]).size;
     if (current.length > 0 && (current.length >= IMPORT_MAX_BATCH || bytes + size > IMPORT_MAX_BATCH_BYTES)) {
       batches.push(current);
       current = [];

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import { useDemo } from '../context/DemoContext';
@@ -33,7 +33,6 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
   const { user } = useAuth();
   const { demoMode } = useDemo();
   const toast = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -109,7 +108,6 @@ export function ImportModal({ onClose, onDone }: ImportModalProps) {
               <input
                 data-testid="import-file-input"
                 type="file"
-                ref={fileRef}
                 multiple
                 accept={IMPORT_ACCEPT}
                 onChange={handleFiles}

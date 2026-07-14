@@ -37,4 +37,13 @@ describe('chunkSongs', () => {
     expect(chunks.length).toBe(1);
     expect(chunks[0].length).toBe(1);
   });
+  it('counts real UTF-8 bytes, not UTF-16 code units, for CJK content', () => {
+    // 'あ' is 1 UTF-16 code unit but 3 UTF-8 bytes. .length sum (9M) would fit
+    // in one batch under the old bug; actual byte size (~13.5M each) forces separate batches.
+    const cjk = { content: 'あ'.repeat(4_500_000) };
+    const chunks = chunkSongs([cjk, cjk]);
+    expect(chunks.length).toBe(2);
+    expect(chunks[0].length).toBe(1);
+    expect(chunks[1].length).toBe(1);
+  });
 });
