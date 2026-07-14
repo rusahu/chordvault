@@ -399,15 +399,15 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   border: 1px solid rgba(255, 152, 0, 0.3);
 }
 
-/* -- Setlist Overlay (add to setlist, song picker) -- */
-.setlist-add-overlay {
+/* -- Shared modal backdrop (dims page behind any modal) -- */
+.modal-backdrop {
   position: fixed;
   inset: 0;
-  background: var(--overlay);
+  background: var(--ui-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 500;
+  z-index: 600;
 }
 
 .setlist-add-content {
@@ -430,16 +430,6 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 /* -- OCR Modal ---------------------------- */
 .ocr-row {
   margin-bottom: 8px;
-}
-
-.ocr-modal {
-  position: fixed;
-  inset: 0;
-  background: var(--overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 600;
 }
 
 .ocr-card {

@@ -132,7 +132,7 @@ export function AddToSetlistModal({
 
   return (
     <div
-      className="setlist-add-overlay"
+      className="modal-backdrop"
       data-overlay
       style={{ display: 'flex' }}
       onClick={(e) => {

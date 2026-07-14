@@ -47,7 +47,7 @@ export function SongPicker({ onPick, onClose }: SongPickerProps) {
   };
 
   return (
-    <div className="setlist-add-overlay" data-overlay style={{ display: 'flex' }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="modal-backdrop" data-overlay onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="setlist-add-content">
         <div className="view-header">
           <h3 className="view-title">{t('setlist.pickSong')}</h3>

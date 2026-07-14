@@ -131,7 +131,7 @@ export function OcrModal({ hasGeminiKey, onResult, onClose }: OcrModalProps) {
   const hasCorrections = chatHistory.filter(m => m.role === 'user').length > 0;
 
   return createPortal(
-    <div className="ocr-modal" data-overlay onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="modal-backdrop" data-overlay onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="ocr-card">
         <div className="view-header" style={{ marginBottom: 16 }}>
           <h3 className="view-title">Import from image or PDF</h3>
