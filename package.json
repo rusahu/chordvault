@@ -1,6 +1,6 @@
 {
   "name": "chordvault",
-  "version": "1.14.1",
+  "version": "1.15.0",
   "description": "Self-hosted chord sheet manager with transpose",
   "author": "Rudy Samuel",
   "license": "AGPL-3.0-or-later",
