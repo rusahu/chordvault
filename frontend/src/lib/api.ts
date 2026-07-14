@@ -29,3 +29,13 @@ export async function api<T = unknown>(
   if (!res.ok) throw new ApiError((data.error as string) || 'Request failed', res.status);
   return data as T;
 }
+
+export interface ImportResult {
+  imported: number;
+  skipped: { index: number; reason: string }[];
+  errors: { index: number; error: string }[];
+}
+
+export function importSongs(songs: { content: string }[], token: string): Promise<ImportResult> {
+  return api<ImportResult>('POST', '/api/songs/import', { songs }, token);
+}
