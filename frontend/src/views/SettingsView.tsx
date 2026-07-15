@@ -308,7 +308,7 @@ export function SettingsView() {
           {isAdmin ? ' As an admin, you can also bulk import ChordPro files into the library.' : ''}
         </p>
         <div className="auth-card" style={{ maxWidth: 400 }}>
-          <div className="flex-row" style={{ flexWrap: 'wrap' }}>
+          <div className="flex-row" style={{ flexWrap: 'wrap', gap: 16 }}>
             {isAdmin && (
               <button className="btn btn-sm" onClick={() => setShowImport(true)}>Import Songs</button>
             )}
