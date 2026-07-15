@@ -39,3 +39,26 @@ export interface ImportResult {
 export function importSongs(songs: { content: string }[], token: string): Promise<ImportResult> {
   return api<ImportResult>('POST', '/api/songs/import', { songs }, token);
 }
+
+export function filenameFromDisposition(header: string | null, fallback: string): string {
+  if (!header) return fallback;
+  const m = /filename="?([^";]+)"?/.exec(header);
+  return m ? m[1] : fallback;
+}
+
+export async function exportSongsBlob(token: string): Promise<{ blob: Blob; filename: string }> {
+  const res = await fetch('/api/songs/export', { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) {
+    let msg = `Export failed (${res.status})`;
+    try {
+      const data = await res.json();
+      if (data?.error) msg = data.error;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new ApiError(msg, res.status);
+  }
+  const blob = await res.blob();
+  const filename = filenameFromDisposition(res.headers.get('Content-Disposition'), 'chordvault-export.zip');
+  return { blob, filename };
+}

@@ -2,11 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { LANGUAGES, languageName } from '../lib/languages';
 import { useDemo } from '../context/DemoContext';
+import { useAuth } from '../context/AuthContext';
+import { exportSongsBlob } from '../lib/api';
+import { ImportModal } from '../components/ImportModal';
 import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT, DEFAULT_GEMINI_MODEL } from '../lib/constants';
 
 export function SettingsView() {
   const apiCall = useApi();
   const { demoMode } = useDemo();
+  const { user, isAdmin } = useAuth();
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -24,6 +28,9 @@ export function SettingsView() {
   const [ocrModel, setOcrModel] = useState(DEFAULT_GEMINI_MODEL);
   const [modelList, setModelList] = useState<{ id: string; label: string; hint: string }[]>([]);
   const [modelMsg, setModelMsg] = useState<{ text: string; color: string } | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportMsg, setExportMsg] = useState<{ text: string; color: string } | null>(null);
+  const [showImport, setShowImport] = useState(false);
 
   const loadPreferredLangs = useCallback(async () => {
     try {
@@ -141,135 +148,172 @@ export function SettingsView() {
     } catch (e) { setLangMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
   };
 
+  const handleExport = async () => {
+    if (!user?.token) return;
+    setExporting(true);
+    setExportMsg(null);
+    try {
+      const { blob, filename } = await exportSongsBlob(user.token);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setExportMsg({ text: (e as Error).message, color: 'var(--danger)' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <>
       <div className="view-header"><h2 className="view-title">Settings</h2></div>
-      <div className="settings-section">
-        <h3 className="admin-section-title">Change Password</h3>
-        {demoMode ? (
-          <div className="muted-text">Disabled in demo mode</div>
-        ) : (
-          <div className="auth-card" style={{ maxWidth: 400 }}>
-            <div className="field"><label>Current Password</label><input type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} autoComplete="current-password" /></div>
-            <div className="field"><label>New Password</label><input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" /></div>
-            <div className="field"><label>Confirm New Password</label><input type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} autoComplete="new-password" /></div>
-            <button className="btn" onClick={changePassword}>Change Password</button>
-            {pwMsg && <div className="field-message" style={{ color: pwMsg.color }}>{pwMsg.text}</div>}
-          </div>
-        )}
-      </div>
-
-      <div className="settings-section">
-        <h3 className="admin-section-title">OCR Settings</h3>
-        <p className="muted-hint">
-          Smart OCR uses Google Gemini to extract chords from photos with higher accuracy. Get a free API key at{' '}
-          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style={{ color: 'var(--accent)' }}>aistudio.google.com/apikey</a>
-        </p>
-        <div className="auth-card" style={{ maxWidth: 400 }}>
-          <div className="muted-hint" style={{ marginBottom: 12 }}>{geminiStatus}</div>
-          <div className="field"><label>Gemini API Key</label><input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="Paste your Gemini API key here" autoComplete="off" /></div>
-          <div className="flex-row">
-            <button className="btn btn-sm" onClick={saveGeminiKey}>Save Key</button>
-            <button className="btn btn-danger btn-sm" onClick={removeGeminiKey}>Remove Key</button>
-          </div>
-          {geminiMsg && <div className="field-message" style={{ color: geminiMsg.color }}>{geminiMsg.text}</div>}
-        </div>
-      </div>
-
-      <div className="settings-section">
-        <h3 className="admin-section-title">OCR Model</h3>
-        <p className="muted-hint">
-          Choose which Gemini model to use for OCR. You can also change this per-extraction in the OCR modal.
-        </p>
-        <div className="auth-card" style={{ maxWidth: 400 }}>
-          <div className="field">
-            <select
-              value={ocrModel}
-              onChange={(e) => saveOcrModel(e.target.value)}
-              style={{ fontSize: 14, padding: '8px 12px' }}
-            >
-              {modelList.map(m => (
-                <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
-              ))}
-            </select>
-          </div>
-          {modelMsg && <div className="field-message" style={{ marginTop: 4, color: modelMsg.color }}>{modelMsg.text}</div>}
-        </div>
-      </div>
-
-      <div className="settings-section">
-        <h3 className="admin-section-title">OCR Prompt</h3>
-        <p className="muted-hint">
-          Customize the instructions sent to Gemini when extracting chords from photos.
-          {hasCustomPrompt ? ' You are using a custom prompt.' : ' Using the default prompt.'}
-        </p>
-        <div className="auth-card" style={{ maxWidth: 600 }}>
-          <div className="field">
-            <textarea
-              value={ocrPrompt}
-              onChange={(e) => setOcrPrompt(e.target.value)}
-              placeholder={defaultPrompt}
-              rows={12}
-              maxLength={MAX_OCR_PROMPT}
-              style={{ fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }}
-            />
-            <div className="muted-text" style={{ fontSize: 11, textAlign: 'right', marginTop: 4 }}>
-              {ocrPrompt.length} / {MAX_OCR_PROMPT}
-            </div>
-          </div>
-          <div className="flex-row" style={{ flexWrap: 'wrap' }}>
-            <button className="btn btn-sm" onClick={saveOcrPrompt}>Save Prompt</button>
-            {!ocrPrompt && (
-              <button className="btn btn-sm" style={{ background: 'var(--surface-alt, var(--surface))' }} onClick={() => setOcrPrompt(defaultPrompt)}>
-                Copy Default
-              </button>
-            )}
-            {hasCustomPrompt && (
-              <button className="btn btn-danger btn-sm" onClick={resetOcrPrompt}>Reset to Default</button>
-            )}
-          </div>
-          {promptMsg && <div className="field-message" style={{ color: promptMsg.color }}>{promptMsg.text}</div>}
-        </div>
-      </div>
-
-      <div className="settings-section">
-        <h3 className="admin-section-title">My Languages</h3>
-        <p className="muted-hint">
-          Your preferred languages appear at the top of the language picker when creating songs.
-        </p>
-        <div className="auth-card" style={{ maxWidth: 400 }}>
-          <div className="flex-row" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-            {preferredLangs.map(code => (
-              <span key={code} className="badge badge-tag" style={{ cursor: 'pointer' }} onClick={() => removeLang(code)}>
-                {languageName(code)} ✕
-              </span>
-            ))}
-            {preferredLangs.length === 0 && <span className="muted-text">No languages set</span>}
-          </div>
-          {preferredLangs.length < MAX_PREFERRED_LANGUAGES && (
-            <div className="field">
-              <input
-                type="text"
-                placeholder="Search to add a language..."
-                value={langSearch}
-                onChange={(e) => setLangSearch(e.target.value)}
-              />
-              {langSearch && (
-                <div className="language-picker-dropdown" style={{ position: 'relative', marginTop: 4 }}>
-                  {LANGUAGES
-                    .filter(l => !preferredLangs.includes(l.code) &&
-                      (l.name.toLowerCase().includes(langSearch.toLowerCase()) || l.code.includes(langSearch.toLowerCase())))
-                    .slice(0, 8)
-                    .map(l => (
-                      <button key={l.code} type="button" className="language-picker-option" onClick={() => addLang(l.code)}>
-                        {l.name} <span className="language-picker-code">{l.code}</span>
-                      </button>
-                    ))}
-                </div>
-              )}
+      <div className="settings-grid">
+        <div className="settings-section">
+          <h3 className="admin-section-title">Change Password</h3>
+          {demoMode ? (
+            <div className="muted-text">Disabled in demo mode</div>
+          ) : (
+            <div className="auth-card">
+              <div className="field"><label>Current Password</label><input type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} autoComplete="current-password" /></div>
+              <div className="field"><label>New Password</label><input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" /></div>
+              <div className="field"><label>Confirm New Password</label><input type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} autoComplete="new-password" /></div>
+              <button className="btn" onClick={changePassword}>Change Password</button>
+              {pwMsg && <div className="field-message" style={{ color: pwMsg.color }}>{pwMsg.text}</div>}
             </div>
           )}
-          {langMsg && <div className="field-message" style={{ color: langMsg.color }}>{langMsg.text}</div>}
+        </div>
+
+        <div className="settings-section">
+          <h3 className="admin-section-title">My Languages</h3>
+          <p className="muted-hint">
+            Your preferred languages appear at the top of the language picker when creating songs.
+          </p>
+          <div className="auth-card">
+            <div className="flex-row" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+              {preferredLangs.map(code => (
+                <span key={code} className="badge badge-tag" style={{ cursor: 'pointer' }} onClick={() => removeLang(code)}>
+                  {languageName(code)} ✕
+                </span>
+              ))}
+              {preferredLangs.length === 0 && <span className="muted-text">No languages set</span>}
+            </div>
+            {preferredLangs.length < MAX_PREFERRED_LANGUAGES && (
+              <div className="field">
+                <input
+                  type="text"
+                  placeholder="Search to add a language..."
+                  value={langSearch}
+                  onChange={(e) => setLangSearch(e.target.value)}
+                />
+                {langSearch && (
+                  <div className="language-picker-dropdown" style={{ position: 'relative', marginTop: 4 }}>
+                    {LANGUAGES
+                      .filter(l => !preferredLangs.includes(l.code) &&
+                        (l.name.toLowerCase().includes(langSearch.toLowerCase()) || l.code.includes(langSearch.toLowerCase())))
+                      .slice(0, 8)
+                      .map(l => (
+                        <button key={l.code} type="button" className="language-picker-option" onClick={() => addLang(l.code)}>
+                          {l.name} <span className="language-picker-code">{l.code}</span>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {langMsg && <div className="field-message" style={{ color: langMsg.color }}>{langMsg.text}</div>}
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <h3 className="admin-section-title">{isAdmin ? 'Import & Export' : 'Export Songs'}</h3>
+          <p className="muted-hint">
+            Download all songs you can access as ChordPro (.cho) files in a zip.
+            {isAdmin ? ' As an admin, you can also bulk import ChordPro files into the library.' : ''}
+          </p>
+          <div className="auth-card">
+            <div className="flex-row" style={{ flexWrap: 'wrap', gap: 16 }}>
+              {isAdmin && (
+                <button className="btn btn-sm" onClick={() => setShowImport(true)}>Import Songs</button>
+              )}
+              <button className="btn btn-sm" onClick={handleExport} disabled={exporting}>
+                {exporting ? 'Exporting…' : 'Export Songs'}
+              </button>
+            </div>
+            {exportMsg && <div className="field-message" style={{ color: exportMsg.color }}>{exportMsg.text}</div>}
+          </div>
+          {showImport && (
+            <ImportModal onClose={() => setShowImport(false)} onDone={() => {}} />
+          )}
+        </div>
+
+        <div className="settings-section">
+          <h3 className="admin-section-title">OCR: API Key</h3>
+          <p className="muted-hint">
+            Smart OCR uses Google Gemini to extract chords from photos with higher accuracy. Get a free API key at{' '}
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style={{ color: 'var(--accent)' }}>aistudio.google.com/apikey</a>
+          </p>
+          <div className="auth-card">
+            <div className="muted-hint" style={{ marginBottom: 12 }}>{geminiStatus}</div>
+            <div className="field"><label>Gemini API Key</label><input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="Paste your Gemini API key here" autoComplete="off" /></div>
+            <div className="flex-row">
+              <button className="btn btn-sm" onClick={saveGeminiKey}>Save Key</button>
+              <button className="btn btn-danger btn-sm" onClick={removeGeminiKey}>Remove Key</button>
+            </div>
+            {geminiMsg && <div className="field-message" style={{ color: geminiMsg.color }}>{geminiMsg.text}</div>}
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <h3 className="admin-section-title">OCR: Model &amp; Prompt</h3>
+          <p className="muted-hint">
+            Choose which Gemini model to use for OCR and customize the extraction prompt. You can also change the model per-extraction in the OCR modal.
+          </p>
+          <div className="auth-card">
+            <div className="field">
+              <label>Model</label>
+              <select
+                value={ocrModel}
+                onChange={(e) => saveOcrModel(e.target.value)}
+                style={{ fontSize: 14, padding: '8px 12px' }}
+              >
+                {modelList.map(m => (
+                  <option key={m.id} value={m.id}>{m.label} — {m.hint}</option>
+                ))}
+              </select>
+              {modelMsg && <div className="field-message" style={{ marginTop: 4, color: modelMsg.color }}>{modelMsg.text}</div>}
+            </div>
+            <div className="field">
+              <label>Prompt</label>
+              <textarea
+                value={ocrPrompt}
+                onChange={(e) => setOcrPrompt(e.target.value)}
+                placeholder={defaultPrompt}
+                rows={7}
+                maxLength={MAX_OCR_PROMPT}
+                style={{ fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }}
+              />
+              <div className="muted-text" style={{ fontSize: 11, textAlign: 'right', marginTop: 4 }}>
+                {ocrPrompt.length} / {MAX_OCR_PROMPT}
+              </div>
+            </div>
+            <div className="flex-row" style={{ flexWrap: 'wrap' }}>
+              <button className="btn btn-sm" onClick={saveOcrPrompt}>Save Prompt</button>
+              {!ocrPrompt && (
+                <button className="btn btn-sm" style={{ background: 'var(--surface-alt, var(--surface))' }} onClick={() => setOcrPrompt(defaultPrompt)}>
+                  Copy Default
+                </button>
+              )}
+              {hasCustomPrompt && (
+                <button className="btn btn-danger btn-sm" onClick={resetOcrPrompt}>Reset to Default</button>
+              )}
+            </div>
+            {promptMsg && <div className="field-message" style={{ color: promptMsg.color }}>{promptMsg.text}</div>}
+          </div>
         </div>
       </div>
     </>

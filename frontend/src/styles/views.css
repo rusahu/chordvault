@@ -139,7 +139,11 @@
 .setlist-tab.active { background: var(--surface); color: var(--text); }
 
 /* -- Settings ------------------------------ */
-.settings-section { margin-bottom: 32px; }
+.settings-section { margin-bottom: 32px; break-inside: avoid; }
+.settings-grid { column-gap: 32px; }
+@media (min-width: 900px) {
+  .settings-grid { column-count: 2; }
+}
 
 /* -- Corrections -------------------------- */
 .corrections-section { margin-top: 32px; border-top: 1px solid var(--border); padding-top: 16px; }
@@ -493,6 +497,7 @@
   font-family: var(--font-serif);
   font-size: 20px;
   font-weight: 600;
+  margin-top: 28px;
   margin-bottom: 12px;
 }
 

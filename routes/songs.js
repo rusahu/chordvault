@@ -1,9 +1,11 @@
 const express = require('express');
+const yazl = require('yazl');
 const { requireAuth, requireAdmin, optionalAuth, isAdminRole } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
 const { parseId, validateSongInput, validateVisibility, validateLanguage, parsePaginationParams } = require('../lib/validation');
 const { LANGUAGE_CODES } = require('../lib/languages');
 const { DEMO_MODE } = require('../lib/demo');
+const { makeUniqueNamer } = require('../lib/exportFilename');
 const Song = require('../lib/models/song');
 const User = require('../lib/models/user');
 
@@ -46,7 +48,7 @@ function resolveCorrectionWithAuth(req, res) {
   return { correction, original, originalId };
 }
 
-function createSongsRouter() {
+function createSongsRouter({ withSkipGlobal, exportLimiter }) {
   const router = express.Router();
 
   router.get('/songs', requireAuth, (req, res) => {
@@ -61,6 +63,27 @@ function createSongsRouter() {
     const userId = req.user ? req.user.id : 0;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
     res.json(Song.listPublic({ q, language, userId, page: pageNum, limit: limitNum }));
+  });
+
+  router.get('/songs/export', withSkipGlobal(exportLimiter), requireAuth, (req, res) => {
+    const isAdmin = isAdminRole(req.user.role);
+    const date = new Date().toISOString().slice(0, 10);
+    const zip = new yazl.ZipFile();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="chordvault-export-${date}.zip"`);
+    zip.outputStream.on('error', (err) => {
+      console.error('Export zip error:', err.message);
+      res.destroy(err);
+    });
+    zip.outputStream.pipe(res);
+    res.on('close', () => {
+      if (!res.writableFinished) zip.outputStream.destroy();
+    });
+    const nameFor = makeUniqueNamer();
+    for (const row of Song.iterateExportable(req.user.id, isAdmin)) {
+      zip.addBuffer(Buffer.from(row.content, 'utf8'), nameFor(row.title, row.id));
+    }
+    zip.end();
   });
 
   router.get('/users/:username/songs', (req, res) => {

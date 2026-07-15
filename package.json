@@ -1,6 +1,6 @@
 {
   "name": "chordvault",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "description": "Self-hosted chord sheet manager with transpose",
   "author": "Rudy Samuel",
   "license": "AGPL-3.0-or-later",
@@ -30,7 +30,8 @@
     "express": "^5.2.1",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
-    "opencc-js": "^1.4.1"
+    "opencc-js": "^1.4.1",
+    "yazl": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

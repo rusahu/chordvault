@@ -36,6 +36,7 @@ const {
   withSkipGlobal,
   authLimiter,
   registerLimiter,
+  exportLimiter,
 } = require('./lib/rateLimiter');
 
 app.set('trust proxy', 1);
@@ -50,7 +51,7 @@ app.use('/api/auth', createAuthRouter({
   authLimiter,
   registerLimiter,
 }));
-app.use('/api', createSongsRouter());
+app.use('/api', createSongsRouter({ withSkipGlobal, exportLimiter }));
 app.use('/api', createSetlistsRouter());
 app.use('/api', createAdminRouter());
 app.use('/api', createSettingsRouter());
