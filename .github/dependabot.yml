@@ -12,13 +12,8 @@ updates:
           - minor
           - patch
     ignore:
-      # TypeScript majors are held back: typescript-eslint 8.x reads TypeScript
-      # internals that TS 7 reshaped, so ESLint dies at module load with
-      # "Cannot read properties of undefined (reading 'Cjs')" before it parses
-      # a single file. Nothing in our own source needs changing.
-      # Remove this entry once typescript-eslint ships TS 7 support, then bump
-      # typescript and typescript-eslint together in one PR.
-      # Minor and patch TypeScript updates are unaffected.
+      # Held until typescript-eslint supports TS 7 — ESLint crashes at load.
+      # Then bump both together.
       - dependency-name: typescript
         update-types:
           - version-update:semver-major
@@ -26,6 +21,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Stay on LTS — Node 25+ breaks the jsdom tests. When moving, update
+      # Dockerfile, ci.yml, .nvmrc and engines together.
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
   - package-ecosystem: github-actions
     directory: /
     schedule:
