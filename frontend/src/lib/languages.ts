@@ -3,7 +3,7 @@ export interface Language {
   name: string;
 }
 
-// Backend copy: ../../languages.js — keep both in sync
+// Codes must match LANGUAGE_CODES in lib/languages.js (pinned by test/languages.test.js).
 export const LANGUAGES: Language[] = [
   { code: 'af', name: 'Afrikaans' },
   { code: 'am', name: 'Amharic' },
