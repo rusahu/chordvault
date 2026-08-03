@@ -3,10 +3,12 @@ import { escHtml } from './util';
 import { normalizeKey, normalizeChord } from './keys';
 import type { SetlistEntry, SetlistPreferences } from '../types';
 
-const PARSER_NAMES = [
-  { cls: 'ChordProParser', label: 'ChordPro' },
-  { cls: 'UltimateGuitarParser', label: 'Ultimate Guitar' },
-  { cls: 'ChordsOverWordsParser', label: 'Chords over lyrics' },
+// preserveWhitespace is only an option on UltimateGuitarParser; the other two take
+// no constructor arguments and accept their options on parse() instead.
+const PARSERS = [
+  { make: () => new ChordSheetJS.ChordProParser(), label: 'ChordPro' },
+  { make: () => new ChordSheetJS.UltimateGuitarParser({ preserveWhitespace: false }), label: 'Ultimate Guitar' },
+  { make: () => new ChordSheetJS.ChordsOverWordsParser(), label: 'Chords over lyrics' },
 ] as const;
 
 
@@ -94,12 +96,9 @@ export function parseSongAutoWithFormat(rawContent: string): { song: ChordSheetJ
   const order = isChordPro ? [0, 1, 2] : [1, 2, 0];
 
   for (const idx of order) {
-    const p = PARSER_NAMES[idx];
-    const ParserClass = (ChordSheetJS as Record<string, unknown>)[p.cls] as
-      (new (opts?: { preserveWhitespace?: boolean }) => { parse(s: string): ChordSheetJS.Song }) | undefined;
-    if (!ParserClass) continue;
+    const p = PARSERS[idx];
     try {
-      const song = new ParserClass({ preserveWhitespace: false }).parse(content);
+      const song = p.make().parse(content);
       const hasChords = song.paragraphs.some((par) =>
         par.lines.some((l) =>
           l.items.some((it) => {
