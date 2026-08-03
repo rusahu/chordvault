@@ -10,6 +10,9 @@ export const ENHARMONIC_MAP: Record<string, string> = {
   'Ab': 'G#',
   'A#': 'Bb',
   'D#': 'Eb',
+  // Transposing into Gb spells the IV chord Cb; the key badge already reads F#
+  'Cb': 'B',
+  'Cbm': 'Bm',
   'Dbm': 'C#m',
   'Gbm': 'F#m',
   'Abm': 'G#m',
