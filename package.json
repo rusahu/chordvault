@@ -9,7 +9,7 @@
     "url": "https://github.com/rusahu/chordvault.git"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=24.0.0"
   },
   "main": "server.js",
   "scripts": {

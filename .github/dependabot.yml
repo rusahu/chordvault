@@ -26,6 +26,16 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Stay on the Node LTS line. Unattended majors already walked this image
+      # 20 -> 25 -> 26 onto current-line releases while CI stayed on 20, and 25+
+      # enables Web Storage by default, which breaks the jsdom test environment.
+      # Move to the next LTS deliberately, updating Dockerfile, ci.yml, .nvmrc
+      # and engines together.
+      # Minor and patch updates still come through.
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
   - package-ecosystem: github-actions
     directory: /
     schedule:
