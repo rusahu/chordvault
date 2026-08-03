@@ -22,12 +22,10 @@
     "@lezer/highlight": "^1.2.3",
     "chordsheetjs": "^15.6.1",
     "codemirror": "^6.0.2",
-    "dotenv": "^17.4.2",
     "jspdf": "^4.2.1",
     "pdf-lib": "^1.17.1",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "use-fit-text": "^2.4.0"
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
