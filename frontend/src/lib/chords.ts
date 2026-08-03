@@ -409,7 +409,8 @@ export function autoFit(): { fontSize: number; twoCol: boolean } {
     if (twoCol) wrap.classList.add('two-col');
     else wrap.classList.remove('two-col');
     
-    if (offset) wrap.style.setProperty('--font-scale', String(1 + offset * 0.12));
+    const scale = fontScaleValue(offset);
+    if (scale) wrap.style.setProperty('--font-scale', scale);
     else wrap.style.removeProperty('--font-scale');
 
     // Calculate available height inside the wrap, accounting for padding (24px top + 24px bottom)
