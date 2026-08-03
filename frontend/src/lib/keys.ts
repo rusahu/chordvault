@@ -1,3 +1,5 @@
+import * as ChordSheetJS from 'chordsheetjs';
+
 export const ALL_KEYS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
 export const ALL_KEYS_MINOR = ['Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'Bbm', 'Bm'];
 
@@ -24,21 +26,15 @@ export function normalizeChord(chord: string): string {
   return chord.replace(/[A-G][b#]?m?/g, (m) => ENHARMONIC_MAP[m] || m);
 }
 
+// Key.distance returns an unsigned 0-11 semitone distance and resolves enharmonics
+// and minor keys itself, so no normalizeKey pre-pass is needed. It throws on
+// unparseable input. The wrap to a signed delta is ours, so picking a key a fifth
+// down stores -5 rather than 7.
 export function getTransposeDelta(fromKey: string, toKey: string): number {
-  const normFrom = normalizeKey(fromKey);
-  const normTo = normalizeKey(toKey);
-  if (normFrom === normTo) return 0;
-  
-  const isMinor = normFrom && normFrom.endsWith('m') && normFrom.length > 1;
-  const keys = isMinor ? ALL_KEYS_MINOR : ALL_KEYS;
-  
-  const fromIdx = keys.indexOf(normFrom);
-  const toIdx = keys.indexOf(normTo);
-  if (fromIdx === -1 || toIdx === -1) return 0;
-  
-  let delta = toIdx - fromIdx;
-  if (delta > 6) delta -= 12;
-  if (delta < -6) delta += 12;
-  
-  return delta;
+  try {
+    const delta = ChordSheetJS.Key.distance(fromKey, toKey);
+    return delta > 6 ? delta - 12 : delta;
+  } catch {
+    return 0;
+  }
 }

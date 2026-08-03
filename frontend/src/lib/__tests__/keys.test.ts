@@ -90,9 +90,27 @@ describe('keys library', () => {
       expect(getTransposeDelta('Cm', 'Gm')).toBe(-5);
     });
 
-    it('returns 0 for invalid keys', () => {
-      expect(getTransposeDelta('H', 'C')).toBe(0);
-      expect(getTransposeDelta('C', 'H')).toBe(0);
+    it('resolves the tritone upward in both directions', () => {
+      expect(getTransposeDelta('C', 'F#')).toBe(6);
+      expect(getTransposeDelta('F#', 'C')).toBe(6);
+    });
+
+    it('resolves enharmonic spellings without the accidental map', () => {
+      expect(getTransposeDelta('Db', 'D')).toBe(1);
+      expect(getTransposeDelta('Gb', 'G')).toBe(1);
+      expect(getTransposeDelta('Ebm', 'Fm')).toBe(2);
+    });
+
+    it('reads H as German notation for B natural', () => {
+      expect(getTransposeDelta('H', 'C')).toBe(1);
+      expect(getTransposeDelta('C', 'H')).toBe(-1);
+    });
+
+    it('returns 0 for unparseable keys', () => {
+      expect(getTransposeDelta('Chorus', 'C')).toBe(0);
+      expect(getTransposeDelta('C', 'Chorus')).toBe(0);
+      expect(getTransposeDelta('', 'C')).toBe(0);
+      expect(getTransposeDelta('C major', 'C')).toBe(0);
     });
   });
 });
