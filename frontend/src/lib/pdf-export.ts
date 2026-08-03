@@ -132,7 +132,7 @@ function autoFitForPdf(container: HTMLElement): void {
 
   // Try shrinking font with 2-column
   for (let offset = -1; offset >= -3; offset--) {
-    wrap.style.setProperty('--font-scale', String(1 + offset * 0.12));
+    wrap.style.setProperty('--font-scale', fontScaleValue(offset) as string);
     if (container.scrollHeight <= PAGE_CONTENT_PX) return;
   }
 

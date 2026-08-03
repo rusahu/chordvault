@@ -62,6 +62,26 @@ describe('keys library', () => {
     it('handles complex suffixes', () => {
       expect(normalizeChord('Abmaj7(#11)')).toBe('G#maj7(#11)');
     });
+
+    // Transposing to F# from G, A or B lands the library in Gb, which spells the
+    // IV chord Cb. The key badge already reads F#, so the sheet showed Cb under an
+    // F# heading. Nobody writes Cb on a chord chart.
+    it('rewrites Cb as B', () => {
+      expect(normalizeChord('Cb')).toBe('B');
+      expect(normalizeChord('Cb7')).toBe('B7');
+      expect(normalizeChord('Cbsus4')).toBe('Bsus4');
+    });
+
+    it('rewrites Cb as B when the suffix starts with m', () => {
+      // The root regex is /[A-G][b#]?m?/, so it swallows the m of "maj7" and looks
+      // up "Cbm" — a Cb entry alone leaves Cbmaj7 untouched.
+      expect(normalizeChord('Cbm')).toBe('Bm');
+      expect(normalizeChord('Cbmaj7')).toBe('Bmaj7');
+    });
+
+    it('rewrites Cb in the bass of a slash chord', () => {
+      expect(normalizeChord('G/Cb')).toBe('G/B');
+    });
   });
 
   describe('getTransposeDelta', () => {
@@ -70,29 +90,40 @@ describe('keys library', () => {
       expect(getTransposeDelta('C#', 'Db')).toBe(0);
     });
 
-    it('calculates shortest positive distance', () => {
+    it('always counts upward, never returning a negative', () => {
       expect(getTransposeDelta('C', 'D')).toBe(2);
-      expect(getTransposeDelta('C', 'F#')).toBe(6);
-    });
-
-    it('wraps distances greater than 6 to negative', () => {
-      expect(getTransposeDelta('C', 'G')).toBe(-5);
-      expect(getTransposeDelta('C', 'B')).toBe(-1);
-    });
-
-    it('wraps distances less than -6 to positive', () => {
+      expect(getTransposeDelta('C', 'G')).toBe(7);
+      expect(getTransposeDelta('C', 'B')).toBe(11);
       expect(getTransposeDelta('B', 'C')).toBe(1);
       expect(getTransposeDelta('G', 'C')).toBe(5);
     });
 
     it('handles minor keys correctly', () => {
       expect(getTransposeDelta('Am', 'Dm')).toBe(5);
-      expect(getTransposeDelta('Cm', 'Gm')).toBe(-5);
+      expect(getTransposeDelta('Cm', 'Gm')).toBe(7);
     });
 
-    it('returns 0 for invalid keys', () => {
-      expect(getTransposeDelta('H', 'C')).toBe(0);
-      expect(getTransposeDelta('C', 'H')).toBe(0);
+    it('gives the tritone as 6 in both directions', () => {
+      expect(getTransposeDelta('C', 'F#')).toBe(6);
+      expect(getTransposeDelta('F#', 'C')).toBe(6);
+    });
+
+    it('resolves enharmonic spellings without the accidental map', () => {
+      expect(getTransposeDelta('Db', 'D')).toBe(1);
+      expect(getTransposeDelta('Gb', 'G')).toBe(1);
+      expect(getTransposeDelta('Ebm', 'Fm')).toBe(2);
+    });
+
+    it('reads H as German notation for B natural', () => {
+      expect(getTransposeDelta('H', 'C')).toBe(1);
+      expect(getTransposeDelta('C', 'H')).toBe(11);
+    });
+
+    it('returns 0 for unparseable keys', () => {
+      expect(getTransposeDelta('Chorus', 'C')).toBe(0);
+      expect(getTransposeDelta('C', 'Chorus')).toBe(0);
+      expect(getTransposeDelta('', 'C')).toBe(0);
+      expect(getTransposeDelta('C major', 'C')).toBe(0);
     });
   });
 });
