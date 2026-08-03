@@ -90,27 +90,20 @@ describe('keys library', () => {
       expect(getTransposeDelta('C#', 'Db')).toBe(0);
     });
 
-    it('calculates shortest positive distance', () => {
+    it('always counts upward, never returning a negative', () => {
       expect(getTransposeDelta('C', 'D')).toBe(2);
-      expect(getTransposeDelta('C', 'F#')).toBe(6);
-    });
-
-    it('wraps distances greater than 6 to negative', () => {
-      expect(getTransposeDelta('C', 'G')).toBe(-5);
-      expect(getTransposeDelta('C', 'B')).toBe(-1);
-    });
-
-    it('wraps distances less than -6 to positive', () => {
+      expect(getTransposeDelta('C', 'G')).toBe(7);
+      expect(getTransposeDelta('C', 'B')).toBe(11);
       expect(getTransposeDelta('B', 'C')).toBe(1);
       expect(getTransposeDelta('G', 'C')).toBe(5);
     });
 
     it('handles minor keys correctly', () => {
       expect(getTransposeDelta('Am', 'Dm')).toBe(5);
-      expect(getTransposeDelta('Cm', 'Gm')).toBe(-5);
+      expect(getTransposeDelta('Cm', 'Gm')).toBe(7);
     });
 
-    it('resolves the tritone upward in both directions', () => {
+    it('gives the tritone as 6 in both directions', () => {
       expect(getTransposeDelta('C', 'F#')).toBe(6);
       expect(getTransposeDelta('F#', 'C')).toBe(6);
     });
@@ -123,7 +116,7 @@ describe('keys library', () => {
 
     it('reads H as German notation for B natural', () => {
       expect(getTransposeDelta('H', 'C')).toBe(1);
-      expect(getTransposeDelta('C', 'H')).toBe(-1);
+      expect(getTransposeDelta('C', 'H')).toBe(11);
     });
 
     it('returns 0 for unparseable keys', () => {

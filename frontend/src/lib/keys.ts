@@ -10,7 +10,6 @@ export const ENHARMONIC_MAP: Record<string, string> = {
   'Ab': 'G#',
   'A#': 'Bb',
   'D#': 'Eb',
-  // Transposing into Gb spells the IV chord Cb; the key badge already reads F#
   'Cb': 'B',
   'Cbm': 'Bm',
   'Dbm': 'C#m',
@@ -29,14 +28,9 @@ export function normalizeChord(chord: string): string {
   return chord.replace(/[A-G][b#]?m?/g, (m) => ENHARMONIC_MAP[m] || m);
 }
 
-// Key.distance returns an unsigned 0-11 semitone distance and resolves enharmonics
-// and minor keys itself, so no normalizeKey pre-pass is needed. It throws on
-// unparseable input. The wrap to a signed delta is ours, so picking a key a fifth
-// down stores -5 rather than 7.
 export function getTransposeDelta(fromKey: string, toKey: string): number {
   try {
-    const delta = ChordSheetJS.Key.distance(fromKey, toKey);
-    return delta > 6 ? delta - 12 : delta;
+    return ChordSheetJS.Key.distance(fromKey, toKey);
   } catch {
     return 0;
   }
