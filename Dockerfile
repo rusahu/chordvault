@@ -1,5 +1,5 @@
 # Stage 1: Build frontend
-FROM node:26-alpine AS frontend
+FROM node:24-alpine AS frontend
 WORKDIR /app/frontend
 COPY frontend/package*.json frontend/.npmrc ./
 RUN npm ci
@@ -7,14 +7,14 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Build backend native deps
-FROM node:26-alpine AS backend
+FROM node:24-alpine AS backend
 RUN apk add --no-cache python3 make g++
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --production
 
 # Stage 3: Final
-FROM node:26-alpine
+FROM node:24-alpine
 RUN apk add --no-cache su-exec
 WORKDIR /app
 COPY --from=backend /app/node_modules ./node_modules
