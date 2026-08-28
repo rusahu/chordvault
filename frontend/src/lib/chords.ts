@@ -342,6 +342,27 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
   }
 }
 
+/** Return the unique playable chord symbols in first-appearance order. */
+export function extractSongChords(content: string, semitones = 0): string[] {
+  const song = prepareSong(content, semitones, false);
+  if (!song) return [];
+
+  const result: string[] = [];
+  const seen = new Set<string>();
+  song.mapChordLyricsPairs((pair) => {
+    const value = (pair as unknown as { chords?: string }).chords?.trim();
+    if (!value || SECTION_LABEL_RE.test(value)) return pair;
+    const chord = normalizeChord(value);
+    const isChordSymbol = /^[A-G][b#]?(?:(?:maj|min|dim|aug|sus|add|alt|no|m)|\d+|[#b]\d+|\([^)]*\)|\/[A-G][b#]?|\/\d+)*$/.test(chord);
+    if (isChordSymbol && !seen.has(chord)) {
+      seen.add(chord);
+      result.push(chord);
+    }
+    return pair;
+  });
+  return result;
+}
+
 export function fixChordAccidentals(song: ChordSheetJS.Song): void {
   song.mapChordLyricsPairs((pair) => {
     const it = pair as unknown as { chords?: string };

@@ -8,10 +8,11 @@ import { useFontScale } from '../hooks/useFontScale';
 import { useTwoCol } from '../hooks/useTwoCol';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { ChordSheet } from '../components/ChordSheet';
+import { ChordDiagrams } from '../components/ChordDiagrams';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
 import { AddToSetlistModal } from '../components/AddToSetlistModal';
-import { renderChordPro, songHasKey, autoFit } from '../lib/chords';
+import { renderChordPro, songHasKey, autoFit, extractSongChords } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction } from '../types';
 
@@ -79,6 +80,10 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const renderedHtml = useMemo(
     () => renderChordPro(content, chord.transpose, chord.nashville),
     [content, chord.transpose, chord.nashville]
+  );
+  const usedChords = useMemo(
+    () => extractSongChords(content, chord.transpose),
+    [content, chord.transpose]
   );
 
   const shortcuts = useMemo(() => ({
@@ -214,6 +219,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
         onExportPdf={handleExportPdf}
         renderKey={songId}
       />
+
+      <ChordDiagrams chords={usedChords} />
 
       <ChordSheet 
         html={renderedHtml} 
