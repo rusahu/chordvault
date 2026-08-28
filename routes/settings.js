@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const User = require('../lib/models/user');
 const { requireAuth } = require('../lib/auth');
 const { LIMITS, GEMINI_MODELS, isValidGeminiModel, resolveGeminiModel } = require('../lib/constants');
-const { validatePreferredLanguages } = require('../lib/validation');
+const { validatePreferredLanguages, validateGeminiApiKey } = require('../lib/validation');
 const { LANGUAGE_CODES } = require('../lib/languages');
 const { AppError } = require('../lib/errors');
 const { parseDataUrl, stripFences, callGemini } = require('../lib/gemini');
@@ -134,10 +134,8 @@ function createSettingsRouter() {
 
   router.put('/settings/gemini-key', requireAuth, (req, res) => {
     const { api_key } = req.body;
-    if (!api_key || typeof api_key !== 'string') return res.status(400).json({ error: 'API key is required' });
-    if (!api_key.startsWith('AIza') || api_key.length < LIMITS.GEMINI_KEY_MIN || api_key.length > LIMITS.GEMINI_KEY_MAX) {
-      return res.status(400).json({ error: 'Invalid Gemini API key format' });
-    }
+    const error = validateGeminiApiKey(api_key);
+    if (error) return res.status(400).json({ error });
     const encrypted = encryptApiKey(api_key);
     User.updateGeminiApiKey(req.user.id, encrypted);
     res.json({ success: true });
