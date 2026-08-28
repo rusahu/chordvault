@@ -6,6 +6,7 @@ const KEYS = {
   fontsize: 'cv_fontsize',
   localSetlists: 'cv_local_setlists',
   setlistOverrides: 'cv_setlist_overrides',
+  chordDiagramsExpanded: 'cv_chord_diagrams_expanded',
 } as const;
 
 export function getStoredUser(): User | null {
@@ -32,11 +33,27 @@ export function setStoredTheme(theme: 'dark' | 'light'): void {
 }
 
 export function getStoredFontSize(): number {
-  return parseInt(localStorage.getItem(KEYS.fontsize) || '0') || 0;
+  try {
+    return parseInt(localStorage.getItem(KEYS.fontsize) || '0') || 0;
+  } catch { return 0; }
 }
 
 export function setStoredFontSize(size: number): void {
-  localStorage.setItem(KEYS.fontsize, String(size));
+  try {
+    localStorage.setItem(KEYS.fontsize, String(size));
+  } catch {}
+}
+
+export function getChordDiagramsExpanded(): boolean {
+  try {
+    return localStorage.getItem(KEYS.chordDiagramsExpanded) === 'true';
+  } catch { return false; }
+}
+
+export function setChordDiagramsExpanded(expanded: boolean): void {
+  try {
+    localStorage.setItem(KEYS.chordDiagramsExpanded, String(expanded));
+  } catch {}
 }
 
 export function getLocalSetlists(): LocalSetlist[] {

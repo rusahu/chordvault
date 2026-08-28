@@ -39,6 +39,8 @@
   "songView.nashville": "Number",
   "songView.nashvilleNoKey": "Number notation requires a {key} directive in the song",
   "songView.addToSetlist": "Setlist",
+  "songView.chordsUsed": "Chords used",
+  "songView.fingeringUnavailable": "Fingering unavailable",
 
   "songEdit.cancel": "Cancel",
   "songEdit.editSong": "✎ Edit Song",
