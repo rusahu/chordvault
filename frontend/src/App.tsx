@@ -143,7 +143,7 @@ export function App() {
       case 'song-view':
         return params.id ? <SongView songId={parseInt(params.id)} navigate={navigate} /> : <BrowseView navigate={navigate} />;
       case 'song-edit':
-        return <SongEditView songId={params.id ? parseInt(params.id) : undefined} navigate={navigate} />;
+        return <SongEditView songId={params.id ? parseInt(params.id) : undefined} openImport={params.import === '1'} navigate={navigate} />;
       case 'correction':
         return params.id ? <CorrectionView songId={parseInt(params.id)} navigate={navigate} /> : <BrowseView navigate={navigate} />;
       case 'auth':

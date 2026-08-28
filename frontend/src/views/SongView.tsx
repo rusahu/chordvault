@@ -11,9 +11,10 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
 import { AddToSetlistModal } from '../components/AddToSetlistModal';
-import { renderChordPro, songHasKey, autoFit } from '../lib/chords';
+import { renderChordPro, songHasKey, autoFit, extractDirective } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction } from '../types';
+import { safeExternalHttpUrl } from '../lib/util';
 
 interface SongViewProps {
   songId: number;
@@ -141,6 +142,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
   if (!song) return <Loading />;
 
+  const sourceUrl = safeExternalHttpUrl(extractDirective(song.content, 'x_source'));
+
   return (
     <div lang={song.language || undefined}>
       <div className="song-view-header">
@@ -222,10 +225,11 @@ export function SongView({ songId, navigate }: SongViewProps) {
         autoFit={autoFitActive} 
       />
 
-      {(song.tags || song.youtube_url) && (
+      {(song.tags || song.youtube_url || sourceUrl) && (
         <div className="song-view-meta song-view-meta-bottom">
           {song.tags && song.tags.split(',').map((tag) => <span key={tag} className="badge badge-tag">{tag}</span>)}
           {song.youtube_url && <a href={song.youtube_url} target="_blank" rel="noopener" className="yt-link">&#9654; YouTube</a>}
+          {sourceUrl && <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="source-link">Original source</a>}
         </div>
       )}
 

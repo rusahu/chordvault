@@ -95,6 +95,7 @@ export function MySongsView({ navigate }: MySongsViewProps) {
           )}
         </div>
         <button className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { import: '1' })}>Import Song</button>
         <button className="btn btn-sm" onClick={() => navigate('song-edit')}>{t('songs.newSong')}</button>
       </div>
       <div className="song-grid">

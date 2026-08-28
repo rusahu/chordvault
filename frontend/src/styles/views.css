@@ -433,6 +433,13 @@
 }
 .yt-link:hover { background: var(--border); }
 
+.source-link {
+  display: inline-block; margin-left: 6px; padding: 2px 8px; font-size: 12px; font-weight: 500;
+  color: var(--accent); background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); text-decoration: none; vertical-align: middle;
+}
+.source-link:hover { background: var(--border); }
+
 /* -- Edit Form ---------------------------- */
 .edit-header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
 .edit-header h2 { font-family: var(--font-serif); font-size: 24px; flex: 1; }

@@ -14,10 +14,11 @@ describe('extractDirective', () => {
   });
 
   it('handles x_ custom directives', () => {
-    const content = '{x_tags: worship,praise}\n{x_language: en}\n{x_youtube: https://yt.com/abc}';
+    const content = '{x_tags: worship,praise}\n{x_language: en}\n{x_youtube: https://yt.com/abc}\n{x_source: https://example.com/song}';
     expect(extractDirective(content, 'x_tags')).toBe('worship,praise');
     expect(extractDirective(content, 'x_language')).toBe('en');
     expect(extractDirective(content, 'x_youtube')).toBe('https://yt.com/abc');
+    expect(extractDirective(content, 'x_source')).toBe('https://example.com/song');
   });
 
   it('trims whitespace around value', () => {
@@ -31,6 +32,13 @@ describe('extractDirective', () => {
 
   it('returns null for empty content', () => {
     expect(extractDirective('', 'title')).toBeNull();
+  });
+});
+
+describe('source provenance', () => {
+  it('survives conversion to ChordPro', () => {
+    const content = '{title: Test}\n{x_source: https://example.com/song}\n\n[G]Hello';
+    expect(toChordPro(content)).toContain('{x_source: https://example.com/song}');
   });
 });
 
