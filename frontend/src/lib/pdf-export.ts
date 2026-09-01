@@ -94,6 +94,7 @@ export async function exportSetlistPdf(
       twoCol: false,
       fontSize: globalSettings.fontSize,
       hideYt: false,
+      hideChords: false,
     });
     const content = entry.content_override || entry.content;
     parts.push(await renderOne(content, entry.transpose, prefs.nashville, prefs.fontSize));

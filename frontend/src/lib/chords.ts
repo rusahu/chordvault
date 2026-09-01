@@ -479,6 +479,7 @@ export function resolveEffectivePreferences(
     nashville: entry._num != null ? !!entry._num : global.nashville,
     twoCol: entry._twoCol != null ? entry._twoCol : (entry.two_col != null ? !!entry.two_col : global.twoCol),
     fontSize: entry._font != null ? entry._font : (entry.font != null ? entry.font : global.fontSize),
-    hideYt: entry._hideYt != null ? entry._hideYt : global.hideYt,
+    hideYt: entry._hideYt != null ? !!entry._hideYt : global.hideYt,
+    hideChords: entry._hideChords != null ? !!entry._hideChords : global.hideChords,
   };
 }

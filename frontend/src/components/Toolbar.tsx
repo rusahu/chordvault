@@ -8,6 +8,8 @@ interface ToolbarProps {
   onNashvilleChange: (checked: boolean) => void;
   twoCol: boolean;
   onTwoColToggle: () => void;
+  hideChords?: boolean;
+  onHideChordsToggle?: () => void;
   fontSize: number;
   onFontChange: (delta: number) => void;
   onReset: () => void;
@@ -19,7 +21,7 @@ interface ToolbarProps {
   onExportPdf?: () => void;
   onToggleSettings?: () => void;
   isModified?: boolean;
-  overrides?: { num?: boolean; twoCol?: boolean; font?: boolean };
+  overrides?: { num?: boolean; twoCol?: boolean; font?: boolean; hideChords?: boolean };
   settingsActive?: boolean;
   renderKey?: number | string;
 }
@@ -31,6 +33,8 @@ export function Toolbar({
   onNashvilleChange,
   twoCol,
   onTwoColToggle,
+  hideChords,
+  onHideChordsToggle,
   fontSize,
   onFontChange,
   onReset,
@@ -80,6 +84,15 @@ export function Toolbar({
         >
           &#124;&#124;
         </button>
+        {onHideChordsToggle && (
+          <button
+            className={`transpose-btn col-toggle${hideChords ? ' active' : ''}${ov.hideChords ? ' overridden' : ''}`}
+            onClick={onHideChordsToggle}
+            title={hideChords ? 'Show chords' : 'Hide chords'}
+          >
+            CH
+          </button>
+        )}
         <button
           className={`transpose-btn font-btn${ov.font ? ' overridden' : ''}`}
           onClick={() => onFontChange(-1)}

@@ -3,6 +3,8 @@ interface SettingsPanelProps {
   onNashvilleChange: (val: boolean) => void;
   hideYt: boolean;
   onHideYtChange: (val: boolean) => void;
+  hideChords: boolean;
+  onHideChordsChange: (val: boolean) => void;
   twoCol: boolean;
   onTwoColChange: (val: boolean) => void;
   fontSize: number;
@@ -15,6 +17,8 @@ export function SettingsPanel({
   onNashvilleChange,
   hideYt,
   onHideYtChange,
+  hideChords,
+  onHideChordsChange,
   twoCol,
   onTwoColChange,
   fontSize,
@@ -35,6 +39,13 @@ export function SettingsPanel({
         <span>Hide YouTube</span>
         <span className="toggle">
           <input type="checkbox" checked={hideYt} onChange={(e) => onHideYtChange(e.target.checked)} />
+          <span className="toggle-slider" />
+        </span>
+      </label>
+      <label className="sl-option">
+        <span>Hide chords</span>
+        <span className="toggle">
+          <input type="checkbox" checked={hideChords} onChange={(e) => onHideChordsChange(e.target.checked)} />
           <span className="toggle-slider" />
         </span>
       </label>

@@ -99,6 +99,16 @@
   min-height: 0;
 }
 
+/* -- Lyrics-only mode (hide chords) -------------------------- */
+.chord-sheet-wrap.hide-chords .chord {
+  display: none;
+}
+
+/* Collapse rows that only contained chords (intros, instrumental breaks) */
+.chord-sheet-wrap.hide-chords .row:has(.lyrics:empty) {
+  display: none;
+}
+
 .chord-sheet .comment,
 .chord-sheet .tag {
   color: var(--muted);
