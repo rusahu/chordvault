@@ -26,7 +26,7 @@ vi.mock('../../components/EditorPreview', () => ({
 
 // Mock OcrModal
 vi.mock('../../components/OcrModal', () => ({
-  OcrModal: () => null,
+  ImportSongModal: () => null,
 }));
 
 // Mock hooks — stable references to avoid infinite re-renders from effect deps

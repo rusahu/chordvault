@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useSongEditor } from '../hooks/useSongEditor';
 import { TagPicker } from '../components/TagPicker';
 import { LanguagePicker } from '../components/LanguagePicker';
-import { OcrModal } from '../components/OcrModal';
+import { ImportSongModal } from '../components/OcrModal';
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor';
 import { EditorPreview } from '../components/EditorPreview';
 import { detectFormat, toChordPro, ensureKeyDirective, extractDirective, updateDirective } from '../lib/chords';
@@ -15,10 +15,11 @@ import type { Song } from '../types';
 
 interface SongEditViewProps {
   songId?: number;
+  openImport?: boolean;
   navigate: (view: string, params?: Record<string, string>) => void;
 }
 
-export function SongEditView({ songId, navigate }: SongEditViewProps) {
+export function SongEditView({ songId, openImport = false, navigate }: SongEditViewProps) {
   const apiCall = useApi();
   const { user } = useAuth();
   const { t } = useI18n();
@@ -26,7 +27,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const [song, setSong] = useState<Song | null>(null);
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [preferredLanguages, setPreferredLanguages] = useState<string[]>([]);
-  const [ocrOpen, setOcrOpen] = useState(false);
+  const [ocrOpen, setOcrOpen] = useState(openImport);
   const [hasGeminiKey, setHasGeminiKey] = useState(false);
   const { theme } = useTheme();
   const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
@@ -212,7 +213,7 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         </div>
         {user && (
           <div className="ocr-row">
-            <button className="btn btn-sm btn-ghost" onClick={() => setOcrOpen(true)}>&#128247; Import from image or PDF</button>
+            <button className="btn btn-sm btn-ghost" onClick={() => setOcrOpen(true)}>&#8681; Import Song</button>
           </div>
         )}
         <div className="editor-tabs" role="tablist">
@@ -250,12 +251,16 @@ export function SongEditView({ songId, navigate }: SongEditViewProps) {
         </>
       )}
       {ocrOpen && (
-        <OcrModal
+        <ImportSongModal
           hasGeminiKey={hasGeminiKey}
           onResult={(text, lang) => {
+            if (state.content.trim() && !confirm('Replace the current editor content with the imported chord sheet?')) {
+              return false;
+            }
             let c = text;
             if (lang && !extractDirective(c, 'x_language')) c = updateDirective(c, 'x_language', lang);
             setInitialContent(c);
+            return true;
           }}
           onClose={() => setOcrOpen(false)}
         />

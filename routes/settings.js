@@ -6,8 +6,15 @@ const { LIMITS, GEMINI_MODELS, isValidGeminiModel, resolveGeminiModel } = requir
 const { validatePreferredLanguages } = require('../lib/validation');
 const { LANGUAGE_CODES } = require('../lib/languages');
 const { AppError } = require('../lib/errors');
-const { parseDataUrl, stripFences, callGemini } = require('../lib/gemini');
+const { parseDataUrl, stripFences, callGemini, callGeminiDetailed } = require('../lib/gemini');
 const { jsonToChordPro } = require('../lib/ocr-convert');
+const {
+  validateImportUrl,
+  assertUrlRetrieved,
+  supportsToolStructuredOutput,
+  finalizeUrlChordPro,
+  convertUrlImportResult,
+} = require('../lib/url-import');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -93,6 +100,24 @@ RULES:
 - Preserve repeat markers as plain text.
 
 Return ONLY the ChordPro text, no explanations or markdown code fences.`;
+
+const URL_IMPORT_PROMPT = `You are a chord sheet extraction tool. Read the public webpage or PDF at the URL below and extract the chord sheet into structured JSON.
+
+For each lyric line, break it into segments. Each segment is a chord followed by the lyrics that play under that chord, up to the next chord.
+
+RULES:
+- Extract only the song and arrangement shown at the supplied URL; ignore navigation, advertisements, comments, and unrelated page text.
+- Transcribe chords exactly as shown and never invent missing lyrics or chords.
+- Preserve chord placement relative to the lyric word or syllable it belongs to.
+- Include section labels, chord-only lines, repeat markers, and clearly stated metadata.
+- Set language to the ISO 639-1 code of the lyrics language.
+- If the page does not contain a chord sheet, do not fabricate one.`;
+
+const URL_IMPORT_TEXT_PROMPT = `${OCR_REFINE_PROMPT}
+
+Read the public webpage or PDF at the URL below. Extract only its chord sheet; ignore navigation, advertisements, comments, and unrelated page text. If it does not contain a chord sheet, do not fabricate one.`;
+
+const URL_CONTEXT_TOOL = [{ url_context: {} }];
 
 /** Derives a 256-bit encryption key from JWT_SECRET using PBKDF2. */
 function deriveEncKey() {
@@ -266,6 +291,81 @@ function createSettingsRouter() {
     res.json({ text: cleanedText, language: detectedLang });
   });
 
+  router.post('/import/url', requireAuth, async (req, res) => {
+    const validation = validateImportUrl(req.body?.url);
+    if (validation.error) return res.status(400).json({ error: validation.error });
+
+    const user = User.getFullById(req.user.id);
+    if (!user?.gemini_api_key) {
+      return res.status(400).json({ error: 'No Gemini API key configured. Add one in Settings.' });
+    }
+
+    let apiKey;
+    try { apiKey = decryptApiKey(user.gemini_api_key); }
+    catch { return res.status(500).json({ error: 'Failed to decrypt API key. Try re-saving it in Settings.' }); }
+
+    const model = resolveGeminiModel(req.body?.model, user.gemini_model);
+    const structured = supportsToolStructuredOutput(model);
+    const result = await callGeminiDetailed({
+      apiKey,
+      model,
+      contents: [{
+        parts: [{ text: `${structured ? URL_IMPORT_PROMPT : URL_IMPORT_TEXT_PROMPT}\n\nSource URL: ${validation.url}` }],
+      }],
+      tools: URL_CONTEXT_TOOL,
+      schema: structured ? OCR_JSON_SCHEMA : undefined,
+      subject: 'URL',
+      retryHint: 'Check that the page is public and contains a chord sheet.',
+    });
+    assertUrlRetrieved(result.candidate);
+
+    const converted = convertUrlImportResult(result.text, structured, validation.url);
+    res.json({ ...converted, sourceUrl: validation.url });
+  });
+
+  router.post('/import/url/refine', requireAuth, async (req, res) => {
+    const validation = validateImportUrl(req.body?.url);
+    if (validation.error) return res.status(400).json({ error: validation.error });
+    const { history, message } = req.body;
+    if (!message || typeof message !== 'string' || !Array.isArray(history)) {
+      return res.status(400).json({ error: 'url, history, and message are required' });
+    }
+    if (message.length > 2000) return res.status(400).json({ error: 'Message too long (max 2000 chars)' });
+    if (history.length > 20) return res.status(400).json({ error: 'Conversation too long. Start a new extraction.' });
+
+    const user = User.getFullById(req.user.id);
+    if (!user?.gemini_api_key) return res.status(400).json({ error: 'No Gemini API key configured.' });
+
+    let apiKey;
+    try { apiKey = decryptApiKey(user.gemini_api_key); }
+    catch { return res.status(500).json({ error: 'Failed to decrypt API key.' }); }
+
+    const contents = [{
+      role: 'user',
+      parts: [{ text: `${URL_IMPORT_TEXT_PROMPT}\n\nSource URL: ${validation.url}` }],
+    }];
+    for (const item of history) {
+      if ((item.role === 'model' || item.role === 'user') && typeof item.text === 'string') {
+        contents.push({ role: item.role, parts: [{ text: item.text }] });
+      }
+    }
+    contents.push({
+      role: 'user',
+      parts: [{ text: `Apply this correction to the chord sheet:\n\n${message}\n\nReturn the FULL corrected ChordPro text only.` }],
+    });
+
+    const result = await callGeminiDetailed({
+      apiKey,
+      model: resolveGeminiModel(req.body?.model, user.gemini_model),
+      contents,
+      tools: URL_CONTEXT_TOOL,
+      subject: 'URL',
+      retryHint: 'Try rephrasing your correction.',
+    });
+    assertUrlRetrieved(result.candidate);
+    res.json({ text: finalizeUrlChordPro(result.text, validation.url) });
+  });
+
   // Refinement endpoint — multi-turn conversation with image context
   router.post('/ocr/gemini/refine', requireAuth, express.json({ limit: LIMITS.MAX_BODY_JSON }), async (req, res) => {
     const { image, history, message, model: requestModel } = req.body;
@@ -317,4 +417,11 @@ function createSettingsRouter() {
   return router;
 }
 
-module.exports = { createSettingsRouter, DEFAULT_OCR_PROMPT, OCR_REFINE_PROMPT, OCR_JSON_SCHEMA };
+module.exports = {
+  createSettingsRouter,
+  DEFAULT_OCR_PROMPT,
+  OCR_REFINE_PROMPT,
+  OCR_JSON_SCHEMA,
+  URL_IMPORT_PROMPT,
+  URL_IMPORT_TEXT_PROMPT,
+};

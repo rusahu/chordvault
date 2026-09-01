@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { parseDataUrl, stripFences, callGemini } = require('../lib/gemini');
+const { parseDataUrl, stripFences, callGemini, callGeminiDetailed } = require('../lib/gemini');
 
 test('parseDataUrl splits a png data URL', () => {
   assert.deepEqual(parseDataUrl('data:image/png;base64,AAAA'), {
@@ -97,6 +97,30 @@ test('callGemini sends a response schema only when one is given', async () => {
   assert.equal(bodies[0].generationConfig, undefined);
   assert.equal(bodies[1].generationConfig.response_mime_type, 'application/json');
   assert.deepEqual(bodies[1].generationConfig.response_schema, { type: 'OBJECT' });
+});
+
+test('callGeminiDetailed includes tools and returns URL metadata', async () => {
+  let body;
+  const candidate = {
+    finishReason: 'STOP',
+    content: { parts: [{ text: '[G]hello' }] },
+    urlContextMetadata: { urlMetadata: [{ urlRetrievalStatus: 'URL_RETRIEVAL_STATUS_SUCCESS' }] },
+  };
+  const restore = stubFetch(async (_url, opts) => {
+    body = JSON.parse(opts.body);
+    return okResponse({ candidates: [candidate] });
+  });
+  try {
+    const result = await callGeminiDetailed({
+      ...ARGS,
+      tools: [{ url_context: {} }],
+    });
+    assert.deepEqual(body.tools, [{ url_context: {} }]);
+    assert.equal(result.text, '[G]hello');
+    assert.equal(result.candidate, candidate);
+  } finally {
+    restore();
+  }
 });
 
 test('callGemini surfaces the API error message on a non-OK response', async () => {

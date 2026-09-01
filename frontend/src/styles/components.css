@@ -443,6 +443,36 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   overflow-y: auto;
 }
 
+.import-source-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 18px;
+  background: var(--surface2);
+  border-radius: var(--radius);
+}
+
+.import-source-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.import-source-tab.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.import-source-help { margin-top: 6px; font-size: 12px; }
+.import-file-preview { padding: 12px; background: var(--surface2); border-radius: 8px; }
+.import-key-warning { margin-bottom: 12px; padding: 10px; background: var(--surface2); border-radius: 8px; }
+.import-result-label { display: block; margin-bottom: 5px; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+
 .ocr-preview {
   max-height: 200px;
   max-width: 100%;
@@ -639,4 +669,3 @@ input[type="search"]::-webkit-search-cancel-button {
 .search-clear-btn:hover {
   color: var(--text);
 }
-
