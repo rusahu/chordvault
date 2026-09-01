@@ -9,9 +9,10 @@ const insertSong = db.prepare(
 );
 const u = insertUser.run('u').lastInsertRowid;
 
-test('songs_search has a pinyin column', () => {
+test('songs_search has pinyin and tags columns', () => {
   const cols = db.prepare('PRAGMA table_info(songs_search)').all().map((c) => c.name);
   assert.ok(cols.includes('pinyin'), `columns were: ${cols.join(',')}`);
+  assert.ok(cols.includes('tags'), `columns were: ${cols.join(',')}`);
 });
 
 test('insert populates pinyin as space-stripped toneless lowercase (title+artist)', () => {
@@ -28,7 +29,7 @@ test('update recomputes pinyin', () => {
   assert.equal(row.pinyin, 'xile');
 });
 
-test('migration: legacy 3-column songs_search is rebuilt with pinyin populated', () => {
+test('migration: a search index without tags is rebuilt with tags and pinyin populated', () => {
   const Database = require('better-sqlite3');
   const path = require('node:path');
   const os = require('node:os');
@@ -36,14 +37,14 @@ test('migration: legacy 3-column songs_search is rebuilt with pinyin populated',
   const file = path.join(os.tmpdir(), `cv-migrate-${process.pid}.db`);
   fs.rmSync(file, { force: true });
 
-  // Build a legacy DB: songs table + OLD 3-column FTS with one row.
+  // Build a legacy DB: songs table + pinyin-era FTS without tags.
   const legacy = new Database(file);
   legacy.exec(`
     CREATE TABLE songs (id INTEGER PRIMARY KEY, user_id, title, artist, key, content,
       visibility, parent_id, youtube_url, format_detected, bpm, tags, language, status,
       content_hash, created_at, updated_at);
-    CREATE VIRTUAL TABLE songs_search USING fts5(title, artist, lyrics, tokenize='trigram');
-    INSERT INTO songs (id, title, artist, content, visibility, status) VALUES (1, '喜樂', '', 'x', 'public', 'active');
+    CREATE VIRTUAL TABLE songs_search USING fts5(title, artist, lyrics, pinyin, tokenize='trigram');
+    INSERT INTO songs (id, title, artist, content, tags, visibility, status) VALUES (1, '喜樂', '', 'x', 'Joyful', 'public', 'active');
   `);
   legacy.close();
 
@@ -53,12 +54,14 @@ test('migration: legacy 3-column songs_search is rebuilt with pinyin populated',
     process.env.DB_PATH = ${JSON.stringify(file)};
     const { db } = require(${JSON.stringify(path.resolve(__dirname, '../lib/db.js'))});
     const cols = db.prepare('PRAGMA table_info(songs_search)').all().map(c => c.name);
-    const row = db.prepare('SELECT pinyin FROM songs_search WHERE rowid = 1').get();
-    console.log(JSON.stringify({ cols, pinyin: row && row.pinyin }));
+    const row = db.prepare('SELECT pinyin, tags FROM songs_search WHERE rowid = 1').get();
+    console.log(JSON.stringify({ cols, pinyin: row && row.pinyin, tags: row && row.tags }));
   `]).toString();
   fs.rmSync(file, { force: true });
 
   const res = JSON.parse(out.trim().split('\n').pop());
   assert.ok(res.cols.includes('pinyin'));
+  assert.ok(res.cols.includes('tags'));
   assert.equal(res.pinyin, 'xile');
+  assert.equal(res.tags, 'Joyful');
 });
