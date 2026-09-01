@@ -75,6 +75,22 @@
   box-shadow: var(--ui-shadow);
 }
 
+.gemini-key-status {
+  display: inline-flex;
+  margin-bottom: 12px;
+  padding: 5px 10px;
+  border-radius: var(--badge-radius);
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.gemini-key-status.configured {
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  color: var(--success);
+}
+
 .auth-logo {
   font-family: var(--font-serif);
   font-size: 36px;
