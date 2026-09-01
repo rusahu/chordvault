@@ -29,14 +29,14 @@
     "express": "^5.2.1",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
-    "opencc-js": "^1.4.1",
-    "pinyin-pro": "^3.29.2",
+    "opencc-js": "^1.4.2",
+    "pinyin-pro": "^3.29.3",
     "yazl": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "concurrently": "^10.0.5",
-    "eslint": "^10.8.1",
+    "eslint": "^10.9.1",
     "husky": "^9.1.7",
     "lint-staged": "^17.3.0",
     "playwright": "^1.62.1",
