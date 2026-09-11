@@ -26,6 +26,32 @@ describe('stepKey', () => {
     expect(stepKey('Chorus', 1)).toBe('Chorus');
   });
 
+  // These keys are outside the picker's table, so the table lookup misses and
+  // the buttons used to be dead on them permanently — a regression against the
+  // pre-1.23.0 handler, which was plain arithmetic on a delta and never cared
+  // what the key was called. 'H' is writable by the migration, so an entry
+  // could be stuck in a key it could not be stepped out of.
+  it('steps a key the picker table does not hold', () => {
+    expect(stepKey('H', 1)).toBe('C');
+    expect(stepKey('H', -1)).toBe('B');
+    expect(stepKey('Hm', 1)).toBe('Cm');
+    expect(stepKey('Hm', -1)).toBe('Bm');
+  });
+
+  it('steps an odd spelling onto a name the API accepts', () => {
+    expect(stepKey('B#', 1)).toBe('C#');
+    expect(stepKey('B#', -1)).toBe('B');
+    expect(stepKey('E#', 1)).toBe('F#');
+    expect(stepKey('E#', -1)).toBe('E');
+  });
+
+  it('never steps onto a name outside the key set', () => {
+    // ChordSheetJS parses these as numeral/solfege keys and would answer '#1'
+    // and 'Si'; the API rejects both, so the button stays a no-op instead.
+    expect(stepKey('1', 1)).toBe('1');
+    expect(stepKey('Do', 1)).toBe('Do');
+  });
+
   it('never leaves the key set, however many steps are taken', () => {
     let k = 'C';
     for (let i = 0; i < 40; i++) {

@@ -68,6 +68,19 @@ export function stepKey(key: string, direction: 1 | -1): string {
   const normalized = normalizeKey(key);
   const table = normalized.endsWith('m') ? ALL_KEYS_MINOR : ALL_KEYS;
   const idx = table.indexOf(normalized);
-  if (idx === -1) return key;
-  return table[(idx + direction + table.length) % table.length];
+  if (idx !== -1) return table[(idx + direction + table.length) % table.length];
+
+  // Keys the picker's table doesn't hold still have to step, or their sharp and
+  // flat buttons are dead forever: German 'H'/'Hm', and spellings like 'B#'
+  // that ENHARMONIC_MAP doesn't cover. ChordSheetJS knows them, and one step
+  // lands back in the table. Its answer is used only when it IS a table key, so
+  // the button can never write a name the API would reject.
+  try {
+    const parsed = ChordSheetJS.Key.parse(normalized);
+    if (parsed) {
+      const stepped = normalizeKey(String(parsed.transpose(direction).normalize()));
+      if (ALL_KEYS.includes(stepped) || ALL_KEYS_MINOR.includes(stepped)) return stepped;
+    }
+  } catch { /* not a key this can step */ }
+  return key;
 }
