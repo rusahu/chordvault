@@ -53,7 +53,6 @@
   "songEdit.privateOnly": "Only you can see this",
   "songEdit.chordproHint": "ChordPro format: place chords in brackets before the syllable — <code>[G]Let it [D]be</code>. Add metadata with <code>{title: My Song}</code>, <code>{artist: The Band}</code>.",
   "songEdit.deleteSong": "Delete song",
-  "songEdit.save": "Save",
   "songEdit.titleRequired": "Title is required",
   "songEdit.contentRequired": "Content is required",
   "songEdit.contentTooLarge": "Song content too large (max 100KB)",

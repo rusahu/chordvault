@@ -19,6 +19,7 @@ export interface SetlistEntry {
   _twoCol?: boolean | null;
   _font?: number | null;
   _hideYt?: boolean | null;
+  _hideChords?: boolean | null;
 }
 
 export interface Setlist {
@@ -65,4 +66,5 @@ export interface SetlistPreferences {
   twoCol: boolean;
   fontSize: number;
   hideYt: boolean;
+  hideChords: boolean;
 }
