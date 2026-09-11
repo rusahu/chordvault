@@ -60,3 +60,26 @@ test('normalizes a non-canonical spelling in a minor key', () => {
 test('normalizes a non-canonical spelling beyond a +/-6 semitone shift', () => {
   assert.equal(songKeyFromContent('{key: C#m}\n[C#m]a', -8), 'Fm');
 });
+
+// German notation ('H' for B natural) is a supported {key:} spelling
+// (CHORDVAULT_CONTEXT.md: "German notation now works"). At an
+// octave-equivalent shift it lands back on the literal 'H' spelling, which
+// isn't in ALL_KEYS/ALL_KEYS_MINOR (those drive the frontend key-picker and
+// have no 'H' button) but must still pass the canonical-key gate via the
+// backend-only CANONICAL_KEYS list, or a German-notation song can never
+// clear the migration's verification gate.
+test('accepts German H notation at every octave-equivalent shift', () => {
+  assert.equal(songKeyFromContent('{key: H}\n[H]a', -12), 'H');
+  assert.equal(songKeyFromContent('{key: H}\n[H]a', 0), 'H');
+  assert.equal(songKeyFromContent('{key: H}\n[H]a', 12), 'H');
+});
+
+test('accepts German Hm notation at every octave-equivalent shift', () => {
+  assert.equal(songKeyFromContent('{key: Hm}\n[Hm]a', -12), 'Hm');
+  assert.equal(songKeyFromContent('{key: Hm}\n[Hm]a', 0), 'Hm');
+  assert.equal(songKeyFromContent('{key: Hm}\n[Hm]a', 12), 'Hm');
+});
+
+test('transposes German H notation away from H at a non-octave shift', () => {
+  assert.equal(songKeyFromContent('{key: H}\n[H]a', 3), 'D');
+});
