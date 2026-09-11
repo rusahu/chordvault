@@ -4,6 +4,7 @@ import { ApiError } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getSetlistOverrides, saveSetlistOverride } from '../lib/storage';
+import { normalizeTranspose } from '../lib/keys';
 import { enrichLocalSetlistSongs } from '../lib/setlists';
 import type { Setlist, SetlistEntry } from '../types';
 
@@ -40,7 +41,9 @@ export function useSetlistPlayer({
         const transposes: Record<string, number> = {};
         const entries = initialSetlist.entries.map((en) => {
           const ov = overrides[String(en.entry_id)];
-          const transpose = ov?.transpose ?? en.transpose;
+          // localStorage overrides were never range-checked, so a value that
+          // drifted before v1.22.2 can still be sitting there.
+          const transpose = normalizeTranspose(ov?.transpose ?? en.transpose);
           transposes[String(en.entry_id)] = transpose;
           return {
             ...en,
@@ -81,7 +84,9 @@ export function useSetlistPlayer({
               const transposes: Record<string, number> = {};
               enriched.entries = enriched.entries.map((en) => {
                 const ov = overrides[String(en.entry_id)];
-                const transpose = ov?.transpose ?? en.transpose;
+                // localStorage overrides were never range-checked, so a value that
+                // drifted before v1.22.2 can still be sitting there.
+                const transpose = normalizeTranspose(ov?.transpose ?? en.transpose);
                 transposes[String(en.entry_id)] = transpose;
                 return {
                   ...en,
@@ -126,7 +131,9 @@ export function useSetlistPlayer({
         const transposes: Record<string, number> = {};
         sl.entries = sl.entries.map((en) => {
           const ov = overrides[String(en.entry_id)];
-          const transpose = ov?.transpose ?? en.transpose;
+          // localStorage overrides were never range-checked, so a value that
+          // drifted before v1.22.2 can still be sitting there.
+          const transpose = normalizeTranspose(ov?.transpose ?? en.transpose);
           transposes[String(en.entry_id)] = transpose;
           return {
             ...en,
@@ -153,7 +160,9 @@ export function useSetlistPlayer({
 
   const isModified = useMemo(() => {
     if (!entry) return false;
-    return entry.transpose !== (savedTransposes[String(entry.entry_id)] ?? 0);
+    // Compare canonical forms: a legacy row may store 10 where the live entry
+    // now holds -2, which is the same sounding key and not a pending change.
+    return normalizeTranspose(entry.transpose) !== normalizeTranspose(savedTransposes[String(entry.entry_id)] ?? 0);
   }, [entry, savedTransposes]);
 
   /**
@@ -242,7 +251,11 @@ export function useSetlistPlayer({
     setSetlist((prev) => {
       if (!prev) return null;
       const newEntries = [...prev.entries];
-      newEntries[index] = { ...newEntries[index], ...updates };
+      const updated = { ...newEntries[index], ...updates };
+      // Single chokepoint for entry writes: transpose accumulates across key
+      // changes, so canonicalise here rather than trusting every call site.
+      if (updates.transpose !== undefined) updated.transpose = normalizeTranspose(updated.transpose);
+      newEntries[index] = updated;
       return { ...prev, entries: newEntries };
     });
   }, [index]);

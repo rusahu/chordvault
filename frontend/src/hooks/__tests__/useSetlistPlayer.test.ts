@@ -176,4 +176,66 @@ describe('useSetlistPlayer Hook', () => {
     });
     expect(result.current.isModified).toBe(false);
   });
+
+  describe('transpose normalization', () => {
+    // Regression: repeated key picks used to accumulate unbounded (a downward
+    // pick returns +10, not -2), pushing transpose past the API's +/-12 guard
+    // while the displayed key looked perfectly ordinary.
+    it('keeps an accumulated transpose inside the persistable range', async () => {
+      mockApiCall.mockResolvedValue(mockSetlist);
+      const { result } = renderHook(() =>
+        useSetlistPlayer({ setlistId: 1, navigate })
+      );
+      await waitFor(() => expect(result.current.setlist).toBeTruthy());
+
+      // Alternating G <-> A via the key picker: deltas arrive as +2 then +10.
+      for (let i = 0; i < 6; i++) {
+        const delta = i % 2 === 0 ? 2 : 10;
+        const current = result.current.entry!.transpose;
+        act(() => { result.current.updateEntry({ transpose: current + delta }); });
+        expect(result.current.entry!.transpose).toBeGreaterThanOrEqual(-12);
+        expect(result.current.entry!.transpose).toBeLessThanOrEqual(12);
+      }
+    });
+
+    it('does not flag a legacy stored value as modified when the key is unchanged', async () => {
+      // mockSetlist entry_1 stores transpose 2; simulate a legacy non-canonical
+      // row by round-tripping up then down, which canonicalises the live value.
+      mockApiCall.mockResolvedValue(mockSetlist);
+      const { result } = renderHook(() =>
+        useSetlistPlayer({ setlistId: 1, navigate })
+      );
+      await waitFor(() => expect(result.current.setlist).toBeTruthy());
+
+      act(() => { result.current.updateEntry({ transpose: result.current.entry!.transpose + 12 }); });
+      expect(result.current.entry!.transpose).toBe(2);
+      expect(result.current.isModified).toBe(false);
+    });
+
+    it('canonicalises a drifted localStorage override on load', async () => {
+      // Pre-v1.22.2 the override store could hold an out-of-range value; loading
+      // it raw meant Save Online failed immediately, before any key change.
+      mockGetOverrides.mockReturnValue({ entry_1: { transpose: 14 } });
+      mockApiCall.mockResolvedValue(mockSetlist);
+      const { result } = renderHook(() =>
+        useSetlistPlayer({ setlistId: 1, navigate })
+      );
+      await waitFor(() => expect(result.current.setlist).toBeTruthy());
+
+      expect(result.current.entry!.transpose).toBe(2);
+      expect(result.current.entry!.transpose).toBeLessThanOrEqual(12);
+    });
+
+    it('leaves non-transpose updates untouched', async () => {
+      mockApiCall.mockResolvedValue(mockSetlist);
+      const { result } = renderHook(() =>
+        useSetlistPlayer({ setlistId: 1, navigate })
+      );
+      await waitFor(() => expect(result.current.setlist).toBeTruthy());
+      const before = result.current.entry!.transpose;
+      act(() => { result.current.updateEntry({ nashville: 0 }); });
+      expect(result.current.entry!.transpose).toBe(before);
+      expect(result.current.entry!.nashville).toBe(0);
+    });
+  });
 });

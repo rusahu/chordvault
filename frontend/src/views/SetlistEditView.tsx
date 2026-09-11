@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { ApiError } from '../lib/api';
+import { normalizeTranspose } from '../lib/keys';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
@@ -197,7 +198,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
   const handleTransposeEntry = async (entryId: number | string, idx: number, delta: number) => {
     if (!setlist) return;
     const entry = reorderedEntries[idx];
-    const newTranspose = (entry.transpose ?? 0) + delta;
+    const newTranspose = normalizeTranspose((entry.transpose ?? 0) + delta);
 
     if (isLocal) {
       lsUpdateEntry(String(setlistId), idx, { transpose: newTranspose });
