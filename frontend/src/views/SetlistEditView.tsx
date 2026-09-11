@@ -100,7 +100,11 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         // objects it was given, so their positions in the pre-drag list are the
         // permutation to apply to the stored records — which are then written
         // back untouched, keeping fields this view never loads.
-        lsReorderEntries(String(setlistId), newEntries.map((e) => setlist.entries.indexOf(e)));
+        const saved = lsReorderEntries(String(setlistId), newEntries.map((e) => setlist.entries.indexOf(e)));
+        if (!saved) {
+          toast(t('setlist.reorderFailed'), 'error');
+          load();
+        }
       } else {
         try {
           await apiCall('PUT', `/api/setlists/${setlistId}/reorder`, {

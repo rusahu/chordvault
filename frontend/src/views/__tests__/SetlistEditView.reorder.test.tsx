@@ -59,6 +59,22 @@ describe('local setlist reorder', () => {
     expect(stored()[0].target_key).toBe('G');
   });
 
+  it('tells the user and resyncs when the write is rejected', async () => {
+    const drag = await renderEdit();
+    // Another tab removed an entry: the permutation no longer fits storage, so
+    // the write must be refused rather than corrupting it.
+    localStorage.setItem(
+      'cv_local_setlists',
+      JSON.stringify([{ id: 'local_1', name: 'SL', entries: STORED.slice(0, 2) }])
+    );
+    drag(0, 1);
+
+    expect(titles()).toEqual(['Alpha', 'Bravo']);
+    expect(stored()[0].transpose).toBe(2);
+    expect(mockToast).toHaveBeenCalledWith('setlist.reorderFailed', 'error');
+    await waitFor(() => expect(screen.queryByText('Charlie')).toBeNull());
+  });
+
   it('maps correctly on a second drag with no reload in between', async () => {
     // entry_id is local_<load index>, so after one reorder the ids the view
     // holds no longer match storage positions. The permutation has to come

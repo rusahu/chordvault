@@ -83,19 +83,23 @@ export function useLocalSetlists() {
    * pre-1.23.0 `transpose` today, anything added later tomorrow. An order that
    * isn't a permutation of the stored entries is ignored rather than written,
    * so a stale mapping can never corrupt storage.
+   *
+   * Returns false when nothing was written, so the caller can tell the user and
+   * resync instead of leaving the view showing an order storage never took.
    */
-  const reorderEntries = useCallback((id: string, order: number[]) => {
+  const reorderEntries = useCallback((id: string, order: number[]): boolean => {
     const all = getLocalSetlists();
     const sl = all.find((s) => s.id === id);
-    if (!sl) return;
+    if (!sl) return false;
     const isPermutation =
       order.length === sl.entries.length &&
       new Set(order).size === order.length &&
       order.every((i) => i >= 0 && i < sl.entries.length);
-    if (!isPermutation) return;
+    if (!isPermutation) return false;
     sl.entries = order.map((i) => sl.entries[i]);
     saveLocalSetlists(all);
     setSetlists([...all]);
+    return true;
   }, []);
 
   return { setlists, refresh, create, remove, rename, getOne, addEntry, removeEntry, moveEntry, updateEntry, reorderEntries };
