@@ -36,15 +36,15 @@ export function normalizeChord(chord: string): string {
 /**
  * Collapses a semitone shift onto the canonical -5..+6 window.
  *
- * Transpose is only meaningful modulo 12 (chord symbols carry no octave), but
- * it is accumulated across key changes and persisted in `setlist_songs.transpose`,
- * which the API bounds to +/-12. Without this, repeated key picks drift out of
- * that range while still rendering a perfectly ordinary key.
+ * Transpose is only meaningful modulo 12 (chord symbols carry no octave).
+ * `getTransposeDelta` computes a single shift fresh at render time from a
+ * `target_key`, but `Key.distance` only ever counts upward, so this keeps
+ * that shift the shortest signed distance between the two keys.
  *
  * Twelve distinct values, not thirteen: -6 and +6 name the same key, so the
  * tritone is always canonicalised upward as +6.
  */
-export function normalizeTranspose(semitones: number): number {
+function normalizeTranspose(semitones: number): number {
   const wrapped = ((semitones % 12) + 12) % 12;
   return wrapped > 6 ? wrapped - 12 : wrapped;
 }

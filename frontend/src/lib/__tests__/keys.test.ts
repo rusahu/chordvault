@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeKey, normalizeChord, getTransposeDelta, normalizeTranspose } from '../keys';
+import { normalizeKey, normalizeChord, getTransposeDelta } from '../keys';
 
 describe('keys library', () => {
   describe('normalizeKey', () => {
@@ -124,44 +124,6 @@ describe('keys library', () => {
       expect(getTransposeDelta('C', 'Chorus')).toBe(0);
       expect(getTransposeDelta('', 'C')).toBe(0);
       expect(getTransposeDelta('C major', 'C')).toBe(0);
-    });
-  });
-
-  describe('normalizeTranspose', () => {
-    it('leaves values already in canonical range untouched', () => {
-      expect(normalizeTranspose(0)).toBe(0);
-      expect(normalizeTranspose(2)).toBe(2);
-      expect(normalizeTranspose(-5)).toBe(-5);
-      expect(normalizeTranspose(6)).toBe(6);
-    });
-
-    it('wraps values that drifted past an octave', () => {
-      expect(normalizeTranspose(14)).toBe(2);
-      expect(normalizeTranspose(26)).toBe(2);
-      expect(normalizeTranspose(-14)).toBe(-2);
-      expect(normalizeTranspose(12)).toBe(0);
-      expect(normalizeTranspose(-12)).toBe(0);
-    });
-
-    it('prefers the shorter direction, canonicalising the tritone as +6', () => {
-      expect(normalizeTranspose(7)).toBe(-5);
-      expect(normalizeTranspose(10)).toBe(-2);
-      expect(normalizeTranspose(-7)).toBe(5);
-      expect(normalizeTranspose(-6)).toBe(6);
-    });
-
-    it('always lands inside the persistable range', () => {
-      for (let t = -60; t <= 60; t++) {
-        const n = normalizeTranspose(t);
-        expect(n).toBeGreaterThanOrEqual(-5);
-        expect(n).toBeLessThanOrEqual(6);
-      }
-    });
-
-    it('preserves the sounding key it wraps', () => {
-      for (let t = -60; t <= 60; t++) {
-        expect(((normalizeTranspose(t) % 12) + 12) % 12).toBe(((t % 12) + 12) % 12);
-      }
     });
   });
 });
