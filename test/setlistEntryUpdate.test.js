@@ -1,48 +1,69 @@
+process.env.DB_PATH = ':memory:';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const Database = require('better-sqlite3');
+const { db } = require('../lib/db');
+const Setlist = require('../lib/models/setlist');
 
-// Mirrors the UPDATE in lib/models/setlist.js updateSongEntryTransaction.
-const SQL = `UPDATE setlist_songs SET
-  target_key = CASE WHEN ? THEN ? ELSE target_key END,
-  nashville = COALESCE(?, nashville)
-  WHERE id = ?`;
+// Exercises the real model against a real schema. An earlier version of this
+// file copied the UPDATE statement into the test, so the model could break
+// without a single test noticing.
 
-function dbWith(targetKey) {
-  const db = new Database(':memory:');
-  db.exec('CREATE TABLE setlist_songs (id INTEGER PRIMARY KEY, target_key TEXT, nashville INTEGER DEFAULT 0)');
-  db.prepare('INSERT INTO setlist_songs (id, target_key) VALUES (1, ?)').run(targetKey);
-  return db;
+const userId = db.prepare("INSERT INTO users (username, password_hash) VALUES ('u', 'x')").run().lastInsertRowid;
+const songId = db.prepare("INSERT INTO songs (user_id, title, content) VALUES (?, 's', '{key: C}')").run(userId).lastInsertRowid;
+const setlistId = db.prepare("INSERT INTO setlists (user_id, name) VALUES (?, 'sl')").run(userId).lastInsertRowid;
+
+function entryWith(targetKey) {
+  return Setlist.addSongEntry(setlistId, songId, { targetKey, nashville: 0 }).entry_id;
 }
-const keyOf = (db) => db.prepare('SELECT target_key FROM setlist_songs WHERE id = 1').get().target_key;
+
+function update(entryId, updates) {
+  Setlist.updateSongEntry(entryId, setlistId, Setlist.getEntryById(entryId, setlistId), updates);
+}
+
+const keyOf = (entryId) => Setlist.getEntryById(entryId, setlistId).target_key;
 
 test('an explicit null clears a pinned key to as-written', () => {
-  const db = dbWith('A');
-  db.prepare(SQL).run(1, null, null, 1);
-  assert.equal(keyOf(db), null);
+  const id = entryWith('A');
+  update(id, { targetKey: null, targetKeyProvided: true });
+  assert.equal(keyOf(id), null);
 });
 
 test('an absent field leaves the pinned key untouched', () => {
-  const db = dbWith('A');
-  db.prepare(SQL).run(0, null, null, 1);
-  assert.equal(keyOf(db), 'A');
+  const id = entryWith('A');
+  update(id, { targetKey: null, targetKeyProvided: false });
+  assert.equal(keyOf(id), 'A');
 });
 
 test('a new key replaces the old one', () => {
-  const db = dbWith('A');
-  db.prepare(SQL).run(1, 'C', null, 1);
-  assert.equal(keyOf(db), 'C');
+  const id = entryWith('A');
+  update(id, { targetKey: 'C', targetKeyProvided: true });
+  assert.equal(keyOf(id), 'C');
 });
 
 test('setting a key on an as-written entry pins it', () => {
-  const db = dbWith(null);
-  db.prepare(SQL).run(1, 'F#', null, 1);
-  assert.equal(keyOf(db), 'F#');
+  const id = entryWith(null);
+  update(id, { targetKey: 'F#', targetKeyProvided: true });
+  assert.equal(keyOf(id), 'F#');
 });
 
 test('updating only nashville does not disturb the key', () => {
-  const db = dbWith('A');
-  db.prepare(SQL).run(0, null, 1, 1);
-  assert.equal(keyOf(db), 'A');
-  assert.equal(db.prepare('SELECT nashville FROM setlist_songs WHERE id = 1').get().nashville, 1);
+  const id = entryWith('A');
+  update(id, { targetKeyProvided: false, nashville: true });
+  assert.equal(keyOf(id), 'A');
+  assert.equal(Setlist.getEntryById(id, setlistId).nashville, 1);
+});
+
+test('a content override is preserved when only the key is updated', () => {
+  const id = entryWith('A');
+  update(id, { targetKeyProvided: true, targetKey: 'D', contentOverride: '{key: E}' });
+  update(id, { targetKeyProvided: true, targetKey: 'G' });
+  const entry = Setlist.getEntryById(id, setlistId);
+  assert.equal(entry.target_key, 'G');
+  assert.equal(entry.content_override, '{key: E}');
+});
+
+test('the entry round-trips through getEntries as target_key', () => {
+  const id = entryWith('Bb');
+  const row = Setlist.getEntries(setlistId).find((e) => e.entry_id === id);
+  assert.equal(row.target_key, 'Bb');
 });
