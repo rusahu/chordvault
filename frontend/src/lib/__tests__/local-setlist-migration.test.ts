@@ -41,6 +41,12 @@ describe('legacy local setlist entries', () => {
     expect(enrichLocalEntry(legacy({ target_key: 'B', transpose: 2 }), SONG, 0)!.target_key).toBe('B');
   });
 
+  it('lets an explicit as-written beat a leftover transpose', () => {
+    // Presence, not nullishness: a stored null is a decision. Same precedence
+    // migrateOverride applies to localStorage overrides.
+    expect(enrichLocalEntry(legacy({ target_key: null, transpose: 2 }), SONG, 0)!.target_key).toBe(null);
+  });
+
   it('formatLocalEntry cannot convert: it has no song content', () => {
     // Deliberate. Key stepping is already inert for these entries, and the
     // player always goes through enrichLocalEntry.

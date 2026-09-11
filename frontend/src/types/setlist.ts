@@ -50,7 +50,7 @@ export interface LocalSetlistEntry {
   song_id: number;
   title: string;
   artist: string;
-  target_key: string | null;
+  target_key?: string | null;  // absent on entries written before 1.23.0
   transpose?: number;          // legacy, read-only
   nashville: number;
 }

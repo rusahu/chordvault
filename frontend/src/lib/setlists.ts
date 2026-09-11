@@ -42,8 +42,11 @@ export function enrichLocalEntry(e: LocalSetlistEntry, song: Song | null, idx: n
     content: song.content,
     content_override: null,
     // Entries saved before 1.23.0 hold an accumulated `transpose` and no
-    // target_key; converting on read keeps the key they were played in.
-    target_key: e.target_key ?? legacyTransposeToTargetKey(song.content, e.transpose),
+    // target_key; converting on read keeps the key they were played in. The
+    // test is presence, not nullishness: a stored null is an explicit
+    // "as written" and must win over a leftover transpose, the same precedence
+    // migrateOverride applies to localStorage overrides.
+    target_key: e.target_key !== undefined ? e.target_key : legacyTransposeToTargetKey(song.content, e.transpose),
     nashville: e.nashville ?? 0,
     font: null,
     two_col: null,
