@@ -3,7 +3,7 @@ import { useApi } from './useApi';
 import { ApiError } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getSetlistOverrides, saveSetlistOverride } from '../lib/storage';
+import { getSetlistOverrides, saveSetlistOverride, migrateOverride } from '../lib/storage';
 import { enrichLocalSetlistSongs } from '../lib/setlists';
 import type { Setlist, SetlistEntry } from '../types';
 
@@ -39,7 +39,11 @@ export function useSetlistPlayer({
         const overrides = getSetlistOverrides(initialSetlist.id);
         const targetKeys: Record<string, string | null> = {};
         const entries = initialSetlist.entries.map((en) => {
-          const ov = overrides[String(en.entry_id)];
+          const rawOverride = overrides[String(en.entry_id)];
+          const ov = rawOverride ? migrateOverride(rawOverride, en.content_override || en.content) : undefined;
+          if (rawOverride && rawOverride.transpose !== undefined) {
+            saveSetlistOverride(initialSetlist.id, en.entry_id, ov!);
+          }
           const targetKey = ov?.target_key ?? en.target_key ?? null;
           targetKeys[String(en.entry_id)] = targetKey;
           return {
@@ -80,7 +84,11 @@ export function useSetlistPlayer({
               const overrides = getSetlistOverrides(enriched.id);
               const targetKeys: Record<string, string | null> = {};
               enriched.entries = enriched.entries.map((en) => {
-                const ov = overrides[String(en.entry_id)];
+                const rawOverride = overrides[String(en.entry_id)];
+                const ov = rawOverride ? migrateOverride(rawOverride, en.content_override || en.content) : undefined;
+                if (rawOverride && rawOverride.transpose !== undefined) {
+                  saveSetlistOverride(enriched.id, en.entry_id, ov!);
+                }
                 const targetKey = ov?.target_key ?? en.target_key ?? null;
                 targetKeys[String(en.entry_id)] = targetKey;
                 return {
@@ -125,7 +133,11 @@ export function useSetlistPlayer({
         const overrides = getSetlistOverrides(sl.id);
         const targetKeys: Record<string, string | null> = {};
         sl.entries = sl.entries.map((en) => {
-          const ov = overrides[String(en.entry_id)];
+          const rawOverride = overrides[String(en.entry_id)];
+          const ov = rawOverride ? migrateOverride(rawOverride, en.content_override || en.content) : undefined;
+          if (rawOverride && rawOverride.transpose !== undefined) {
+            saveSetlistOverride(sl.id, en.entry_id, ov!);
+          }
           const targetKey = ov?.target_key ?? en.target_key ?? null;
           targetKeys[String(en.entry_id)] = targetKey;
           return {

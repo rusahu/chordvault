@@ -19,10 +19,14 @@ vi.mock('../../context/ToastContext', () => ({
   useToast: () => mockToast,
 }));
 
-vi.mock('../../lib/storage', () => ({
-  getSetlistOverrides: vi.fn(),
-  saveSetlistOverride: vi.fn(),
-}));
+vi.mock('../../lib/storage', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/storage')>('../../lib/storage');
+  return {
+    getSetlistOverrides: vi.fn(),
+    saveSetlistOverride: vi.fn(),
+    migrateOverride: actual.migrateOverride,
+  };
+});
 
 describe('useSetlistPlayer Hook', () => {
   const navigate = vi.fn();
@@ -39,7 +43,7 @@ describe('useSetlistPlayer Hook', () => {
         song_id: 101,
         title: 'Song 1',
         artist: 'Artist 1',
-        content: 'C G Am F',
+        content: '{key: C}\n[C]a [F]b',
         content_override: null,
         target_key: 'A',
         nashville: 1,
@@ -204,6 +208,19 @@ describe('useSetlistPlayer Hook', () => {
       act(() => { result.current.updateEntry({ target_key: null }); });
       expect(result.current.entry!.target_key).toBe(null);
       expect(result.current.isModified).toBe(true);
+    });
+
+    it('converts a legacy transpose override on load', async () => {
+      mockGetOverrides.mockReturnValue({ entry_1: { transpose: 2 } });
+      mockApiCall.mockResolvedValue(mockSetlist);
+      const { result } = renderHook(() =>
+        useSetlistPlayer({ setlistId: 1, navigate })
+      );
+      await waitFor(() => expect(result.current.setlist).toBeTruthy());
+
+      // mockSetlist entry_1 content is in C, so +2 is D
+      expect(result.current.entry!.target_key).toBe('D');
+      expect(mockSaveOverride).toHaveBeenCalled();
     });
   });
 });
