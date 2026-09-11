@@ -96,14 +96,11 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
       setSetlist((prev) => prev ? { ...prev, entries: newEntries } : null);
 
       if (isLocal) {
-        const localEntries = newEntries.map((e) => ({
-          song_id: e.song_id,
-          title: e.title,
-          artist: e.artist,
-          target_key: e.target_key,
-          nashville: e.nashville,
-        }));
-        lsReorderEntries(String(setlistId), localEntries);
+        // A reorder changes order only. useDragReorder permutes the very
+        // objects it was given, so their positions in the pre-drag list are the
+        // permutation to apply to the stored records — which are then written
+        // back untouched, keeping fields this view never loads.
+        lsReorderEntries(String(setlistId), newEntries.map((e) => setlist.entries.indexOf(e)));
       } else {
         try {
           await apiCall('PUT', `/api/setlists/${setlistId}/reorder`, {
