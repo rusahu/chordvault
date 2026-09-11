@@ -1,5 +1,5 @@
 import { getSongKey } from '../lib/chords';
-import { getTransposeDelta } from '../lib/keys';
+import { entrySemitones } from '../lib/setlistKeys';
 import type { SetlistEntry } from '../types';
 
 interface SetlistEntryCardProps {
@@ -30,7 +30,7 @@ export function SetlistEntryCard({
   isDragging,
 }: SetlistEntryCardProps) {
   const content = entry.content_override || entry.content;
-  const semitones = entry.target_key ? getTransposeDelta(getSongKey(content, 0), entry.target_key) : 0;
+  const semitones = entrySemitones(content, entry.target_key);
   const keyDisplay = getSongKey(content, semitones);
   const canStep = !!(entry.target_key || getSongKey(content, 0));
 

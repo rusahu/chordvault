@@ -14,7 +14,8 @@ import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
 import { renderChordPro, getSongKey, clampFontSize, songHasKey, resolveEffectivePreferences, autoFit } from '../lib/chords';
 import { useSetlistPreferences } from '../hooks/useSetlistPreferences';
-import { getTransposeDelta, stepKey } from '../lib/keys';
+import { stepKey } from '../lib/keys';
+import { entrySemitones } from '../lib/setlistKeys';
 import type { Setlist } from '../types';
 
 interface SetlistPlayViewProps {
@@ -77,17 +78,14 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const effTwoCol = effectivePrefs.twoCol;
   const effFont = effectivePrefs.fontSize;
   const hideYt = effectivePrefs.hideYt;
-  const entrySemitones = useMemo(() => {
-    if (!entry?.target_key) return 0;
-    return getTransposeDelta(getSongKey(content, 0), entry.target_key);
-  }, [entry?.target_key, content]);
+  const semitones = useMemo(() => entrySemitones(content, entry?.target_key), [entry?.target_key, content]);
 
-  const keyDisplay = entry ? getSongKey(content, entrySemitones) : '';
+  const keyDisplay = entry ? getSongKey(content, semitones) : '';
 
   const renderedHtml = useMemo(() => {
     if (!entry) return '';
-    return renderChordPro(content, entrySemitones, !!effNum);
-  }, [content, effNum, entry, entrySemitones]);
+    return renderChordPro(content, semitones, !!effNum);
+  }, [content, effNum, entry, semitones]);
 
   // Key stepping
   const stepEntryKey = useCallback((direction: 1 | -1) => {
@@ -269,7 +267,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
       <Toolbar
         currentKey={keyDisplay}
         nashville={!!effNum}
-        nashvilleDisabled={!songHasKey(content, entrySemitones)}
+        nashvilleDisabled={!songHasKey(content, semitones)}
         onNashvilleChange={toggleEntryNum}
         twoCol={!!effTwoCol}
         onTwoColToggle={toggleEntryTwoCol}

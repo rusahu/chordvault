@@ -1,5 +1,5 @@
 import type { User, LocalSetlist } from '../types';
-import { getSongKey } from './chords';
+import { legacyTransposeToTargetKey } from './setlistKeys';
 
 const KEYS = {
   user: 'cv_user',
@@ -103,9 +103,7 @@ export function migrateOverride(
 ): SetlistOverride {
   const { transpose, ...rest } = override;
   if (rest.target_key !== undefined) return rest;
-  if (transpose === undefined || transpose === 0) return { ...rest, target_key: null };
-  const key = getSongKey(content, transpose);
-  return { ...rest, target_key: key || null };
+  return { ...rest, target_key: legacyTransposeToTargetKey(content, transpose) };
 }
 
 export function getSessionItem(key: string): string | null {
