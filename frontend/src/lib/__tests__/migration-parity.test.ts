@@ -5,8 +5,11 @@ import { songKeyFromContent } from '../../../../lib/songKey.js';
 
 // The migration writes target_key = songKeyFromContent(content, transpose).
 // Rendering must then be byte-identical to rendering the old raw delta.
-// 17 live rows flip transposition direction under the new model, and direction
-// drives enharmonic spelling, so this is not a tautology.
+// What this actually discriminates is the enharmonic map: 17 live rows flip
+// transposition direction under the new model, and a descending shift spells
+// flat-ward, so dropping Cb/Fb from ENHARMONIC_MAP fails it. It does NOT
+// discriminate normalizeTranspose — removing that leaves it green, because
+// normalizeChord erases the spelling difference an un-normalized shift makes.
 describe('migration render parity', () => {
   const SAMPLE = (k: string) => `{key: ${k}}
 [${k}]a [F]b [Bb]c [F#]d [Gb]e [B]f [Am7]g [D/F#]h [C#m]i [Ab]j [Esus4]k [Cb]l`;

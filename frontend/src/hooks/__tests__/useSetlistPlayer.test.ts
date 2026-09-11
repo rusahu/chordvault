@@ -182,10 +182,10 @@ describe('useSetlistPlayer Hook', () => {
   });
 
   describe('target key assignment', () => {
-    // Regression: the old model accumulated a semitone delta, so repeated key
-    // picks could drift out of the API's persistable range (a downward pick
-    // returns +10, not -2). Assigning the key name directly cannot drift.
-    it('assigns a picked key directly without accumulating', async () => {
+    // Scope: this only covers updateEntry's merge, which is where a picked key
+    // enters the hook's state. The shift the key produces is computed at render
+    // time, not here — see SetlistPlayView.key.test.tsx for that.
+    it('replaces the entry target key on every update', async () => {
       mockApiCall.mockResolvedValue(mockSetlist);
       const { result } = renderHook(() =>
         useSetlistPlayer({ setlistId: 1, navigate })
