@@ -22,9 +22,21 @@ test('handles minor keys', () => {
   assert.equal(songKeyFromContent('{key: Am}\n[Am]a', 3), 'Cm');
 });
 
-test('accepts the short {k:} directive and is case-insensitive', () => {
-  assert.equal(songKeyFromContent('{k: C}\n[C]a', 2), 'D');
-  assert.equal(songKeyFromContent('{Key: C}\n[C]a', 2), 'D');
+// The frontend's ChordProParser recognises ONLY a lowercase, case-sensitive
+// `key` directive — {k:}, {Key:} and {KEY:} leave it with no key at all, so it
+// falls back to the first chord root. Reading them here would backfill a
+// perfectly canonical target_key that the frontend then disagrees with, and
+// the migration's gate cannot catch a canonical value. Failing closed leaves
+// the row NULL and blocks the column drop instead.
+test('rejects the {k:} alias and the capitalised spellings the frontend ignores', () => {
+  assert.equal(songKeyFromContent('{k: C}\n[C]a', 2), '');
+  assert.equal(songKeyFromContent('{K: C}\n[C]a', 2), '');
+  assert.equal(songKeyFromContent('{Key: C}\n[C]a', 2), '');
+  assert.equal(songKeyFromContent('{KEY: C}\n[C]a', 2), '');
+});
+
+test('accepts a space before the colon, which the frontend parser also accepts', () => {
+  assert.equal(songKeyFromContent('{key : C}\n[C]a', 2), 'D');
 });
 
 test('wraps past an octave', () => {

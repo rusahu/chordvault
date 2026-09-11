@@ -1,7 +1,7 @@
 const express = require('express');
 const { requireAuth, optionalAuth, isAdminRole } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
-const { parseId, validateSetlistInput, validateTargetKey, parsePaginationParams } = require('../lib/validation');
+const { parseId, validateSetlistInput, validateTargetKey, canonicalTargetKey, parsePaginationParams } = require('../lib/validation');
 const Setlist = require('../lib/models/setlist');
 const Song = require('../lib/models/song');
 
@@ -122,7 +122,7 @@ function createSetlistsRouter() {
     if (song.user_id !== req.user.id && song.visibility !== VISIBILITY.PUBLIC) {
       return res.status(403).json({ error: 'Cannot add a private song you don\'t own' });
     }
-    const result = Setlist.addSongEntry(id, songIdParsed, { targetKey: target_key ?? null, nashville });
+    const result = Setlist.addSongEntry(id, songIdParsed, { targetKey: target_key == null ? null : canonicalTargetKey(target_key), nashville });
     res.json({ entry_id: result.entry_id, position: result.position });
   });
 
@@ -144,7 +144,7 @@ function createSetlistsRouter() {
       return res.status(400).json({ error: 'Content override too large (max 100KB)' });
     }
     Setlist.updateSongEntry(entryId, setlistId, entry, {
-      targetKey: target_key ?? null,
+      targetKey: target_key == null ? null : canonicalTargetKey(target_key),
       targetKeyProvided: 'target_key' in req.body,
       nashville,
       font,
