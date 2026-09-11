@@ -85,6 +85,7 @@ export function saveSetlistOverride(
     const eid = String(entryId);
     if (!all[sid]) all[sid] = {};
     all[sid][eid] = { ...all[sid][eid], ...data };
+    delete all[sid][eid].transpose; // legacy field never written going forward; drop it on every save
     localStorage.setItem(KEYS.setlistOverrides, JSON.stringify(all));
   } catch (e) { console.error('Failed to save setlist override', e); }
 }

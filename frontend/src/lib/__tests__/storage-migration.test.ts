@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { migrateOverride } from '../storage';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { migrateOverride, getSetlistOverrides, saveSetlistOverride } from '../storage';
 
 const content = '{key: G}\n[G]a [C]b [D]c';
 
@@ -35,5 +35,29 @@ describe('localStorage override migration', () => {
 
   it('returns as-written for an empty override', () => {
     expect(migrateOverride({}, content)).toEqual({ target_key: null });
+  });
+});
+
+describe('legacy override retirement on write', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('drops the legacy transpose field when the migrated override is written back', () => {
+    localStorage.setItem('cv_setlist_overrides', JSON.stringify({ '1': { '5': { transpose: 2 } } }));
+    const raw = getSetlistOverrides(1)['5'];
+    saveSetlistOverride(1, 5, migrateOverride(raw, content));
+    expect(getSetlistOverrides(1)['5']).toEqual({ target_key: 'A' });
+  });
+
+  it('performs no further write on a second load of an already-migrated record', () => {
+    localStorage.setItem('cv_setlist_overrides', JSON.stringify({ '1': { '5': { transpose: 2 } } }));
+    const raw = getSetlistOverrides(1)['5'];
+    saveSetlistOverride(1, 5, migrateOverride(raw, content));
+
+    // Mirrors the load-path guard in useSetlistPlayer, which only re-saves
+    // when the raw record still carries a `transpose` field.
+    const rawAfterFirstLoad = getSetlistOverrides(1)['5'];
+    expect(rawAfterFirstLoad.transpose).toBeUndefined();
   });
 });
