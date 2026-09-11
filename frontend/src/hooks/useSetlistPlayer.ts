@@ -16,6 +16,32 @@ interface UseSetlistPlayerOptions {
   onNavigate?: () => void;
 }
 
+/**
+ * Merges the browser's stored overrides onto freshly loaded entries.
+ *
+ * A stored override wins even when its target_key is null: null means "play as
+ * written", which is a choice the user saved, so it must not fall back to the
+ * server's pinned key. An override holding no key decision at all (only layout
+ * fields) leaves the entry's own key alone. Legacy records are converted to a
+ * target key and written back.
+ */
+function applyStoredOverrides(setlistId: number | string, entries: SetlistEntry[]) {
+  const overrides = getSetlistOverrides(setlistId);
+  const targetKeys: Record<string, string | null> = {};
+  const merged = entries.map((en) => {
+    const raw = overrides[String(en.entry_id)];
+    const ov = raw ? migrateOverride(raw, en.content_override || en.content) : undefined;
+    if (raw && raw.transpose !== undefined) {
+      saveSetlistOverride(setlistId, en.entry_id, ov!);
+    }
+    const storedKey = raw && ('target_key' in raw || 'transpose' in raw);
+    const targetKey = (storedKey ? ov!.target_key : en.target_key) ?? null;
+    targetKeys[String(en.entry_id)] = targetKey;
+    return { ...en, target_key: targetKey, font: null, two_col: null, nashville: 0 };
+  });
+  return { entries: merged, targetKeys };
+}
+
 export function useSetlistPlayer({
   setlistId,
   isLocal,
@@ -36,24 +62,7 @@ export function useSetlistPlayer({
   useEffect(() => {
     if (isLocal) {
       if (initialSetlist) {
-        const overrides = getSetlistOverrides(initialSetlist.id);
-        const targetKeys: Record<string, string | null> = {};
-        const entries = initialSetlist.entries.map((en) => {
-          const rawOverride = overrides[String(en.entry_id)];
-          const ov = rawOverride ? migrateOverride(rawOverride, en.content_override || en.content) : undefined;
-          if (rawOverride && rawOverride.transpose !== undefined) {
-            saveSetlistOverride(initialSetlist.id, en.entry_id, ov!);
-          }
-          const targetKey = ov?.target_key ?? en.target_key ?? null;
-          targetKeys[String(en.entry_id)] = targetKey;
-          return {
-            ...en,
-            target_key: targetKey,
-            font: null,
-            two_col: null,
-            nashville: 0,
-          };
-        });
+        const { entries, targetKeys } = applyStoredOverrides(initialSetlist.id, initialSetlist.entries);
         setSetlist({
           ...initialSetlist,
           entries,
@@ -81,27 +90,11 @@ export function useSetlistPlayer({
                 event_date: null,
               };
 
-              const overrides = getSetlistOverrides(enriched.id);
-              const targetKeys: Record<string, string | null> = {};
-              enriched.entries = enriched.entries.map((en) => {
-                const rawOverride = overrides[String(en.entry_id)];
-                const ov = rawOverride ? migrateOverride(rawOverride, en.content_override || en.content) : undefined;
-                if (rawOverride && rawOverride.transpose !== undefined) {
-                  saveSetlistOverride(enriched.id, en.entry_id, ov!);
-                }
-                const targetKey = ov?.target_key ?? en.target_key ?? null;
-                targetKeys[String(en.entry_id)] = targetKey;
-                return {
-                  ...en,
-                  target_key: targetKey,
-                  font: null,
-                  two_col: null,
-                  nashville: 0,
-                };
-              });
+              const merged = applyStoredOverrides(enriched.id, enriched.entries);
+              enriched.entries = merged.entries;
 
               setSetlist(enriched);
-              setSavedTargetKeys(targetKeys);
+              setSavedTargetKeys(merged.targetKeys);
             })
             .catch((err) => {
               toast(err.message, 'error');
@@ -130,27 +123,11 @@ export function useSetlistPlayer({
         }
 
         // Merge local overrides
-        const overrides = getSetlistOverrides(sl.id);
-        const targetKeys: Record<string, string | null> = {};
-        sl.entries = sl.entries.map((en) => {
-          const rawOverride = overrides[String(en.entry_id)];
-          const ov = rawOverride ? migrateOverride(rawOverride, en.content_override || en.content) : undefined;
-          if (rawOverride && rawOverride.transpose !== undefined) {
-            saveSetlistOverride(sl.id, en.entry_id, ov!);
-          }
-          const targetKey = ov?.target_key ?? en.target_key ?? null;
-          targetKeys[String(en.entry_id)] = targetKey;
-          return {
-            ...en,
-            target_key: targetKey,
-            font: null,
-            two_col: null,
-            nashville: 0,
-          };
-        });
+        const merged = applyStoredOverrides(sl.id, sl.entries);
+        sl.entries = merged.entries;
 
         setSetlist(sl);
-        setSavedTargetKeys(targetKeys);
+        setSavedTargetKeys(merged.targetKeys);
       } catch (e) {
         toast((e as Error).message, 'error');
         navigate(user ? 'setlists' : 'browse');

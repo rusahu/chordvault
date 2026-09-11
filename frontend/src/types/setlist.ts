@@ -51,6 +51,7 @@ export interface LocalSetlistEntry {
   title: string;
   artist: string;
   target_key: string | null;
+  transpose?: number;          // legacy, read-only
   nashville: number;
 }
 

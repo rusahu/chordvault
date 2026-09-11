@@ -1,8 +1,14 @@
+import { legacyTransposeToTargetKey } from './setlistKeys';
 import type { LocalSetlistEntry, SetlistEntry, Song } from '../types';
 
 /**
  * Format a minimal local setlist entry from storage into a SetlistEntry.
  * Used for listing and metadata views where song contents are not yet loaded.
+ *
+ * A legacy `transpose` is NOT converted here: with no song content there is no
+ * key to convert it against. Null is safe for these views because key stepping
+ * is already inert without a derivable key (getSongKey('', 0) === ''); the
+ * player converts the legacy value in enrichLocalEntry, where content exists.
  */
 export function formatLocalEntry(e: LocalSetlistEntry, idx: number): SetlistEntry {
   return {
@@ -35,7 +41,9 @@ export function enrichLocalEntry(e: LocalSetlistEntry, song: Song | null, idx: n
     artist: song.artist || '',
     content: song.content,
     content_override: null,
-    target_key: e.target_key ?? null,
+    // Entries saved before 1.23.0 hold an accumulated `transpose` and no
+    // target_key; converting on read keeps the key they were played in.
+    target_key: e.target_key ?? legacyTransposeToTargetKey(song.content, e.transpose),
     nashville: e.nashville ?? 0,
     font: null,
     two_col: null,
