@@ -1,7 +1,7 @@
 const express = require('express');
 const { requireAuth, optionalAuth, isAdminRole } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
-const { parseId, validateSetlistInput, validateTranspose, parsePaginationParams } = require('../lib/validation');
+const { parseId, validateSetlistInput, validateTargetKey, parsePaginationParams } = require('../lib/validation');
 const Setlist = require('../lib/models/setlist');
 const Song = require('../lib/models/song');
 
@@ -49,7 +49,7 @@ function createSetlistsRouter() {
       if (e.visibility === VISIBILITY.PRIVATE && e.song_user_id !== userId && !(req.user && isAdminRole(req.user.role))) {
         return {
           entry_id: e.entry_id, song_id: e.song_id, position: e.position,
-          transpose: 0, nashville: 0, content_override: null,
+          target_key: null, nashville: 0, content_override: null,
           title: '[Private Song]', artist: '', content: '', key: '',
           youtube_url: null, bpm: null, tags: null, language: '',
           username: '', is_private_placeholder: true,
@@ -71,7 +71,7 @@ function createSetlistsRouter() {
       if (e.visibility === VISIBILITY.PRIVATE && e.song_user_id !== req.user.id && !isAdminRole(req.user.role)) {
         return {
           entry_id: e.entry_id, song_id: e.song_id, position: e.position,
-          transpose: 0, nashville: 0, content_override: null,
+          target_key: null, nashville: 0, content_override: null,
           title: '[Private Song]', artist: '', content: '', key: '',
           youtube_url: null, bpm: null, tags: null, language: '',
           username: '', is_private_placeholder: true,
@@ -107,12 +107,12 @@ function createSetlistsRouter() {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid setlist ID' });
     if (!resolveSetlist(res, id, req.user.id)) return;
-    const { song_id, transpose, nashville } = req.body;
+    const { song_id, target_key, nashville } = req.body;
     if (!song_id) return res.status(400).json({ error: 'song_id is required' });
     const songIdParsed = parseId(song_id);
     if (!songIdParsed) return res.status(400).json({ error: 'Invalid song_id' });
-    const transposeErr = validateTranspose(transpose);
-    if (transposeErr) return res.status(400).json({ error: transposeErr });
+    const keyErr = validateTargetKey(target_key);
+    if (keyErr) return res.status(400).json({ error: keyErr });
     if (nashville !== undefined && typeof nashville !== 'boolean' && nashville !== 0 && nashville !== 1) {
       return res.status(400).json({ error: 'Nashville must be a boolean' });
     }
@@ -122,7 +122,7 @@ function createSetlistsRouter() {
     if (song.user_id !== req.user.id && song.visibility !== VISIBILITY.PUBLIC) {
       return res.status(403).json({ error: 'Cannot add a private song you don\'t own' });
     }
-    const result = Setlist.addSongEntry(id, songIdParsed, { transpose, nashville });
+    const result = Setlist.addSongEntry(id, songIdParsed, { targetKey: target_key ?? null, nashville });
     res.json({ entry_id: result.entry_id, position: result.position });
   });
 
@@ -134,9 +134,9 @@ function createSetlistsRouter() {
     if (!resolveSetlist(res, setlistId, req.user.id)) return;
     const entry = Setlist.getEntryById(entryId, setlistId);
     if (!entry) return res.status(404).json({ error: 'Entry not found' });
-    const { transpose, nashville, font, two_col, content_override } = req.body;
-    const transposeErr = validateTranspose(transpose);
-    if (transposeErr) return res.status(400).json({ error: transposeErr });
+    const { target_key, nashville, font, two_col, content_override } = req.body;
+    const keyErr = validateTargetKey(target_key);
+    if (keyErr) return res.status(400).json({ error: keyErr });
     if (nashville !== undefined && typeof nashville !== 'boolean' && nashville !== 0 && nashville !== 1) {
       return res.status(400).json({ error: 'Nashville must be a boolean' });
     }
@@ -144,7 +144,8 @@ function createSetlistsRouter() {
       return res.status(400).json({ error: 'Content override too large (max 100KB)' });
     }
     Setlist.updateSongEntry(entryId, setlistId, entry, {
-      transpose,
+      targetKey: target_key ?? null,
+      targetKeyProvided: 'target_key' in req.body,
       nashville,
       font,
       twoCol: two_col,
