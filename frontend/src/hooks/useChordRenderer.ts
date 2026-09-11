@@ -1,57 +1,43 @@
 import { useState, useCallback, useMemo } from 'react';
 import { renderChordPro, getSongKey, songHasKey } from '../lib/chords';
-import { getTransposeDelta, normalizeTranspose } from '../lib/keys';
+import { getTransposeDelta, stepKey } from '../lib/keys';
 
 export function useChordRenderer(content: string) {
-  const [transpose, setTranspose] = useState(0);
+  const [targetKey, setTargetKey] = useState<string | null>(null);
   const [nashville, setNashville] = useState(false);
+
+  const sourceKey = useMemo(() => getSongKey(content, 0), [content]);
+  const transpose = useMemo(
+    () => (targetKey ? getTransposeDelta(sourceKey, targetKey) : 0),
+    [sourceKey, targetKey]
+  );
 
   const renderedHtml = useMemo(
     () => renderChordPro(content, transpose, nashville),
     [content, transpose, nashville]
   );
 
-  const currentKey = useMemo(
-    () => getSongKey(content, transpose),
-    [content, transpose]
-  );
+  const currentKey = useMemo(() => getSongKey(content, transpose), [content, transpose]);
+  const hasKey = useMemo(() => songHasKey(content, transpose), [content, transpose]);
 
-  const hasKey = useMemo(
-    () => songHasKey(content, transpose),
-    [content, transpose]
-  );
+  const stepCurrentKey = useCallback((direction: 1 | -1) => {
+    setTargetKey((prev) => {
+      const base = prev || sourceKey;
+      return base ? stepKey(base, direction) : prev;
+    });
+  }, [sourceKey]);
 
-  const doTranspose = useCallback((delta: number) => {
-    setTranspose((prev) => normalizeTranspose(prev + delta));
-  }, []);
-
-  const resetTranspose = useCallback(() => {
-    setTranspose(0);
-  }, []);
+  const resetKey = useCallback(() => setTargetKey(null), []);
 
   const toggleNashville = useCallback((checked: boolean) => {
     setNashville(checked);
-    if (checked) setTranspose(0);
+    if (checked) setTargetKey(null);
   }, []);
 
-  const pickKey = useCallback((targetKey: string) => {
-    const delta = getTransposeDelta(currentKey, targetKey);
-    if (delta !== 0) {
-      setTranspose((prev) => normalizeTranspose(prev + delta));
-    }
-  }, [currentKey]);
+  const pickKey = useCallback((key: string) => setTargetKey(key), []);
 
   return {
-    transpose,
-    setTranspose,
-    nashville,
-    setNashville,
-    renderedHtml,
-    currentKey,
-    hasKey,
-    doTranspose,
-    resetTranspose,
-    toggleNashville,
-    pickKey,
+    targetKey, setTargetKey, transpose, nashville, setNashville,
+    renderedHtml, currentKey, hasKey, stepCurrentKey, resetKey, toggleNashville, pickKey,
   };
 }

@@ -41,7 +41,7 @@ describe('useSetlistPlayer Hook', () => {
         artist: 'Artist 1',
         content: 'C G Am F',
         content_override: null,
-        transpose: 2,
+        target_key: 'A',
         nashville: 1,
         font: 2,
         two_col: 1,
@@ -78,7 +78,7 @@ describe('useSetlistPlayer Hook', () => {
     expect(entry.nashville).toBe(0);
   });
 
-  it('does not trigger isModified when session layout options are changed, but triggers when transpose changes', async () => {
+  it('does not trigger isModified when session layout options are changed, but triggers when the key changes', async () => {
     mockApiCall.mockResolvedValue(mockSetlist);
 
     const { result } = renderHook(() =>
@@ -106,14 +106,14 @@ describe('useSetlistPlayer Hook', () => {
     });
     expect(result.current.isModified).toBe(false);
 
-    // Update transposition override (should trigger isModified)
+    // Update the target key (should trigger isModified)
     act(() => {
-      result.current.updateEntry({ transpose: 3 });
+      result.current.updateEntry({ target_key: 'C' });
     });
     expect(result.current.isModified).toBe(true);
   });
 
-  it('saves only key transposition to server during saveOnline', async () => {
+  it('saves only the target key to server during saveOnline', async () => {
     mockApiCall.mockResolvedValue(mockSetlist);
 
     const { result } = renderHook(() =>
@@ -127,27 +127,27 @@ describe('useSetlistPlayer Hook', () => {
       expect(result.current.entry).not.toBeNull();
     });
 
-    // Update transposition
+    // Update the target key
     act(() => {
-      result.current.updateEntry({ transpose: 5 });
+      result.current.updateEntry({ target_key: 'C' });
     });
- 
+
     mockApiCall.mockResolvedValueOnce({ success: true });
- 
+
     await act(async () => {
       await result.current.saveOnline(true);
     });
 
-    // Verify PUT request only sends transpose
+    // Verify PUT request only sends target_key
     expect(mockApiCall).toHaveBeenLastCalledWith(
       'PUT',
       '/api/setlists/1/entries/entry_1',
-      { transpose: 5 }
+      { target_key: 'C' }
     );
     expect(result.current.isModified).toBe(false);
   });
 
-  it('saves only key transposition locally during saveLocal', async () => {
+  it('saves only the target key locally during saveLocal', async () => {
     mockApiCall.mockResolvedValue(mockSetlist);
 
     const { result } = renderHook(() =>
@@ -161,81 +161,49 @@ describe('useSetlistPlayer Hook', () => {
       expect(result.current.entry).not.toBeNull();
     });
 
-    // Update transposition and session layout
+    // Update the target key and session layout
     act(() => {
-      result.current.updateEntry({ transpose: -1, _font: 1 });
+      result.current.updateEntry({ target_key: 'G', _font: 1 });
     });
 
     act(() => {
       result.current.saveLocal(true);
     });
 
-    // Verify only transpose is stored
+    // Verify only target_key is stored
     expect(mockSaveOverride).toHaveBeenCalledWith(1, 'entry_1', {
-      transpose: -1,
+      target_key: 'G',
     });
     expect(result.current.isModified).toBe(false);
   });
 
-  describe('transpose normalization', () => {
-    // Regression: repeated key picks used to accumulate unbounded (a downward
-    // pick returns +10, not -2), pushing transpose past the API's +/-12 guard
-    // while the displayed key looked perfectly ordinary.
-    it('keeps an accumulated transpose inside the persistable range', async () => {
+  describe('target key assignment', () => {
+    // Regression: the old model accumulated a semitone delta, so repeated key
+    // picks could drift out of the API's persistable range (a downward pick
+    // returns +10, not -2). Assigning the key name directly cannot drift.
+    it('assigns a picked key directly without accumulating', async () => {
       mockApiCall.mockResolvedValue(mockSetlist);
       const { result } = renderHook(() =>
         useSetlistPlayer({ setlistId: 1, navigate })
       );
       await waitFor(() => expect(result.current.setlist).toBeTruthy());
 
-      // Alternating G <-> A via the key picker: deltas arrive as +2 then +10.
-      for (let i = 0; i < 6; i++) {
-        const delta = i % 2 === 0 ? 2 : 10;
-        const current = result.current.entry!.transpose;
-        act(() => { result.current.updateEntry({ transpose: current + delta }); });
-        expect(result.current.entry!.transpose).toBeGreaterThanOrEqual(-12);
-        expect(result.current.entry!.transpose).toBeLessThanOrEqual(12);
+      for (const key of ['A', 'G', 'A', 'G', 'C', 'F#']) {
+        act(() => { result.current.updateEntry({ target_key: key }); });
+        expect(result.current.entry!.target_key).toBe(key);
       }
     });
 
-    it('does not flag a legacy stored value as modified when the key is unchanged', async () => {
-      // mockSetlist entry_1 stores transpose 2; simulate a legacy non-canonical
-      // row by round-tripping up then down, which canonicalises the live value.
+    it('treats a null target key as an unsaved reset to as-written', async () => {
       mockApiCall.mockResolvedValue(mockSetlist);
       const { result } = renderHook(() =>
         useSetlistPlayer({ setlistId: 1, navigate })
       );
       await waitFor(() => expect(result.current.setlist).toBeTruthy());
 
-      act(() => { result.current.updateEntry({ transpose: result.current.entry!.transpose + 12 }); });
-      expect(result.current.entry!.transpose).toBe(2);
-      expect(result.current.isModified).toBe(false);
-    });
-
-    it('canonicalises a drifted localStorage override on load', async () => {
-      // Pre-v1.22.2 the override store could hold an out-of-range value; loading
-      // it raw meant Save Online failed immediately, before any key change.
-      mockGetOverrides.mockReturnValue({ entry_1: { transpose: 14 } });
-      mockApiCall.mockResolvedValue(mockSetlist);
-      const { result } = renderHook(() =>
-        useSetlistPlayer({ setlistId: 1, navigate })
-      );
-      await waitFor(() => expect(result.current.setlist).toBeTruthy());
-
-      expect(result.current.entry!.transpose).toBe(2);
-      expect(result.current.entry!.transpose).toBeLessThanOrEqual(12);
-    });
-
-    it('leaves non-transpose updates untouched', async () => {
-      mockApiCall.mockResolvedValue(mockSetlist);
-      const { result } = renderHook(() =>
-        useSetlistPlayer({ setlistId: 1, navigate })
-      );
-      await waitFor(() => expect(result.current.setlist).toBeTruthy());
-      const before = result.current.entry!.transpose;
-      act(() => { result.current.updateEntry({ nashville: 0 }); });
-      expect(result.current.entry!.transpose).toBe(before);
-      expect(result.current.entry!.nashville).toBe(0);
+      act(() => { result.current.updateEntry({ target_key: null }); });
+      expect(result.current.entry!.target_key).toBe(null);
+      expect(result.current.isModified).toBe(true);
     });
   });
 });

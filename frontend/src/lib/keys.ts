@@ -57,3 +57,17 @@ export function getTransposeDelta(fromKey: string, toKey: string): number {
     return 0;
   }
 }
+
+/**
+ * Returns the key one semitone above or below `key`, preserving major/minor.
+ *
+ * Replaces the old accumulate-a-delta arrow handlers: stepping between key
+ * names cannot drift out of range the way a running total could.
+ */
+export function stepKey(key: string, direction: 1 | -1): string {
+  const normalized = normalizeKey(key);
+  const table = normalized.endsWith('m') ? ALL_KEYS_MINOR : ALL_KEYS;
+  const idx = table.indexOf(normalized);
+  if (idx === -1) return key;
+  return table[(idx + direction + table.length) % table.length];
+}

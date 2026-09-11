@@ -1,4 +1,5 @@
 import { getSongKey } from '../lib/chords';
+import { getTransposeDelta } from '../lib/keys';
 import type { SetlistEntry } from '../types';
 
 interface SetlistEntryCardProps {
@@ -7,7 +8,7 @@ interface SetlistEntryCardProps {
   isEditable: boolean;
   isLocal: boolean;
   onRemove: (entryId: number | string, idx: number) => void;
-  onTranspose: (entryId: number | string, idx: number, delta: number) => void;
+  onStepKey: (entryId: number | string, idx: number, direction: 1 | -1) => void;
   onClick: (idx: number) => void;
   t: (key: string) => string;
   dragProps?: React.HTMLProps<HTMLDivElement>;
@@ -21,14 +22,17 @@ export function SetlistEntryCard({
   isEditable,
   isLocal,
   onRemove,
-  onTranspose,
+  onStepKey,
   onClick,
   t,
   dragProps,
   handleProps,
   isDragging,
 }: SetlistEntryCardProps) {
-  const keyDisplay = getSongKey(entry.content_override || entry.content, entry.transpose);
+  const content = entry.content_override || entry.content;
+  const semitones = entry.target_key ? getTransposeDelta(getSongKey(content, 0), entry.target_key) : 0;
+  const keyDisplay = getSongKey(content, semitones);
+  const canStep = !!(entry.target_key || getSongKey(content, 0));
 
   return (
     <div
@@ -66,10 +70,10 @@ export function SetlistEntryCard({
       </div>
       {isEditable && (
         <div className="setlist-entry-controls" onClick={(e) => e.stopPropagation()}>
-          <button className="btn btn-ghost btn-sm" onClick={() => onTranspose(entry.entry_id, idx, -1)}>
+          <button className="btn btn-ghost btn-sm" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, -1)}>
             &#9837;
           </button>
-          <button className="btn btn-ghost btn-sm" onClick={() => onTranspose(entry.entry_id, idx, 1)}>
+          <button className="btn btn-ghost btn-sm" disabled={!canStep} onClick={() => onStepKey(entry.entry_id, idx, 1)}>
             &#9839;
           </button>
         </div>

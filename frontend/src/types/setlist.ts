@@ -5,7 +5,7 @@ export interface SetlistEntry {
   artist: string;
   content: string;
   content_override: string | null;
-  transpose: number;
+  target_key: string | null;
   nashville: number;
   font: number | null;
   two_col: number | null;
@@ -50,7 +50,7 @@ export interface LocalSetlistEntry {
   song_id: number;
   title: string;
   artist: string;
-  transpose: number;
+  target_key: string | null;
   nashville: number;
 }
 

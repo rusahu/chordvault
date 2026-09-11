@@ -17,21 +17,20 @@ vi.mock('../../hooks/useLocalSetlists', () => ({
 
 const setlist = {
   id: 1, user_id: 1, name: 'SL', visibility: 'private',
-  entries: [{ entry_id: 1, song_id: 9, title: 'S', artist: '', content: '{key: C}\n[C]a', transpose: 12, nashville: 0 }],
+  entries: [{ entry_id: 1, song_id: 9, title: 'S', artist: '', content: '{key: C}\n[C]a', target_key: 'B', nashville: 0 }],
 };
 
-describe('SetlistEditView transpose buttons', () => {
+describe('SetlistEditView key buttons', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockApiCall.mockResolvedValue(setlist);
   });
 
-  it('never PUTs a transpose the API would reject, even from the boundary', async () => {
+  it('steps the key by name instead of accumulating a delta', async () => {
     render(<SetlistEditView setlistId={1} navigate={vi.fn()} />);
     await waitFor(() => expect(screen.getByText('S')).toBeTruthy());
 
-    // Entry sits at +12, the top of the API's accepted range. One more sharp
-    // would push an un-normalized accumulator to 13 and fail the save.
+    // Entry is pinned to B. One sharp step should assign C directly.
     fireEvent.click(screen.getByText('♯'));
 
     await waitFor(() => {
@@ -40,8 +39,17 @@ describe('SetlistEditView transpose buttons', () => {
     });
 
     const [, , body] = mockApiCall.mock.calls.find(c => c[0] === 'PUT')!;
-    expect(body.transpose).toBe(1);
-    expect(body.transpose).toBeGreaterThanOrEqual(-12);
-    expect(body.transpose).toBeLessThanOrEqual(12);
+    expect(body).toEqual({ target_key: 'C' });
+  });
+
+  it('disables the key buttons for a song with no derivable key', async () => {
+    mockApiCall.mockResolvedValue({
+      ...setlist,
+      entries: [{ ...setlist.entries[0], content: 'just lyrics, no chords', target_key: null }],
+    });
+    render(<SetlistEditView setlistId={1} navigate={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('S')).toBeTruthy());
+    expect(screen.getByText('♭')).toBeDisabled();
+    expect(screen.getByText('♯')).toBeDisabled();
   });
 });

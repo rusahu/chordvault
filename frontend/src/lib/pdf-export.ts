@@ -1,6 +1,7 @@
 import { PdfFormatter } from 'chordsheetjs/pdf';
 import { PDFDocument } from 'pdf-lib';
-import { prepareSong, resolveEffectivePreferences } from './chords';
+import { prepareSong, resolveEffectivePreferences, getSongKey } from './chords';
+import { getTransposeDelta } from './keys';
 import { buildPdfConfig } from './pdf-config';
 import { EMBEDDED_FONT } from './constants';
 import { loadPdfFont, makePdfConstructor, unsupportedChars } from './pdf-fonts';
@@ -96,7 +97,8 @@ export async function exportSetlistPdf(
       hideYt: false,
     });
     const content = entry.content_override || entry.content;
-    parts.push(await renderOne(content, entry.transpose, prefs.nashville, prefs.fontSize));
+    const semitones = entry.target_key ? getTransposeDelta(getSongKey(content, 0), entry.target_key) : 0;
+    parts.push(await renderOne(content, semitones, prefs.nashville, prefs.fontSize));
     unsupportedChars(content).forEach((c) => missing.add(c));
   }
 
