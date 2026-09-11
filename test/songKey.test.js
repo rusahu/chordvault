@@ -44,3 +44,19 @@ test('returns empty string when the key is not parseable', () => {
 test('returns empty string for empty content', () => {
   assert.equal(songKeyFromContent('', 0), '');
 });
+
+// Key.transpose() alone can yield a non-canonical spelling like 'B#' or 'E#',
+// which ENHARMONIC_MAP doesn't cover. .normalize() resolves it to the
+// canonical letter before normalizeKey() runs; without it these would either
+// return the raw 'B#'/'E#' spelling or (post-canonical-gate) ''.
+test('normalizes a spelling that only appears without a canonicalizing transpose', () => {
+  assert.equal(songKeyFromContent('{key: C#}\n[C#]a', -1), 'C');
+});
+
+test('normalizes a non-canonical spelling in a minor key', () => {
+  assert.equal(songKeyFromContent('{key: C#m}\n[C#m]a', -1), 'Cm');
+});
+
+test('normalizes a non-canonical spelling beyond a +/-6 semitone shift', () => {
+  assert.equal(songKeyFromContent('{key: C#m}\n[C#m]a', -8), 'Fm');
+});
