@@ -409,8 +409,8 @@ export interface FitLayout {
 /** Largest and smallest font offsets the Fit action will settle on. */
 const FIT_MAX_FONT = 3;
 const FIT_MIN_FONT = -3;
-/** Breathing room left below the sheet, in px. */
-const FIT_BOTTOM_MARGIN = 24;
+/** Breathing room kept above and below the sheet, in px. */
+const FIT_MARGIN = 24;
 /** Must match the min-width of the .two-col rule in chord-sheet.css. */
 const TWO_COL_MIN_WIDTH = 640;
 
@@ -445,15 +445,40 @@ function captureFitLayout(wrap: HTMLElement): () => void {
   };
 }
 
+function viewportHeight(): number {
+  return window.visualViewport?.height ?? window.innerHeight;
+}
+
+/** Where the sheet starts in the document, independent of the current scroll. */
+function documentTop(output: Element): number {
+  return output.getBoundingClientRect().top + window.scrollY;
+}
+
+/** Where the sheet lands once scrolled up as far as the page allows. */
+function topAfterScroll(output: Element): number {
+  const maxScroll = Math.max(0, document.documentElement.scrollHeight - viewportHeight());
+  return Math.max(FIT_MARGIN, documentTop(output) - maxScroll);
+}
+
 /**
- * Height the sheet may occupy with the page scrolled to the top, which is
- * where the Fit action leaves it. Measured against the viewport rather than
- * the wrap, which grows to its own content and so always "fits".
+ * Height the sheet may occupy. Fit scrolls the sheet up to fill the screen, so
+ * the page header and toolbar cost nothing -- they scroll away. Only a page too
+ * short to scroll that far gives back less than a full screen. Measured against
+ * the viewport and not the wrap, which grows to its content and so always "fits".
  */
-function availableHeight(output: HTMLElement): number {
-  const viewport = window.visualViewport?.height ?? window.innerHeight;
-  const top = output.getBoundingClientRect().top + window.scrollY;
-  return viewport - top - FIT_BOTTOM_MARGIN;
+function availableHeight(output: Element): number {
+  return viewportHeight() - topAfterScroll(output) - FIT_MARGIN;
+}
+
+/**
+ * Scrolls the sheet up to fill the screen, where Fit measured it to fit. Call
+ * this only once the new layout is in the DOM, or the browser clamps the scroll
+ * against the old page height.
+ */
+export function scrollSheetToTop(): void {
+  const output = document.querySelector('#chord-output');
+  if (!output) return window.scrollTo(0, 0);
+  window.scrollTo(0, documentTop(output) - FIT_MARGIN);
 }
 
 export function autoFit(): FitLayout {
