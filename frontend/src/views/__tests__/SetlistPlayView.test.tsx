@@ -50,7 +50,7 @@ describe('SetlistPlayView Auto-Fit', () => {
     vi.clearAllMocks();
     (useSetlistPlayer as Mock).mockReturnValue({
       setlist: { id: 1, title: 'Test Setlist', entries: [{ entry_id: 1, title: 'Song 1', content: 'C G' }, { entry_id: 2, title: 'Song 2', content: 'D A' }] },
-      entry: { entry_id: 1, title: 'Song 1', content: 'C G', transpose: 0 },
+      entry: { entry_id: 1, title: 'Song 1', content: 'C G' },
       index: 0,
       total: 2,
       goTo: vi.fn(),

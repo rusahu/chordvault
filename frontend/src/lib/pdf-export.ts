@@ -1,6 +1,7 @@
 import { PdfFormatter } from 'chordsheetjs/pdf';
 import { PDFDocument } from 'pdf-lib';
 import { prepareSong, resolveEffectivePreferences } from './chords';
+import { entrySemitones } from './setlistKeys';
 import { buildPdfConfig } from './pdf-config';
 import { EMBEDDED_FONT } from './constants';
 import { loadPdfFont, makePdfConstructor, unsupportedChars } from './pdf-fonts';
@@ -96,7 +97,8 @@ export async function exportSetlistPdf(
       hideYt: false,
     });
     const content = entry.content_override || entry.content;
-    parts.push(await renderOne(content, entry.transpose, prefs.nashville, prefs.fontSize));
+    const semitones = entrySemitones(content, entry.target_key);
+    parts.push(await renderOne(content, semitones, prefs.nashville, prefs.fontSize));
     unsupportedChars(content).forEach((c) => missing.add(c));
   }
 

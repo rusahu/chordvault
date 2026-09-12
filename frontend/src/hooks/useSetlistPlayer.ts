@@ -3,7 +3,7 @@ import { useApi } from './useApi';
 import { ApiError } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getSetlistOverrides, saveSetlistOverride } from '../lib/storage';
+import { getSetlistOverrides, saveSetlistOverride, migrateOverride } from '../lib/storage';
 import { enrichLocalSetlistSongs } from '../lib/setlists';
 import type { Setlist, SetlistEntry } from '../types';
 
@@ -14,6 +14,32 @@ interface UseSetlistPlayerOptions {
   initialIndex?: number;
   navigate: (view: string, params?: Record<string, string>) => void;
   onNavigate?: () => void;
+}
+
+/**
+ * Merges the browser's stored overrides onto freshly loaded entries.
+ *
+ * A stored override wins even when its target_key is null: null means "play as
+ * written", which is a choice the user saved, so it must not fall back to the
+ * server's pinned key. An override holding no key decision at all (only layout
+ * fields) leaves the entry's own key alone. Legacy records are converted to a
+ * target key and written back.
+ */
+function applyStoredOverrides(setlistId: number | string, entries: SetlistEntry[]) {
+  const overrides = getSetlistOverrides(setlistId);
+  const targetKeys: Record<string, string | null> = {};
+  const merged = entries.map((en) => {
+    const raw = overrides[String(en.entry_id)];
+    const ov = raw ? migrateOverride(raw, en.content_override || en.content) : undefined;
+    if (raw && raw.transpose !== undefined) {
+      saveSetlistOverride(setlistId, en.entry_id, ov!);
+    }
+    const storedKey = raw && ('target_key' in raw || 'transpose' in raw);
+    const targetKey = (storedKey ? ov!.target_key : en.target_key) ?? null;
+    targetKeys[String(en.entry_id)] = targetKey;
+    return { ...en, target_key: targetKey, font: null, two_col: null, nashville: 0 };
+  });
+  return { entries: merged, targetKeys };
 }
 
 export function useSetlistPlayer({
@@ -31,31 +57,18 @@ export function useSetlistPlayer({
   const [setlist, setSetlist] = useState<Setlist | null>(initialSetlist || null);
   const [index, setIndex] = useState(initialIndex || 0);
   
-  const [savedTransposes, setSavedTransposes] = useState<Record<string, number>>({});
+  const [savedTargetKeys, setSavedTargetKeys] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
     if (isLocal) {
       if (initialSetlist) {
-        const overrides = getSetlistOverrides(initialSetlist.id);
-        const transposes: Record<string, number> = {};
-        const entries = initialSetlist.entries.map((en) => {
-          const ov = overrides[String(en.entry_id)];
-          const transpose = ov?.transpose ?? en.transpose;
-          transposes[String(en.entry_id)] = transpose;
-          return {
-            ...en,
-            transpose,
-            font: null,
-            two_col: null,
-            nashville: 0,
-          };
-        });
+        const { entries, targetKeys } = applyStoredOverrides(initialSetlist.id, initialSetlist.entries);
         setSetlist({
           ...initialSetlist,
           entries,
           isLocal: true,
         });
-        setSavedTransposes(transposes);
+        setSavedTargetKeys(targetKeys);
       } else {
         // Fallback: load local setlist from storage and fetch song contents
         import('../lib/storage').then(({ getLocalSetlists }) => {
@@ -77,23 +90,11 @@ export function useSetlistPlayer({
                 event_date: null,
               };
 
-              const overrides = getSetlistOverrides(enriched.id);
-              const transposes: Record<string, number> = {};
-              enriched.entries = enriched.entries.map((en) => {
-                const ov = overrides[String(en.entry_id)];
-                const transpose = ov?.transpose ?? en.transpose;
-                transposes[String(en.entry_id)] = transpose;
-                return {
-                  ...en,
-                  transpose,
-                  font: null,
-                  two_col: null,
-                  nashville: 0,
-                };
-              });
+              const merged = applyStoredOverrides(enriched.id, enriched.entries);
+              enriched.entries = merged.entries;
 
               setSetlist(enriched);
-              setSavedTransposes(transposes);
+              setSavedTargetKeys(merged.targetKeys);
             })
             .catch((err) => {
               toast(err.message, 'error');
@@ -122,23 +123,11 @@ export function useSetlistPlayer({
         }
 
         // Merge local overrides
-        const overrides = getSetlistOverrides(sl.id);
-        const transposes: Record<string, number> = {};
-        sl.entries = sl.entries.map((en) => {
-          const ov = overrides[String(en.entry_id)];
-          const transpose = ov?.transpose ?? en.transpose;
-          transposes[String(en.entry_id)] = transpose;
-          return {
-            ...en,
-            transpose,
-            font: null,
-            two_col: null,
-            nashville: 0,
-          };
-        });
+        const merged = applyStoredOverrides(sl.id, sl.entries);
+        sl.entries = merged.entries;
 
         setSetlist(sl);
-        setSavedTransposes(transposes);
+        setSavedTargetKeys(merged.targetKeys);
       } catch (e) {
         toast((e as Error).message, 'error');
         navigate(user ? 'setlists' : 'browse');
@@ -153,21 +142,21 @@ export function useSetlistPlayer({
 
   const isModified = useMemo(() => {
     if (!entry) return false;
-    return entry.transpose !== (savedTransposes[String(entry.entry_id)] ?? 0);
-  }, [entry, savedTransposes]);
+    return entry.target_key !== (savedTargetKeys[String(entry.entry_id)] ?? null);
+  }, [entry, savedTargetKeys]);
 
   /**
-   * Saves the current transpose settings to the server (only for owners).
+   * Saves the current key setting to the server (only for owners).
    */
   const saveOnline = useCallback(async (silent = false) => {
     if (!setlist || !entry || !user || setlist.user_id !== user.id) return;
     try {
       await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, {
-        transpose: entry.transpose,
+        target_key: entry.target_key,
       });
-      setSavedTransposes(prev => ({
+      setSavedTargetKeys(prev => ({
         ...prev,
-        [String(entry.entry_id)]: entry.transpose
+        [String(entry.entry_id)]: entry.target_key
       }));
       if (!silent) toast('Key saved to cloud', 'success');
     } catch (e) {
@@ -176,16 +165,16 @@ export function useSetlistPlayer({
   }, [setlist, entry, apiCall, user, toast]);
 
   /**
-   * Saves the current transpose settings locally in the browser.
+   * Saves the current key setting locally in the browser.
    */
   const saveLocal = useCallback((silent = false) => {
     if (!setlist || !entry) return;
     saveSetlistOverride(setlist.id, entry.entry_id, {
-      transpose: entry.transpose,
+      target_key: entry.target_key,
     });
-    setSavedTransposes(prev => ({
+    setSavedTargetKeys(prev => ({
       ...prev,
-      [String(entry.entry_id)]: entry.transpose
+      [String(entry.entry_id)]: entry.target_key
     }));
     if (!silent) toast('Key saved locally', 'success');
   }, [setlist, entry, toast]);

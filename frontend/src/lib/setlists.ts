@@ -1,8 +1,14 @@
+import { legacyTransposeToTargetKey } from './setlistKeys';
 import type { LocalSetlistEntry, SetlistEntry, Song } from '../types';
 
 /**
  * Format a minimal local setlist entry from storage into a SetlistEntry.
  * Used for listing and metadata views where song contents are not yet loaded.
+ *
+ * A legacy `transpose` is NOT converted here: with no song content there is no
+ * key to convert it against. Null is safe for these views because key stepping
+ * is already inert without a derivable key (getSongKey('', 0) === ''); the
+ * player converts the legacy value in enrichLocalEntry, where content exists.
  */
 export function formatLocalEntry(e: LocalSetlistEntry, idx: number): SetlistEntry {
   return {
@@ -10,7 +16,7 @@ export function formatLocalEntry(e: LocalSetlistEntry, idx: number): SetlistEntr
     song_id: e.song_id,
     title: e.title,
     artist: e.artist || '',
-    transpose: e.transpose || 0,
+    target_key: e.target_key ?? null,
     nashville: e.nashville || 0,
     content: '',
     content_override: null,
@@ -35,7 +41,12 @@ export function enrichLocalEntry(e: LocalSetlistEntry, song: Song | null, idx: n
     artist: song.artist || '',
     content: song.content,
     content_override: null,
-    transpose: e.transpose ?? 0,
+    // Entries saved before 1.23.0 hold an accumulated `transpose` and no
+    // target_key; converting on read keeps the key they were played in. The
+    // test is presence, not nullishness: a stored null is an explicit
+    // "as written" and must win over a leftover transpose, the same precedence
+    // migrateOverride applies to localStorage overrides.
+    target_key: e.target_key !== undefined ? e.target_key : legacyTransposeToTargetKey(song.content, e.transpose),
     nashville: e.nashville ?? 0,
     font: null,
     two_col: null,

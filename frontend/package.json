@@ -1,11 +1,11 @@
 {
   "name": "chordvault-frontend",
-  "version": "1.22.1",
+  "version": "1.23.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -p tsconfig.build.json && vite build",
     "preview": "vite preview",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",

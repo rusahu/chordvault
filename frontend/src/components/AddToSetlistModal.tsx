@@ -13,7 +13,7 @@ interface AddToSetlistModalProps {
   songTitle: string;
   songArtist: string;
   songVisibility?: string;
-  transpose: number;
+  targetKey: string | null;
   nashville: boolean;
 }
 
@@ -24,7 +24,7 @@ export function AddToSetlistModal({
   songTitle,
   songArtist,
   songVisibility,
-  transpose,
+  targetKey,
   nashville,
 }: AddToSetlistModalProps) {
   const apiCall = useApi();
@@ -65,7 +65,7 @@ export function AddToSetlistModal({
         song_id: songId,
         title: songTitle,
         artist: songArtist,
-        transpose,
+        target_key: targetKey,
         nashville: nashville ? 1 : 0,
       });
       if (added) {
@@ -82,7 +82,7 @@ export function AddToSetlistModal({
     try {
       await apiCall('POST', `/api/setlists/${targetId}/songs`, {
         song_id: songId,
-        transpose,
+        target_key: targetKey,
         nashville,
       });
       onClose();
@@ -105,7 +105,7 @@ export function AddToSetlistModal({
         song_id: songId,
         title: songTitle,
         artist: songArtist,
-        transpose,
+        target_key: targetKey,
         nashville: nashville ? 1 : 0,
       });
       onClose();
@@ -118,7 +118,7 @@ export function AddToSetlistModal({
       });
       await apiCall('POST', `/api/setlists/${result.id}/songs`, {
         song_id: songId,
-        transpose,
+        target_key: targetKey,
         nashville,
       });
       onClose();
