@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
