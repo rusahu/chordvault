@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { flushSync } from 'react-dom';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -11,7 +12,7 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
 import { AddToSetlistModal } from '../components/AddToSetlistModal';
-import { renderChordPro, songHasKey, autoFit } from '../lib/chords';
+import { renderChordPro, songHasKey, autoFit, scrollSheetToTop } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction } from '../types';
 
@@ -58,16 +59,14 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const { setTargetKey: resetChordKey, setNashville: resetChordNashville } = chord;
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
-  const [autoFitActive, setAutoFitActive] = useState(false);
 
   const handleAutoFit = () => {
-    setAutoFitActive(true);
-    setTimeout(() => {
-      const result = autoFit();
-      fontScale.changeFontSize(result.fontSize);
+    const result = autoFit();
+    flushSync(() => {
+      fontScale.setFontSizeTo(result.fontSize);
       twoColState.setTwoColTo(result.twoCol);
-      setAutoFitActive(false);
-    }, 100);
+    });
+    scrollSheetToTop();
   };
 
   // Reset key/nashville when navigating to a different song
@@ -210,7 +209,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
         }}
         onPickKey={chord.pickKey}
         onAutoFit={handleAutoFit}
-        autoFitActive={autoFitActive}
         onExportPdf={handleExportPdf}
         renderKey={songId}
       />
@@ -219,7 +217,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
         html={renderedHtml} 
         twoCol={twoColState.twoCol} 
         fontSize={fontScale.fontSize} 
-        autoFit={autoFitActive} 
       />
 
       {(song.tags || song.youtube_url) && (

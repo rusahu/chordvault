@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -12,7 +13,7 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
-import { renderChordPro, getSongKey, clampFontSize, songHasKey, resolveEffectivePreferences, autoFit } from '../lib/chords';
+import { renderChordPro, getSongKey, clampFontSize, songHasKey, resolveEffectivePreferences, autoFit, scrollSheetToTop } from '../lib/chords';
 import { useSetlistPreferences } from '../hooks/useSetlistPreferences';
 import { stepKey } from '../lib/keys';
 import { entrySemitones } from '../lib/setlistKeys';
@@ -42,7 +43,6 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const [slOptionsOpen, setSlOptionsOpen] = useState(false);
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
-  const [autoFitActive, setAutoFitActive] = useState(false);
 
   const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
@@ -54,11 +54,6 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
       setEditing(false); 
     },
   });
-
-  // Handle auto-fit logic
-  useEffect(() => {
-    setAutoFitActive(false);
-  }, [index]);
 
   const content = entry ? (entry.content_override || entry.content) : '';
 
@@ -210,16 +205,14 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   };
 
   const doFit = () => {
-    setAutoFitActive(true);
-    // Use a small timeout to let the autoFit() calculation run with visual feedback
-    setTimeout(() => {
-      const result = autoFit();
+    const result = autoFit();
+    flushSync(() => {
       updateEntry({ 
         _font: result.fontSize === fontScale.fontSize ? null : result.fontSize,
         _twoCol: result.twoCol === !!twoColState.twoCol ? null : result.twoCol
       });
-      setAutoFitActive(false);
-    }, 100);
+    });
+    scrollSheetToTop();
   };
 
   if (!setlist) return <Loading />;
@@ -275,11 +268,9 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
         onFontChange={changeEntryFont}
         onReset={() => {
           if (entry) { updateEntry({ _font: null, _twoCol: null }); }
-          setAutoFitActive(false);
         }}
         onPickKey={pickKey}
         onAutoFit={doFit}
-        autoFitActive={autoFitActive}
         onSaveOnline={isOwner ? () => saveOnline(false) : undefined}
         onSaveLocal={() => saveLocal(false)}
         onExportPdf={handleExportAllPdf}
@@ -335,7 +326,6 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
               html={renderedHtml} 
               twoCol={!!effTwoCol} 
               fontSize={effFont || 0} 
-              autoFit={autoFitActive} 
             />
           )}
         </>

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Mock } from 'vitest';
 import { SetlistPlayView } from '../SetlistPlayView';
 import { useSetlistPlayer } from '../../hooks/useSetlistPlayer';
@@ -64,19 +64,12 @@ describe('SetlistPlayView Auto-Fit', () => {
     });
   });
 
-  it('performs a one-time Auto-fit action', async () => {
+  it('applies the fitted layout as a session override', () => {
     render(<SetlistPlayView setlistId={1} navigate={navigate} />);
-    
-    const fitBtn = screen.getByTitle(/Auto-fit for this screen/);
-    fireEvent.click(fitBtn);
-    
-    // Button should briefly show "active" class
-    expect(fitBtn).toHaveClass('active');
-    
-    // After timeout it should be back to OFF
-    await waitFor(() => expect(fitBtn).not.toHaveClass('active'), { timeout: 2000 });
-    expect(mockUpdateEntry).toHaveBeenCalledWith(expect.objectContaining({
-      _font: expect.any(Number),
-    }));
+
+    fireEvent.click(screen.getByTitle(/Auto-fit for this screen/));
+
+    // autoFit is mocked to return { fontSize: -1, twoCol: true }
+    expect(mockUpdateEntry).toHaveBeenCalledWith(expect.objectContaining({ _font: -1 }));
   });
 });
