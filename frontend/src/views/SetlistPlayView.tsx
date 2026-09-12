@@ -42,7 +42,6 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const [slOptionsOpen, setSlOptionsOpen] = useState(false);
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
-  const [autoFitActive, setAutoFitActive] = useState(false);
 
   const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
@@ -54,11 +53,6 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
       setEditing(false); 
     },
   });
-
-  // Handle auto-fit logic
-  useEffect(() => {
-    setAutoFitActive(false);
-  }, [index]);
 
   const content = entry ? (entry.content_override || entry.content) : '';
 
@@ -210,16 +204,12 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   };
 
   const doFit = () => {
-    setAutoFitActive(true);
-    // Use a small timeout to let the autoFit() calculation run with visual feedback
-    setTimeout(() => {
-      const result = autoFit();
-      updateEntry({ 
-        _font: result.fontSize === fontScale.fontSize ? null : result.fontSize,
-        _twoCol: result.twoCol === !!twoColState.twoCol ? null : result.twoCol
-      });
-      setAutoFitActive(false);
-    }, 100);
+    const result = autoFit();
+    updateEntry({ 
+      _font: result.fontSize === fontScale.fontSize ? null : result.fontSize,
+      _twoCol: result.twoCol === !!twoColState.twoCol ? null : result.twoCol
+    });
+    window.scrollTo(0, 0);
   };
 
   if (!setlist) return <Loading />;
@@ -275,11 +265,9 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
         onFontChange={changeEntryFont}
         onReset={() => {
           if (entry) { updateEntry({ _font: null, _twoCol: null }); }
-          setAutoFitActive(false);
         }}
         onPickKey={pickKey}
         onAutoFit={doFit}
-        autoFitActive={autoFitActive}
         onSaveOnline={isOwner ? () => saveOnline(false) : undefined}
         onSaveLocal={() => saveLocal(false)}
         onExportPdf={handleExportAllPdf}
@@ -335,7 +323,6 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
               html={renderedHtml} 
               twoCol={!!effTwoCol} 
               fontSize={effFont || 0} 
-              autoFit={autoFitActive} 
             />
           )}
         </>

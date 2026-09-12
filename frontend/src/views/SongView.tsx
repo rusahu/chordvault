@@ -58,16 +58,12 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const { setTargetKey: resetChordKey, setNashville: resetChordNashville } = chord;
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
-  const [autoFitActive, setAutoFitActive] = useState(false);
 
   const handleAutoFit = () => {
-    setAutoFitActive(true);
-    setTimeout(() => {
-      const result = autoFit();
-      fontScale.changeFontSize(result.fontSize);
-      twoColState.setTwoColTo(result.twoCol);
-      setAutoFitActive(false);
-    }, 100);
+    const result = autoFit();
+    fontScale.setFontSizeTo(result.fontSize);
+    twoColState.setTwoColTo(result.twoCol);
+    window.scrollTo(0, 0);
   };
 
   // Reset key/nashville when navigating to a different song
@@ -210,7 +206,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
         }}
         onPickKey={chord.pickKey}
         onAutoFit={handleAutoFit}
-        autoFitActive={autoFitActive}
         onExportPdf={handleExportPdf}
         renderKey={songId}
       />
@@ -219,7 +214,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
         html={renderedHtml} 
         twoCol={twoColState.twoCol} 
         fontSize={fontScale.fontSize} 
-        autoFit={autoFitActive} 
       />
 
       {(song.tags || song.youtube_url) && (

@@ -401,74 +401,79 @@ export function fontScaleValue(offset: number): string | undefined {
   return offset ? String(1 + offset * 0.12) : undefined;
 }
 
-export function autoFit(): { fontSize: number; twoCol: boolean } {
-  const wrap = document.querySelector('.chord-sheet-wrap') as HTMLElement | null;
-  if (!wrap) return { fontSize: 0, twoCol: false };
-
-  const output = wrap.querySelector('#chord-output') as HTMLElement | null;
-  if (!output) return { fontSize: 0, twoCol: false };
-
-  const wasTwoCol = wrap.classList.contains('two-col');
-  const prevScale = wrap.style.getPropertyValue('--font-scale');
-
-  const tryFit = (offset: number, twoCol: boolean): boolean => {
-    // Apply settings and measure actual layout
-    if (twoCol) wrap.classList.add('two-col');
-    else wrap.classList.remove('two-col');
-    
-    const scale = fontScaleValue(offset);
-    if (scale) wrap.style.setProperty('--font-scale', scale);
-    else wrap.style.removeProperty('--font-scale');
-
-    // Calculate available height inside the wrap, accounting for padding (24px top + 24px bottom)
-    const available = wrap.clientHeight - 48;
-    
-    // Safety check: if clientHeight is 0 (not rendered yet), fall back to viewport calc
-    if (available <= 0) {
-      const viewportAvailable = window.innerHeight - wrap.getBoundingClientRect().top - 48 - 24; // padding + margin
-      return output.scrollHeight <= viewportAvailable;
-    }
-
-    return output.scrollHeight <= available;
-  };
-
-  const isWide = window.innerWidth >= 640;
-
-  if (isWide) {
-    // 1. Try 1-col, font 0 (The Gold Standard)
-    if (tryFit(0, false)) return { fontSize: 0, twoCol: false };
-
-    // 2. Try 2-col, font 0 (Prioritize 2-col over shrinking font)
-    if (tryFit(0, true)) return { fontSize: 0, twoCol: true };
-
-    // 3. Try shrinking font in 2-col mode
-    for (let offset = -1; offset >= -3; offset--) {
-      if (tryFit(offset, true)) return { fontSize: clampFontSize(offset), twoCol: true };
-    }
-
-    // 4. Try shrinking font in 1-col mode
-    for (let offset = -1; offset >= -3; offset--) {
-      if (tryFit(offset, false)) return { fontSize: clampFontSize(offset), twoCol: false };
-    }
-  } else {
-    // Phone/Portrait: 1-col is preferred
-    for (let offset = 0; offset >= -3; offset--) {
-      if (tryFit(offset, false)) return { fontSize: clampFontSize(offset), twoCol: false };
-    }
-    // Last resort for phone: 2-col with tiny font (unlikely to be better, but just in case)
-    if (tryFit(-3, true)) return { fontSize: -3, twoCol: true };
-  }
-
-  // Restore original state before returning fallback
-  if (wasTwoCol) wrap.classList.add('two-col');
-  else wrap.classList.remove('two-col');
-  if (prevScale) wrap.style.setProperty('--font-scale', prevScale);
-  else wrap.style.removeProperty('--font-scale');
-
-  // If nothing fits, use smallest font and appropriate column count
-  return { fontSize: -3, twoCol: isWide };
+export interface FitLayout {
+  fontSize: number;
+  twoCol: boolean;
 }
 
+/** Largest and smallest font offsets the Fit action will settle on. */
+const FIT_MAX_FONT = 3;
+const FIT_MIN_FONT = -3;
+/** Breathing room left below the sheet, in px. */
+const FIT_BOTTOM_MARGIN = 24;
+/** Must match the min-width of the .two-col rule in chord-sheet.css. */
+const TWO_COL_MIN_WIDTH = 640;
+
+/**
+ * Layouts the Fit action will try, best first. Largest font wins; at an equal
+ * font size two columns win, since they mean less scrolling.
+ */
+function fitCandidates(isDesktop: boolean): FitLayout[] {
+  const candidates: FitLayout[] = [];
+  for (let fontSize = FIT_MAX_FONT; fontSize >= FIT_MIN_FONT; fontSize--) {
+    if (isDesktop) candidates.push({ fontSize, twoCol: true });
+    candidates.push({ fontSize, twoCol: false });
+  }
+  return candidates;
+}
+
+function applyFitLayout(wrap: HTMLElement, { fontSize, twoCol }: FitLayout): void {
+  wrap.classList.toggle('two-col', twoCol);
+  const scale = fontScaleValue(fontSize);
+  if (scale) wrap.style.setProperty('--font-scale', scale);
+  else wrap.style.removeProperty('--font-scale');
+}
+
+/** Snapshots the wrap's current layout, returning a function that puts it back. */
+function captureFitLayout(wrap: HTMLElement): () => void {
+  const twoCol = wrap.classList.contains('two-col');
+  const scale = wrap.style.getPropertyValue('--font-scale');
+  return () => {
+    wrap.classList.toggle('two-col', twoCol);
+    if (scale) wrap.style.setProperty('--font-scale', scale);
+    else wrap.style.removeProperty('--font-scale');
+  };
+}
+
+/**
+ * Height the sheet may occupy with the page scrolled to the top, which is
+ * where the Fit action leaves it. Measured against the viewport rather than
+ * the wrap, which grows to its own content and so always "fits".
+ */
+function availableHeight(output: HTMLElement): number {
+  const viewport = window.visualViewport?.height ?? window.innerHeight;
+  const top = output.getBoundingClientRect().top + window.scrollY;
+  return viewport - top - FIT_BOTTOM_MARGIN;
+}
+
+export function autoFit(): FitLayout {
+  if (typeof window === 'undefined') return { fontSize: 0, twoCol: false };
+
+  const wrap = document.querySelector('.chord-sheet-wrap') as HTMLElement | null;
+  const output = wrap?.querySelector('#chord-output') as HTMLElement | null;
+  if (!wrap || !output) return { fontSize: 0, twoCol: false };
+
+  const restore = captureFitLayout(wrap);
+  const isDesktop = window.innerWidth >= TWO_COL_MIN_WIDTH;
+
+  const fitted = fitCandidates(isDesktop).find((candidate) => {
+    applyFitLayout(wrap, candidate);
+    return output.scrollHeight <= availableHeight(output);
+  });
+
+  restore();
+  return fitted ?? { fontSize: FIT_MIN_FONT, twoCol: isDesktop };
+}
 
 export function resolveEffectivePreferences(
   entry: SetlistEntry | null | undefined,
