@@ -33,6 +33,7 @@ vi.mock('../../components/OcrModal', () => ({
 const mockApiCall = vi.fn().mockImplementation((_method: string, path: string) => {
   if (path === '/api/settings/gemini-key') return Promise.resolve({ hasKey: false });
   if (path === '/api/settings/languages') return Promise.resolve({ languages: [] });
+  if (path === '/api/songs/tags') return Promise.resolve({ tags: ['worship', 'praise'] });
   return Promise.resolve({});
 });
 const mockUser = { id: 1, username: 'testuser', role: 'owner', token: 'fake' };
@@ -77,6 +78,7 @@ describe('SongEditView two-way sync', () => {
     mockApiCall.mockImplementation((_method: string, path: string) => {
       if (path === '/api/settings/gemini-key') return Promise.resolve({ hasKey: false });
       if (path === '/api/settings/languages') return Promise.resolve({ languages: [] });
+      if (path === '/api/songs/tags') return Promise.resolve({ tags: ['worship', 'praise'] });
       return Promise.resolve({});
     });
   });
@@ -215,37 +217,35 @@ describe('SongEditView two-way sync', () => {
 
   // ─── Tag sync ─────────────────────────────────────────────────
 
-  it('clicking a tag adds {x_tags:} directive to content', async () => {
+  it('typing a custom tag adds {x_tags:} directive to content', async () => {
     await renderEditor();
-
-    // TagPicker renders buttons for each preset tag
-    const worshipBtn = screen.getByText('worship');
-    fireEvent.click(worshipBtn);
-
-    expect(getEditor().value).toContain('{x_tags: worship}');
+    const input = screen.getByPlaceholderText('Add a tag…');
+    fireEvent.change(input, { target: { value: 'Romantic' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(getEditor().value).toContain('{x_tags: Romantic}');
   });
 
-  it('clicking multiple tags creates comma-separated {x_tags:}', async () => {
+  it('adds suggested and custom tags as comma-separated {x_tags:}', async () => {
     await renderEditor();
-
+    await screen.findByText('worship');
     fireEvent.click(screen.getByText('worship'));
-    fireEvent.click(screen.getByText('praise'));
-
-    expect(getEditor().value).toContain('{x_tags: worship,praise}');
+    const input = screen.getByPlaceholderText('Add a tag…');
+    fireEvent.change(input, { target: { value: 'Romantic' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(getEditor().value).toContain('{x_tags: worship,Romantic}');
   });
 
-  it('toggling a tag off removes it from {x_tags:}', async () => {
+  it('prevents case-insensitive duplicates and removes a tag from the song', async () => {
     await renderEditor();
-
-    // Add two tags
-    fireEvent.click(screen.getByText('worship'));
-    fireEvent.click(screen.getByText('praise'));
-    expect(getEditor().value).toContain('{x_tags: worship,praise}');
-
-    // Remove worship
-    fireEvent.click(screen.getByText('worship'));
-    expect(getEditor().value).toContain('{x_tags: praise}');
-    expect(getEditor().value).not.toContain('worship');
+    const input = screen.getByPlaceholderText('Add a tag…');
+    fireEvent.change(input, { target: { value: 'Romantic' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.change(input, { target: { value: 'romantic' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(getEditor().value).toContain('{x_tags: Romantic}');
+    expect(getEditor().value).not.toContain('Romantic,romantic');
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Romantic' }));
+    expect(getEditor().value).not.toContain('{x_tags:');
   });
 
   // ─── Directive ordering ───────────────────────────────────────

@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { SongCard } from '../components/SongCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
+import { MultiTagSelect } from '../components/MultiTagSelect';
 import type { SongListItem } from '../types';
 import { LANGUAGES } from '../lib/languages';
 import { getSessionItem, setSessionItem } from '../lib/storage';
@@ -22,6 +23,13 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   const [songs, setSongs] = useState<SongListItem[]>([]);
   const [query, setQuery] = useState(() => getSessionItem('cv_browse_query') || '');
   const [langFilter, setLangFilter] = useState(() => getSessionItem('cv_browse_lang') || '');
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
+    try {
+      const stored = JSON.parse(getSessionItem('cv_browse_tags') || '[]');
+      return Array.isArray(stored) ? stored.filter((tag): tag is string => typeof tag === 'string') : [];
+    } catch { return []; }
+  });
   const [showFilters, setShowFilters] = useState(() => getSessionItem('cv_browse_show_filters') === 'true');
   const [loaded, setLoaded] = useState(false);
   const [page, setPage] = useState(() => {
@@ -30,12 +38,13 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   });
   const [totalPages, setTotalPages] = useState(1);
 
-  const load = useCallback(async (q = '', lang = '', targetPage = 1) => {
+  const load = useCallback(async (q = '', lang = '', tags: string[] = [], targetPage = 1) => {
     try {
       let url = '/api/songs/public';
       const params: string[] = [];
       if (q) params.push(`q=${encodeURIComponent(q)}`);
       if (lang) params.push(`language=${encodeURIComponent(lang)}`);
+      tags.forEach((tag) => params.push(`tags=${encodeURIComponent(tag)}`));
       params.push(`page=${targetPage}`);
       params.push(`limit=20`);
       url += '?' + params.join('&');
@@ -55,28 +64,40 @@ export function BrowseView({ navigate }: BrowseViewProps) {
       
       setSessionItem('cv_browse_query', q);
       setSessionItem('cv_browse_lang', lang);
+      setSessionItem('cv_browse_tags', JSON.stringify(tags));
       setSessionItem('cv_browse_page', String(data.page));
     } catch (e) { toast((e as Error).message, 'error'); }
   }, [api, toast]);
 
   useEffect(() => {
-    load(query, langFilter, page);
+    load(query, langFilter, selectedTags, page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [load]);
 
+  useEffect(() => {
+    api<{ tags: string[] }>('GET', '/api/songs/public/tags')
+      .then((data) => setAvailableTags(data.tags))
+      .catch((e) => toast(e.message, 'error'));
+  }, [api, toast]);
+
   const handleClear = () => {
     setQuery('');
-    load('', langFilter, 1);
+    load('', langFilter, selectedTags, 1);
   };
 
-  const doSearch = () => load(query, langFilter, 1);
+  const doSearch = () => load(query, langFilter, selectedTags, 1);
 
   const handlePageChange = (newPage: number) => {
-    load(query, langFilter, newPage);
+    load(query, langFilter, selectedTags, newPage);
     window.scrollTo(0, 0);
   };
 
-  const showHero = !user && !query && !langFilter && loaded && songs.length === 0 && page === 1;
+  const changeTags = (tags: string[]) => {
+    setSelectedTags(tags);
+    load(query, langFilter, tags, 1);
+  };
+
+  const showHero = !user && !query && !langFilter && !selectedTags.length && loaded && songs.length === 0 && page === 1;
 
   return (
     <>
@@ -113,7 +134,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
             </div>
             <button className="btn btn-ghost btn-sm" onClick={doSearch}>{t('songs.search')}</button>
             <button
-              className={`btn btn-ghost btn-sm${showFilters || langFilter ? ' active' : ''}`}
+              className={`btn btn-ghost btn-sm${showFilters || langFilter || selectedTags.length ? ' active' : ''}`}
               onClick={() => {
                 const next = !showFilters;
                 setShowFilters(next);
@@ -132,13 +153,14 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               <select
                 className="language-filter"
                 value={langFilter}
-                onChange={(e) => { setLangFilter(e.target.value); load(query, e.target.value, 1); }}
+                onChange={(e) => { setLangFilter(e.target.value); load(query, e.target.value, selectedTags, 1); }}
               >
                 <option value="">All languages</option>
                 {LANGUAGES.map(l => (
                   <option key={l.code} value={l.code}>{l.name}</option>
                 ))}
               </select>
+              <MultiTagSelect options={availableTags} selected={selectedTags} onChange={changeTags} />
             </div>
           )}
           <div className="song-grid">
