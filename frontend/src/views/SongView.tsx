@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { flushSync } from 'react-dom';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -12,7 +11,7 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { Loading } from '../components/Loading';
 import { AddToSetlistModal } from '../components/AddToSetlistModal';
-import { renderChordPro, songHasKey, autoFit, scrollSheetToTop } from '../lib/chords';
+import { renderChordPro, songHasKey, autoFit } from '../lib/chords';
 import { languageName } from '../lib/languages';
 import type { Song, SongVersion, Correction } from '../types';
 
@@ -62,11 +61,9 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
   const handleAutoFit = () => {
     const result = autoFit();
-    flushSync(() => {
-      fontScale.setFontSizeTo(result.fontSize);
-      twoColState.setTwoColTo(result.twoCol);
-    });
-    scrollSheetToTop();
+    fontScale.setFontSizeTo(result.fontSize);
+    twoColState.setTwoColTo(result.twoCol);
+    window.scrollTo(0, 0);
   };
 
   // Reset key/nashville when navigating to a different song

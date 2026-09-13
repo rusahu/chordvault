@@ -445,8 +445,16 @@ function captureFitLayout(wrap: HTMLElement): () => void {
   };
 }
 
+/**
+ * The smaller of the layout and visual viewports, so mobile browser chrome that
+ * is currently hidden cannot be counted as usable height and then reappear when
+ * Fit scrolls back to the top. Pinch zoom shrinks the visual viewport without
+ * shrinking the screen, so it is ignored while zoomed.
+ */
 function viewportHeight(): number {
-  return window.visualViewport?.height ?? window.innerHeight;
+  const visual = window.visualViewport;
+  if (!visual || visual.scale > 1) return window.innerHeight;
+  return Math.min(window.innerHeight, visual.height);
 }
 
 /** Where the sheet starts in the document, independent of the current scroll. */
@@ -454,31 +462,44 @@ function documentTop(output: Element): number {
   return output.getBoundingClientRect().top + window.scrollY;
 }
 
-/** Where the sheet lands once scrolled up as far as the page allows. */
-function topAfterScroll(output: Element): number {
-  const maxScroll = Math.max(0, document.documentElement.scrollHeight - viewportHeight());
-  return Math.max(FIT_MARGIN, documentTop(output) - maxScroll);
-}
-
 /**
- * Height the sheet may occupy. Fit scrolls the sheet up to fill the screen, so
- * the page header and toolbar cost nothing -- they scroll away. Only a page too
- * short to scroll that far gives back less than a full screen. Measured against
- * the viewport and not the wrap, which grows to its content and so always "fits".
+ * Height the sheet may occupy: the space it actually has where it sits, with the
+ * page scrolled to the top. Budgeting a whole screen instead (on the grounds
+ * that the header scrolls away) inflated the font until the song fitted at one
+ * exact scroll offset and nowhere else. Measured against the viewport and not
+ * the wrap, which grows to its own content and so always "fits".
  */
 function availableHeight(output: Element): number {
-  return viewportHeight() - topAfterScroll(output) - FIT_MARGIN;
+  return viewportHeight() - documentTop(output) - FIT_MARGIN;
+}
+
+function fitsVertically(output: Element): boolean {
+  return output.scrollHeight <= availableHeight(output);
 }
 
 /**
- * Scrolls the sheet up to fill the screen, where Fit measured it to fit. Call
- * this only once the new layout is in the DOM, or the browser clamps the scroll
- * against the old page height.
+ * Chord and lyric pairs are laid out as inline-flex columns that do not shrink,
+ * so a bigger font or a narrower column can push a line off the side. The wrap
+ * scrolls horizontally to hide that, which reads as "it does not fit".
  */
-export function scrollSheetToTop(): void {
-  const output = document.querySelector('#chord-output');
-  if (!output) return window.scrollTo(0, 0);
-  window.scrollTo(0, documentTop(output) - FIT_MARGIN);
+function fitsHorizontally(wrap: Element): boolean {
+  return wrap.scrollWidth <= wrap.clientWidth;
+}
+
+/**
+ * A chord line that wraps drops its tail onto a second visual line, away from
+ * the chords above it, so the sheet stops lining up. Two narrow columns cause
+ * this long before anything overflows, which is why a layout can measure as
+ * fitting and still read as wrong.
+ */
+function wrapsChordLines(output: Element): boolean {
+  for (const row of output.querySelectorAll('.row')) {
+    const pairs = [...row.children];
+    if (!pairs.length) continue;
+    const tallestPair = Math.max(...pairs.map((pair) => pair.getBoundingClientRect().height));
+    if (tallestPair > 0 && row.getBoundingClientRect().height > tallestPair * 1.5) return true;
+  }
+  return false;
 }
 
 export function autoFit(): FitLayout {
@@ -489,15 +510,24 @@ export function autoFit(): FitLayout {
   if (!wrap || !output) return { fontSize: 0, twoCol: false };
 
   const restore = captureFitLayout(wrap);
+  const startingTwoCol = wrap.classList.contains('two-col');
   const isDesktop = window.innerWidth >= TWO_COL_MIN_WIDTH;
 
-  const fitted = fitCandidates(isDesktop).find((candidate) => {
+  const candidates = fitCandidates(isDesktop);
+  const fitsOnScreen = (candidate: FitLayout) => {
     applyFitLayout(wrap, candidate);
-    return output.scrollHeight <= availableHeight(output);
-  });
+    return fitsVertically(output) && fitsHorizontally(wrap);
+  };
+
+  // Prefer a layout that keeps every chord line intact. Only if no such layout
+  // exists is a wrapped one better than nothing.
+  const fitted = candidates.find((c) => fitsOnScreen(c) && !wrapsChordLines(output))
+    ?? candidates.find(fitsOnScreen);
 
   restore();
-  return fitted ?? { fontSize: FIT_MIN_FONT, twoCol: isDesktop };
+  // Nothing fits at any size. Stay readable at the normal font and leave the
+  // column count alone: a layout Fit cannot justify is worse than no change.
+  return fitted ?? { fontSize: 0, twoCol: startingTwoCol };
 }
 
 export function resolveEffectivePreferences(

@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
-import { flushSync } from 'react-dom';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -13,7 +12,7 @@ import { ChordSheet } from '../components/ChordSheet';
 import { Toolbar } from '../components/Toolbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
-import { renderChordPro, getSongKey, clampFontSize, songHasKey, resolveEffectivePreferences, autoFit, scrollSheetToTop } from '../lib/chords';
+import { renderChordPro, getSongKey, clampFontSize, songHasKey, resolveEffectivePreferences, autoFit } from '../lib/chords';
 import { useSetlistPreferences } from '../hooks/useSetlistPreferences';
 import { stepKey } from '../lib/keys';
 import { entrySemitones } from '../lib/setlistKeys';
@@ -206,13 +205,11 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
 
   const doFit = () => {
     const result = autoFit();
-    flushSync(() => {
-      updateEntry({ 
-        _font: result.fontSize === fontScale.fontSize ? null : result.fontSize,
-        _twoCol: result.twoCol === !!twoColState.twoCol ? null : result.twoCol
-      });
+    updateEntry({ 
+      _font: result.fontSize === fontScale.fontSize ? null : result.fontSize,
+      _twoCol: result.twoCol === !!twoColState.twoCol ? null : result.twoCol
     });
-    scrollSheetToTop();
+    window.scrollTo(0, 0);
   };
 
   if (!setlist) return <Loading />;
