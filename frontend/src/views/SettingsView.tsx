@@ -5,6 +5,7 @@ import { useDemo } from '../context/DemoContext';
 import { useAuth } from '../context/AuthContext';
 import { exportSongsBlob } from '../lib/api';
 import { ImportModal } from '../components/ImportModal';
+import { GeminiKeySettings } from '../components/GeminiKeySettings';
 import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT, DEFAULT_GEMINI_MODEL } from '../lib/constants';
 
 export function SettingsView() {
@@ -15,9 +16,6 @@ export function SettingsView() {
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [pwMsg, setPwMsg] = useState<{ text: string; color: string } | null>(null);
-  const [geminiStatus, setGeminiStatus] = useState<string>('Checking...');
-  const [geminiKey, setGeminiKey] = useState('');
-  const [geminiMsg, setGeminiMsg] = useState<{ text: string; color: string } | null>(null);
   const [preferredLangs, setPreferredLangs] = useState<string[]>([]);
   const [langSearch, setLangSearch] = useState('');
   const [langMsg, setLangMsg] = useState<{ text: string; color: string } | null>(null);
@@ -39,13 +37,6 @@ export function SettingsView() {
     } catch {}
   }, [apiCall]);
 
-  const loadGeminiStatus = useCallback(async () => {
-    try {
-      const data = await apiCall<{ hasKey: boolean }>('GET', '/api/settings/gemini-key');
-      setGeminiStatus(data.hasKey ? '✓ Key saved' : 'No key set');
-    } catch { setGeminiStatus('Could not check status'); }
-  }, [apiCall]);
-
   const loadOcrPrompt = useCallback(async () => {
     try {
       const data = await apiCall<{ prompt: string | null; defaultPrompt: string }>('GET', '/api/settings/ocr-prompt');
@@ -65,7 +56,7 @@ export function SettingsView() {
     } catch {}
   }, [apiCall]);
 
-  useEffect(() => { loadGeminiStatus(); loadOcrPrompt(); loadOcrModel(); }, [loadGeminiStatus, loadOcrPrompt, loadOcrModel]);
+  useEffect(() => { loadOcrPrompt(); loadOcrModel(); }, [loadOcrPrompt, loadOcrModel]);
   useEffect(() => { loadPreferredLangs(); }, [loadPreferredLangs]);
 
   const changePassword = async () => {
@@ -78,25 +69,6 @@ export function SettingsView() {
       setPwMsg({ text: 'Password changed successfully', color: 'var(--success)' });
       setCurrentPw(''); setNewPw(''); setConfirmPw('');
     } catch (e) { setPwMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
-  };
-
-  const saveGeminiKey = async () => {
-    setGeminiMsg(null);
-    if (!geminiKey.trim()) { setGeminiMsg({ text: 'Enter an API key', color: 'var(--danger)' }); return; }
-    try {
-      await apiCall('PUT', '/api/settings/gemini-key', { api_key: geminiKey.trim() });
-      setGeminiMsg({ text: 'Key saved', color: 'var(--success)' });
-      setGeminiKey('');
-      loadGeminiStatus();
-    } catch (e) { setGeminiMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
-  };
-
-  const removeGeminiKey = async () => {
-    try {
-      await apiCall('DELETE', '/api/settings/gemini-key');
-      setGeminiMsg({ text: 'Key removed', color: 'var(--success)' });
-      loadGeminiStatus();
-    } catch (e) { setGeminiMsg({ text: (e as Error).message, color: 'var(--danger)' }); }
   };
 
   const saveOcrModel = async (model: string) => {
@@ -257,15 +229,7 @@ export function SettingsView() {
             Smart OCR uses Google Gemini to extract chords from photos with higher accuracy. Get a free API key at{' '}
             <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style={{ color: 'var(--accent)' }}>aistudio.google.com/apikey</a>
           </p>
-          <div className="auth-card">
-            <div className="muted-hint" style={{ marginBottom: 12 }}>{geminiStatus}</div>
-            <div className="field"><label>Gemini API Key</label><input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="Paste your Gemini API key here" autoComplete="off" /></div>
-            <div className="flex-row">
-              <button className="btn btn-sm" onClick={saveGeminiKey}>Save Key</button>
-              <button className="btn btn-danger btn-sm" onClick={removeGeminiKey}>Remove Key</button>
-            </div>
-            {geminiMsg && <div className="field-message" style={{ color: geminiMsg.color }}>{geminiMsg.text}</div>}
-          </div>
+          <GeminiKeySettings />
         </div>
 
         <div className="settings-section">
