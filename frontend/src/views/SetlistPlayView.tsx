@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
@@ -14,7 +14,8 @@ import { SettingsPanel } from '../components/SettingsPanel';
 import { Loading } from '../components/Loading';
 import { renderChordPro, getSongKey, clampFontSize, songHasKey, resolveEffectivePreferences, autoFit } from '../lib/chords';
 import { useSetlistPreferences } from '../hooks/useSetlistPreferences';
-import { getTransposeDelta } from '../lib/keys';
+import { stepKey } from '../lib/keys';
+import { entrySemitones } from '../lib/setlistKeys';
 import type { Setlist } from '../types';
 
 interface SetlistPlayViewProps {
@@ -41,7 +42,6 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const [slOptionsOpen, setSlOptionsOpen] = useState(false);
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
-  const [autoFitActive, setAutoFitActive] = useState(false);
 
   const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
@@ -53,11 +53,6 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
       setEditing(false); 
     },
   });
-
-  // Handle auto-fit logic
-  useEffect(() => {
-    setAutoFitActive(false);
-  }, [index]);
 
   const content = entry ? (entry.content_override || entry.content) : '';
 
@@ -77,19 +72,22 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const effTwoCol = effectivePrefs.twoCol;
   const effFont = effectivePrefs.fontSize;
   const hideYt = effectivePrefs.hideYt;
-  const keyDisplay = entry ? getSongKey(content, entry.transpose) : '';
+  const semitones = useMemo(() => entrySemitones(content, entry?.target_key), [entry?.target_key, content]);
 
-  const entryTranspose = entry?.transpose ?? 0;
+  const keyDisplay = entry ? getSongKey(content, semitones) : '';
+
   const renderedHtml = useMemo(() => {
     if (!entry) return '';
-    return renderChordPro(content, entryTranspose, !!effNum);
-  }, [content, effNum, entry, entryTranspose]);
+    return renderChordPro(content, semitones, !!effNum);
+  }, [content, effNum, entry, semitones]);
 
-  // Transpose
-  const transpose = useCallback((delta: number) => {
-    if (!setlist || !entry) return;
-    updateEntry({ transpose: entry.transpose + delta });
-  }, [setlist, entry, updateEntry]);
+  // Key stepping
+  const stepEntryKey = useCallback((direction: 1 | -1) => {
+    if (!entry) return;
+    const current = entry.target_key || getSongKey(content, 0);
+    if (!current) return;
+    updateEntry({ target_key: stepKey(current, direction) });
+  }, [entry, content, updateEntry]);
 
   // Per-song overrides
   const toggleEntryNum = useCallback((checked: boolean) => {
@@ -127,12 +125,8 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   // Key picker
   const pickKey = useCallback((targetKey: string) => {
     if (!entry) return;
-    const currentKey = getSongKey(content, entry.transpose);
-    const delta = getTransposeDelta(currentKey, targetKey);
-    if (delta !== 0) {
-      transpose(delta);
-    }
-  }, [entry, content, transpose]);
+    updateEntry({ target_key: targetKey });
+  }, [entry, updateEntry]);
 
   // Inline editor
   const openEditor = useCallback(() => {
@@ -169,14 +163,14 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const shortcuts = useMemo(() => ({
     'ArrowLeft': (e: KeyboardEvent) => { e.preventDefault(); prev(); },
     'ArrowRight': (e: KeyboardEvent) => { e.preventDefault(); next(); },
-    'ArrowUp': (e: KeyboardEvent) => { e.preventDefault(); transpose(1); },
-    'ArrowDown': (e: KeyboardEvent) => { e.preventDefault(); transpose(-1); },
+    'ArrowUp': (e: KeyboardEvent) => { e.preventDefault(); stepEntryKey(1); },
+    'ArrowDown': (e: KeyboardEvent) => { e.preventDefault(); stepEntryKey(-1); },
     'n': () => { if (entry) toggleEntryNum(!entry.nashville); },
     'N': () => { if (entry) toggleEntryNum(!entry.nashville); },
     'e': () => openEditor(),
     'E': () => openEditor(),
     'Escape': () => { if (editing) setEditing(false); else exit(); },
-  }), [prev, next, transpose, entry, toggleEntryNum, openEditor, editing, exit]);
+  }), [prev, next, stepEntryKey, entry, toggleEntryNum, openEditor, editing, exit]);
 
   useKeyboardShortcuts(shortcuts, !!setlist);
 
@@ -210,16 +204,12 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   };
 
   const doFit = () => {
-    setAutoFitActive(true);
-    // Use a small timeout to let the autoFit() calculation run with visual feedback
-    setTimeout(() => {
-      const result = autoFit();
-      updateEntry({ 
-        _font: result.fontSize === fontScale.fontSize ? null : result.fontSize,
-        _twoCol: result.twoCol === !!twoColState.twoCol ? null : result.twoCol
-      });
-      setAutoFitActive(false);
-    }, 100);
+    const result = autoFit();
+    updateEntry({ 
+      _font: result.fontSize === fontScale.fontSize ? null : result.fontSize,
+      _twoCol: result.twoCol === !!twoColState.twoCol ? null : result.twoCol
+    });
+    window.scrollTo(0, 0);
   };
 
   if (!setlist) return <Loading />;
@@ -267,7 +257,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
       <Toolbar
         currentKey={keyDisplay}
         nashville={!!effNum}
-        nashvilleDisabled={!songHasKey(content, entry.transpose)}
+        nashvilleDisabled={!songHasKey(content, semitones)}
         onNashvilleChange={toggleEntryNum}
         twoCol={!!effTwoCol}
         onTwoColToggle={toggleEntryTwoCol}
@@ -275,11 +265,9 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
         onFontChange={changeEntryFont}
         onReset={() => {
           if (entry) { updateEntry({ _font: null, _twoCol: null }); }
-          setAutoFitActive(false);
         }}
         onPickKey={pickKey}
         onAutoFit={doFit}
-        autoFitActive={autoFitActive}
         onSaveOnline={isOwner ? () => saveOnline(false) : undefined}
         onSaveLocal={() => saveLocal(false)}
         onExportPdf={handleExportAllPdf}
@@ -335,7 +323,6 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
               html={renderedHtml} 
               twoCol={!!effTwoCol} 
               fontSize={effFont || 0} 
-              autoFit={autoFitActive} 
             />
           )}
         </>

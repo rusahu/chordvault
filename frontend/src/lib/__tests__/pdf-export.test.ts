@@ -118,7 +118,7 @@ const entry = (n: number, over: Partial<SetlistEntry> = {}): SetlistEntry => ({
   artist: 'A',
   content: `{title: Song ${n}}\n{key: G}\n[G]la la la\n`,
   content_override: null,
-  transpose: 0,
+  target_key: null,
   nashville: 0,
   font: null,
   two_col: null,
@@ -161,8 +161,8 @@ describe('exportSetlistPdf', () => {
     ).rejects.toThrow('No exportable songs');
   });
 
-  it('applies per-entry transpose', async () => {
-    await exportSetlistPdf(setlist([entry(1, { transpose: 2 })]), { nashville: false, fontSize: 0 });
+  it('applies per-entry target key', async () => {
+    await exportSetlistPdf(setlist([entry(1, { target_key: 'A' })]), { nashville: false, fontSize: 0 });
     expect(textOf(await lastPdf())).toContain('A');
   });
 

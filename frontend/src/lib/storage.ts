@@ -1,4 +1,5 @@
 import type { User, LocalSetlist } from '../types';
+import { legacyTransposeToTargetKey } from './setlistKeys';
 
 const KEYS = {
   user: 'cv_user',
@@ -49,11 +50,21 @@ export function saveLocalSetlists(arr: LocalSetlist[]): void {
   localStorage.setItem(KEYS.localSetlists, JSON.stringify(arr));
 }
 
+export interface SetlistOverride {
+  target_key?: string | null;
+  transpose?: number;          // legacy, read-only
+  nashville?: boolean;
+  font?: number;
+  two_col?: number | null;
+}
+
 /**
- * Gets personal transpose/Nashville overrides for a specific setlist.
- * Format: { [entryId]: { transpose: number, nashville: boolean, font: number, two_col: boolean } }
+ * Gets personal key/Nashville overrides for a specific setlist.
+ * Format: { [entryId]: { target_key: string | null, nashville: boolean, font: number, two_col: boolean } }
+ * May also contain legacy { transpose: number, ... } records; pass through
+ * migrateOverride() before use.
  */
-export function getSetlistOverrides(setlistId: number | string): Record<string, { transpose?: number; nashville?: boolean; font?: number; two_col?: number | null }> {
+export function getSetlistOverrides(setlistId: number | string): Record<string, SetlistOverride> {
   try {
     const all = JSON.parse(localStorage.getItem(KEYS.setlistOverrides) || '{}');
     return all[String(setlistId)] || {};
@@ -61,12 +72,12 @@ export function getSetlistOverrides(setlistId: number | string): Record<string, 
 }
 
 /**
- * Saves a personal transpose/Nashville override for a single setlist entry.
+ * Saves a personal key/Nashville override for a single setlist entry.
  */
 export function saveSetlistOverride(
   setlistId: number | string,
   entryId: number | string,
-  data: { transpose?: number; nashville?: boolean; font?: number | null; two_col?: number | null }
+  data: SetlistOverride
 ): void {
   try {
     const all = JSON.parse(localStorage.getItem(KEYS.setlistOverrides) || '{}');
@@ -74,8 +85,25 @@ export function saveSetlistOverride(
     const eid = String(entryId);
     if (!all[sid]) all[sid] = {};
     all[sid][eid] = { ...all[sid][eid], ...data };
+    delete all[sid][eid].transpose; // legacy field never written going forward; drop it on every save
     localStorage.setItem(KEYS.setlistOverrides, JSON.stringify(all));
   } catch (e) { console.error('Failed to save setlist override', e); }
+}
+
+/**
+ * Converts a stored override to the target-key shape.
+ *
+ * Overrides predating 1.23.0 hold an accumulated `transpose` and were never
+ * range-checked, so a value that drifted before the fix can still be sitting
+ * in a browser. Converting on read means no saved personal key is lost.
+ */
+export function migrateOverride(
+  override: SetlistOverride,
+  content: string
+): SetlistOverride {
+  const { transpose, ...rest } = override;
+  if (rest.target_key !== undefined) return rest;
+  return { ...rest, target_key: legacyTransposeToTargetKey(content, transpose) };
 }
 
 export function getSessionItem(key: string): string | null {

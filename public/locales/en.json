@@ -119,6 +119,7 @@
   "setlist.pickSong": "Add a Song",
   "setlist.songAdded": "Song added to setlist",
   "setlist.songRemoved": "Song removed",
+  "setlist.reorderFailed": "Could not save the new order",
   "setlist.noSongsYet": "No songs in this setlist yet",
   "setlist.edited": "Edited",
   "setlist.addToSetlist": "＋ Setlist",

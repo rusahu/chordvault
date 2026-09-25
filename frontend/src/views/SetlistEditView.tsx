@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { ApiError } from '../lib/api';
+import { stepKey } from '../lib/keys';
+import { getSongKey } from '../lib/chords';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { useToast } from '../context/ToastContext';
@@ -94,14 +96,15 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
       setSetlist((prev) => prev ? { ...prev, entries: newEntries } : null);
 
       if (isLocal) {
-        const localEntries = newEntries.map((e) => ({
-          song_id: e.song_id,
-          title: e.title,
-          artist: e.artist,
-          transpose: e.transpose,
-          nashville: e.nashville,
-        }));
-        lsReorderEntries(String(setlistId), localEntries);
+        // A reorder changes order only. useDragReorder permutes the very
+        // objects it was given, so their positions in the pre-drag list are the
+        // permutation to apply to the stored records — which are then written
+        // back untouched, keeping fields this view never loads.
+        const saved = lsReorderEntries(String(setlistId), newEntries.map((e) => setlist.entries.indexOf(e)));
+        if (!saved) {
+          toast(t('setlist.reorderFailed'), 'error');
+          load();
+        }
       } else {
         try {
           await apiCall('PUT', `/api/setlists/${setlistId}/reorder`, {
@@ -174,7 +177,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
         song_id: song.id,
         title: song.title,
         artist: song.artist || '',
-        transpose: 0,
+        target_key: null,
         nashville: 0
       });
       if (added) {
@@ -194,26 +197,29 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
     }
   };
 
-  const handleTransposeEntry = async (entryId: number | string, idx: number, delta: number) => {
+  const handleStepEntryKey = async (entryId: number | string, idx: number, direction: 1 | -1) => {
     if (!setlist) return;
     const entry = reorderedEntries[idx];
-    const newTranspose = (entry.transpose ?? 0) + delta;
+    const content = entry.content_override || entry.content;
+    const current = entry.target_key || getSongKey(content, 0);
+    if (!current) return;
+    const newKey = stepKey(current, direction);
 
     if (isLocal) {
-      lsUpdateEntry(String(setlistId), idx, { transpose: newTranspose });
+      lsUpdateEntry(String(setlistId), idx, { target_key: newKey });
       setSetlist((prev) => {
         if (!prev) return null;
         const entries = [...prev.entries];
-        entries[idx] = { ...entries[idx], transpose: newTranspose };
+        entries[idx] = { ...entries[idx], target_key: newKey };
         return { ...prev, entries };
       });
     } else {
       try {
-        await apiCall('PUT', `/api/setlists/${setlistId}/entries/${entryId}`, { transpose: newTranspose });
+        await apiCall('PUT', `/api/setlists/${setlistId}/entries/${entryId}`, { target_key: newKey });
         setSetlist((prev) => {
           if (!prev) return null;
           const entries = [...prev.entries];
-          entries[idx] = { ...entries[idx], transpose: newTranspose };
+          entries[idx] = { ...entries[idx], target_key: newKey };
           return { ...prev, entries };
         });
       } catch (e) {
@@ -331,7 +337,7 @@ export function SetlistEditView({ setlistId, navigate }: SetlistEditViewProps) {
               isEditable={isEditable}
               isLocal={isLocal}
               onRemove={removeEntry}
-              onTranspose={handleTransposeEntry}
+              onStepKey={handleStepEntryKey}
               onClick={handleItemClick}
               dragProps={dragProps(idx)}
               handleProps={handleProps(idx)}

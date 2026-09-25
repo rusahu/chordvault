@@ -12,7 +12,7 @@ interface EditorPreviewProps {
 
 export function EditorPreview({ content, debounceMs = 300, forceRender }: EditorPreviewProps) {
   const [debouncedContent, setDebouncedContent] = useState(content);
-  const [transpose, setTranspose] = useState(0);
+  const [targetKey, setTargetKey] = useState<string | null>(null);
   const [nashville, setNashville] = useState(false);
   const [keyPickerVisible, setKeyPickerVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -33,23 +33,28 @@ export function EditorPreview({ content, debounceMs = 300, forceRender }: Editor
     }
   }, [forceRender]);
 
-  const html = useMemo(
-    () => renderChordPro(debouncedContent, transpose, nashville),
-    [debouncedContent, transpose, nashville]
-  );
-
   // Derive current key from {key:} directive
   const currentKey = useMemo(() => {
     const m = debouncedContent.match(/\{key:\s*([^}]+)\}/i);
     return m ? normalizeKey(m[1].trim()) : '';
   }, [debouncedContent]);
 
+  const transpose = useMemo(
+    () => (targetKey && currentKey ? getTransposeDelta(currentKey, targetKey) : 0),
+    [currentKey, targetKey]
+  );
+
+  const html = useMemo(
+    () => renderChordPro(debouncedContent, transpose, nashville),
+    [debouncedContent, transpose, nashville]
+  );
+
   const nashvilleDisabled = !songHasKey(debouncedContent, transpose);
 
-  // KeyPicker.onPickKey receives a key string — compute semitone delta from current key
+  // KeyPicker.onPickKey receives a key string — assign it directly
   const handlePickKey = (pickedKey: string) => {
     if (!currentKey) return;
-    setTranspose(getTransposeDelta(currentKey, pickedKey));
+    setTargetKey(pickedKey);
   };
 
   if (!debouncedContent.trim()) {
@@ -76,8 +81,8 @@ export function EditorPreview({ content, debounceMs = 300, forceRender }: Editor
         >
           #
         </button>
-        {transpose !== 0 && (
-          <button className="btn btn-ghost btn-sm" onClick={() => setTranspose(0)} title="Reset transpose">
+        {targetKey && (
+          <button className="btn btn-ghost btn-sm" onClick={() => setTargetKey(null)} title="Reset transpose">
             &#8634;
           </button>
         )}

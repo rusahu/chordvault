@@ -55,26 +55,22 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
   const content = song?.content || '';
   const chord = useChordRenderer(content);
-  const { setTranspose: resetChordTranspose, setNashville: resetChordNashville } = chord;
+  const { setTargetKey: resetChordKey, setNashville: resetChordNashville } = chord;
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
-  const [autoFitActive, setAutoFitActive] = useState(false);
 
   const handleAutoFit = () => {
-    setAutoFitActive(true);
-    setTimeout(() => {
-      const result = autoFit();
-      fontScale.changeFontSize(result.fontSize);
-      twoColState.setTwoColTo(result.twoCol);
-      setAutoFitActive(false);
-    }, 100);
+    const result = autoFit();
+    fontScale.setFontSizeTo(result.fontSize);
+    twoColState.setTwoColTo(result.twoCol);
+    window.scrollTo(0, 0);
   };
 
-  // Reset transpose/nashville when navigating to a different song
+  // Reset key/nashville when navigating to a different song
   useEffect(() => {
-    resetChordTranspose(0);
+    resetChordKey(null);
     resetChordNashville(false);
-  }, [songId, resetChordTranspose, resetChordNashville]);
+  }, [songId, resetChordKey, resetChordNashville]);
 
   const renderedHtml = useMemo(
     () => renderChordPro(content, chord.transpose, chord.nashville),
@@ -82,11 +78,11 @@ export function SongView({ songId, navigate }: SongViewProps) {
   );
 
   const shortcuts = useMemo(() => ({
-    'ArrowUp': (e: KeyboardEvent) => { e.preventDefault(); chord.doTranspose(1); },
-    'ArrowDown': (e: KeyboardEvent) => { e.preventDefault(); chord.doTranspose(-1); },
-    '+': (e: KeyboardEvent) => { e.preventDefault(); chord.doTranspose(1); },
-    '-': (e: KeyboardEvent) => { e.preventDefault(); chord.doTranspose(-1); },
-    '0': () => chord.resetTranspose(),
+    'ArrowUp': (e: KeyboardEvent) => { e.preventDefault(); chord.stepCurrentKey(1); },
+    'ArrowDown': (e: KeyboardEvent) => { e.preventDefault(); chord.stepCurrentKey(-1); },
+    '+': (e: KeyboardEvent) => { e.preventDefault(); chord.stepCurrentKey(1); },
+    '-': (e: KeyboardEvent) => { e.preventDefault(); chord.stepCurrentKey(-1); },
+    '0': () => chord.resetKey(),
     'n': () => chord.toggleNashville(!chord.nashville),
     'N': () => chord.toggleNashville(!chord.nashville),
   }), [chord]);
@@ -210,7 +206,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
         }}
         onPickKey={chord.pickKey}
         onAutoFit={handleAutoFit}
-        autoFitActive={autoFitActive}
         onExportPdf={handleExportPdf}
         renderKey={songId}
       />
@@ -219,7 +214,6 @@ export function SongView({ songId, navigate }: SongViewProps) {
         html={renderedHtml} 
         twoCol={twoColState.twoCol} 
         fontSize={fontScale.fontSize} 
-        autoFit={autoFitActive} 
       />
 
       {(song.tags || song.youtube_url) && (
@@ -255,7 +249,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
         songTitle={song?.title || ''}
         songArtist={song?.artist || ''}
         songVisibility={song?.visibility}
-        transpose={chord.transpose}
+        targetKey={chord.targetKey}
         nashville={chord.nashville}
       />
     </div>
