@@ -15,7 +15,6 @@ interface ToolbarProps {
   onReset: () => void;
   onPickKey: (key: string) => void;
   onAutoFit?: () => void;
-  autoFitActive?: boolean;
   onSaveOnline?: () => void;
   onSaveLocal?: () => void;
   onExportPdf?: () => void;
@@ -40,7 +39,6 @@ export function Toolbar({
   onReset,
   onPickKey,
   onAutoFit,
-  autoFitActive,
   onSaveOnline,
   onSaveLocal,
   onExportPdf,
@@ -108,7 +106,7 @@ export function Toolbar({
         <span className="toolbar-divider" />
         {onAutoFit && (
           <button
-            className={`transpose-btn font-btn autofit-btn${autoFitActive ? ' active' : ''}`}
+            className={"transpose-btn font-btn autofit-btn"}
             onClick={onAutoFit}
             title="Auto-fit for this screen (one-time)"
           >
