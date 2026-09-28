@@ -95,6 +95,7 @@ export async function exportSetlistPdf(
       twoCol: false,
       fontSize: globalSettings.fontSize,
       hideYt: false,
+      hideChords: false,
     });
     const content = entry.content_override || entry.content;
     const semitones = entrySemitones(content, entry.target_key);

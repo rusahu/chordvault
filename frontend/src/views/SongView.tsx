@@ -58,6 +58,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
   const { setTargetKey: resetChordKey, setNashville: resetChordNashville } = chord;
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
+  const [autoFitActive, setAutoFitActive] = useState(false);
+  const [hideChords, setHideChords] = useState(false);
 
   const handleAutoFit = () => {
     const result = autoFit();
@@ -198,6 +200,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
         onNashvilleChange={chord.toggleNashville}
         twoCol={twoColState.twoCol}
         onTwoColToggle={twoColState.toggleTwoCol}
+        hideChords={hideChords}
+        onHideChordsToggle={() => setHideChords((v) => !v)}
         fontSize={fontScale.fontSize}
         onFontChange={fontScale.changeFontSize}
         onReset={() => { 
@@ -214,6 +218,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
         html={renderedHtml} 
         twoCol={twoColState.twoCol} 
         fontSize={fontScale.fontSize} 
+        autoFit={autoFitActive} 
+        hideChords={hideChords}
       />
 
       {(song.tags || song.youtube_url) && (

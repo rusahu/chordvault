@@ -5,15 +5,17 @@ interface ChordSheetProps {
   html: string;
   twoCol?: boolean;
   fontSize?: number;
+  autoFit?: boolean; // Kept for class naming if needed
+  hideChords?: boolean;
 }
 
-export function ChordSheet({ html, twoCol, fontSize }: ChordSheetProps) {
+export function ChordSheet({ html, twoCol, fontSize, autoFit, hideChords }: ChordSheetProps) {
   // Manual/Legacy Scaling Logic
   const manualScale = fontScaleValue(fontSize || 0);
   
   const style: React.CSSProperties = manualScale ? { '--font-scale': String(manualScale) } as React.CSSProperties : {};
 
-  const cls = `chord-sheet-wrap${twoCol ? ' two-col' : ''}`;
+  const cls = `chord-sheet-wrap${twoCol ? ' two-col' : ''}${autoFit ? ' fitted-mode' : ''}${hideChords ? ' hide-chords' : ''}`;
 
   return (
     <div

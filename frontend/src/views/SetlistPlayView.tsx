@@ -39,6 +39,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   // Global setlist settings
   const [slNashville, setSlNashville] = useState(false);
   const [slHideYt, setSlHideYt] = useState(false);
+  const [slHideChords, setSlHideChords] = useState(false);
   const [slOptionsOpen, setSlOptionsOpen] = useState(false);
   const fontScale = useFontScale();
   const twoColState = useTwoCol();
@@ -65,16 +66,16 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     twoCol: twoColState.twoCol,
     fontSize: fontScale.fontSize,
     hideYt: slHideYt,
-  }), [slNashville, twoColState.twoCol, fontScale.fontSize, slHideYt]);
+    hideChords: slHideChords,
+  }), [slNashville, twoColState.twoCol, fontScale.fontSize, slHideYt, slHideChords]);
 
   const effectivePrefs = useSetlistPreferences(entry, globalPrefs);
   const effNum = effectivePrefs.nashville;
   const effTwoCol = effectivePrefs.twoCol;
   const effFont = effectivePrefs.fontSize;
   const hideYt = effectivePrefs.hideYt;
-  const semitones = useMemo(() => entrySemitones(content, entry?.target_key), [entry?.target_key, content]);
-
-  const keyDisplay = entry ? getSongKey(content, semitones) : '';
+  const hideChords = effectivePrefs.hideChords;
+  const keyDisplay = entry ? getSongKey(content, entry.transpose) : '';
 
   const renderedHtml = useMemo(() => {
     if (!entry) return '';
@@ -105,10 +106,24 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
       twoCol: twoColState.twoCol,
       fontSize: fontScale.fontSize,
       hideYt: slHideYt,
+      hideChords: slHideChords,
     });
     const nextVal = !prefs.twoCol;
     updateEntry({ _twoCol: nextVal === (!!twoColState.twoCol) ? null : nextVal });
-  }, [entry, slNashville, twoColState.twoCol, fontScale.fontSize, slHideYt, updateEntry]);
+  }, [entry, slNashville, twoColState.twoCol, fontScale.fontSize, slHideYt, slHideChords, updateEntry]);
+
+  const toggleEntryHideChords = useCallback(() => {
+    if (!entry) return;
+    const prefs = resolveEffectivePreferences(entry, {
+      nashville: slNashville,
+      twoCol: twoColState.twoCol,
+      fontSize: fontScale.fontSize,
+      hideYt: slHideYt,
+      hideChords: slHideChords,
+    });
+    const nextVal = !prefs.hideChords;
+    updateEntry({ _hideChords: nextVal === slHideChords ? null : nextVal });
+  }, [entry, slNashville, twoColState.twoCol, fontScale.fontSize, slHideYt, slHideChords, updateEntry]);
 
   const changeEntryFont = useCallback((delta: number) => {
     if (!entry) return;
@@ -117,10 +132,11 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
       twoCol: twoColState.twoCol,
       fontSize: fontScale.fontSize,
       hideYt: slHideYt,
+      hideChords: slHideChords,
     });
     const nextVal = clampFontSize(prefs.fontSize + delta);
     updateEntry({ _font: nextVal === fontScale.fontSize ? null : nextVal });
-  }, [entry, slNashville, twoColState.twoCol, fontScale.fontSize, slHideYt, updateEntry]);
+  }, [entry, slNashville, twoColState.twoCol, fontScale.fontSize, slHideYt, slHideChords, updateEntry]);
 
   // Key picker
   const pickKey = useCallback((targetKey: string) => {
@@ -261,6 +277,8 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
         onNashvilleChange={toggleEntryNum}
         twoCol={!!effTwoCol}
         onTwoColToggle={toggleEntryTwoCol}
+        hideChords={hideChords}
+        onHideChordsToggle={toggleEntryHideChords}
         fontSize={effFont || 0}
         onFontChange={changeEntryFont}
         onReset={() => {
@@ -279,6 +297,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
           num: entry._num != null,
           twoCol: entry._twoCol != null,
           font: entry._font != null,
+          hideChords: entry._hideChords != null,
         }}
       />
 
@@ -288,6 +307,8 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
           onNashvilleChange={setSlNashville}
           hideYt={slHideYt}
           onHideYtChange={setSlHideYt}
+          hideChords={slHideChords}
+          onHideChordsChange={setSlHideChords}
           twoCol={twoColState.twoCol}
           onTwoColChange={twoColState.setTwoColTo}
           fontSize={fontScale.fontSize}
@@ -323,6 +344,8 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
               html={renderedHtml} 
               twoCol={!!effTwoCol} 
               fontSize={effFont || 0} 
+              autoFit={autoFitActive} 
+              hideChords={hideChords}
             />
           )}
         </>
