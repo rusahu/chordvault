@@ -8,6 +8,7 @@ const { DEMO_MODE } = require('../lib/demo');
 const { makeUniqueNamer } = require('../lib/exportFilename');
 const Song = require('../lib/models/song');
 const User = require('../lib/models/user');
+const { normalizeTags, parseTagFilters, normalizeTagDirective } = require('../lib/tags');
 
 function extractDirective(content, name) {
   const re = new RegExp(`\\{${name}:\\s*([^}]*)\\}`, 'i');
@@ -17,7 +18,7 @@ function extractDirective(content, name) {
 
 function extractMetadata(content) {
   const tags = extractDirective(content, 'x_tags');
-  const cleanedTags = tags ? String(tags).split(',').map(t => t.trim().toLowerCase()).filter(Boolean).join(',') : null;
+  const cleanedTags = normalizeTags(tags).join(',') || null;
   const bpmStr = extractDirective(content, 'tempo');
   const bpm = bpmStr ? parseInt(bpmStr, 10) : null;
   return {
@@ -52,17 +53,25 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
   const router = express.Router();
 
   router.get('/songs', requireAuth, (req, res) => {
-    const { q, language, page, limit } = req.query;
+    const { q, language, tags, page, limit } = req.query;
     const userId = req.user.id;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
-    res.json(Song.listForUser(userId, { q, language, page: pageNum, limit: limitNum }));
+    res.json(Song.listForUser(userId, { q, language, tags: parseTagFilters(tags), page: pageNum, limit: limitNum }));
+  });
+
+  router.get('/songs/tags', requireAuth, (req, res) => {
+    res.json({ tags: Song.listTagsForUser(req.user.id) });
   });
 
   router.get('/songs/public', (req, res) => {
-    const { q, language, page, limit } = req.query;
+    const { q, language, tags, page, limit } = req.query;
     const userId = req.user ? req.user.id : 0;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
-    res.json(Song.listPublic({ q, language, userId, page: pageNum, limit: limitNum }));
+    res.json(Song.listPublic({ q, language, tags: parseTagFilters(tags), userId, page: pageNum, limit: limitNum }));
+  });
+
+  router.get('/songs/public/tags', (_req, res) => {
+    res.json({ tags: Song.listPublicTags() });
   });
 
   router.get('/songs/export', withSkipGlobal(exportLimiter), requireAuth, (req, res) => {
@@ -127,7 +136,8 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     if (content.length > LIMITS.MAX_CONTENT) return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
     const chordError = validateSongInput({ content, requireChord: true });
     if (chordError) return res.status(400).json({ error: chordError });
-    const meta = extractMetadata(content);
+    const normalizedContent = normalizeTagDirective(content);
+    const meta = extractMetadata(normalizedContent);
     if (!meta.title) return res.status(400).json({ error: 'Title is required. Add {title: Song Name} to your content.' });
     if (meta.language) {
       const langError = validateLanguage(meta.language);
@@ -138,7 +148,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
 
     const fmt = format_detected?.trim() || null;
     const finalVisibility = visibility === VISIBILITY.PRIVATE ? VISIBILITY.PRIVATE : VISIBILITY.PUBLIC;
-    const result = Song.create(req.user.id, meta, content, finalVisibility, fmt);
+    const result = Song.create(req.user.id, meta, normalizedContent, finalVisibility, fmt);
     res.json({ id: result.lastInsertRowid });
   });
 
@@ -156,7 +166,8 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     songs.forEach((s, i) => {
       if (!s.content?.trim()) { errors.push({ index: i, error: 'Content is required' }); return; }
       if (s.content.length > LIMITS.MAX_CONTENT) { errors.push({ index: i, error: `Content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` }); return; }
-      const meta = extractMetadata(s.content);
+      const normalizedContent = normalizeTagDirective(s.content);
+      const meta = extractMetadata(normalizedContent);
       if (!meta.title) { errors.push({ index: i, error: 'Title is required. Add {title: Song Name} to content.' }); return; }
       if (meta.language && !LANGUAGE_CODES.has(meta.language)) { errors.push({ index: i, error: `Invalid language code: ${meta.language}` }); return; }
       const visError = validateVisibility(s.visibility);
@@ -164,7 +175,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
       valid.push({
         index: i,
         ...meta,
-        content: s.content.trim(),
+        content: normalizedContent.trim(),
         visibility: s.visibility === VISIBILITY.PRIVATE ? VISIBILITY.PRIVATE : VISIBILITY.PUBLIC,
       });
     });
@@ -188,7 +199,8 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     if (content && content.length > LIMITS.MAX_CONTENT) return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
     const chordError = validateSongInput({ content, requireChord: true });
     if (chordError) return res.status(400).json({ error: chordError });
-    const meta = extractMetadata(finalContent);
+    const normalizedContent = normalizeTagDirective(finalContent);
+    const meta = extractMetadata(normalizedContent);
     if (!meta.title) return res.status(400).json({ error: 'Title is required. Add {title: Song Name} to your content.' });
     if (meta.language) {
       const langError = validateLanguage(meta.language);
@@ -199,7 +211,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
 
     const fmt = format_detected !== undefined ? (format_detected?.trim() || null) : existing.format_detected;
     const finalVisibility = visibility !== undefined ? (visibility === VISIBILITY.PRIVATE ? VISIBILITY.PRIVATE : VISIBILITY.PUBLIC) : existing.visibility;
-    Song.update(id, meta, finalContent, finalVisibility, fmt);
+    Song.update(id, meta, normalizedContent, finalVisibility, fmt);
     res.json({ success: true });
   });
 
@@ -228,8 +240,9 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     if (validationError) return res.status(400).json({ error: validationError });
 
     const parentId = original.parent_id || original.id;
-    const meta = extractMetadata(content);
-    const result = Song.createVersion(req.user.id, parentId, meta, content, original.visibility);
+    const normalizedContent = normalizeTagDirective(content);
+    const meta = extractMetadata(normalizedContent);
+    const result = Song.createVersion(req.user.id, parentId, meta, normalizedContent, original.visibility);
     res.json({ id: result.lastInsertRowid });
   });
 
@@ -265,8 +278,9 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     if (validationError) return res.status(400).json({ error: validationError.replace('before saving', 'before submitting') });
 
     const parentId = original.parent_id || original.id;
-    const meta = extractMetadata(content);
-    const result = Song.createCorrection(req.user.id, parentId, meta, content);
+    const normalizedContent = normalizeTagDirective(content);
+    const meta = extractMetadata(normalizedContent);
+    const result = Song.createCorrection(req.user.id, parentId, meta, normalizedContent);
     res.json({ id: result.lastInsertRowid });
   });
 
