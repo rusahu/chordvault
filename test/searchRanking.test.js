@@ -7,14 +7,14 @@ const Song = require('../lib/models/song');
 const insertUser = db.prepare("INSERT INTO users (username, password_hash) VALUES (?, 'x')");
 // explicit updated_at so recency is controlled (lyric-only match is the NEWEST)
 const insertSong = db.prepare(
-  "INSERT INTO songs (user_id, title, artist, content, visibility, status, updated_at) VALUES (?, ?, ?, ?, 'public', 'active', ?)"
+  "INSERT INTO songs (user_id, title, artist, content, tags, visibility, status, updated_at) VALUES (?, ?, ?, ?, ?, 'public', 'active', ?)"
 );
 const u = insertUser.run('u').lastInsertRowid;
 
 // term "amazing": in title (oldest), in artist (middle), in lyrics only (NEWEST)
-insertSong.run(u, 'Amazing Grace', 'Newton', '{title: Amazing Grace}\n[G]sweet sound', '2024-01-01');
-insertSong.run(u, 'Grace Alone', 'Amazing Band', '{title: Grace Alone}\n[C]love', '2025-01-01');
-insertSong.run(u, 'Old Rugged Cross', 'x', '{title: Old Rugged Cross}\ntruly amazing to sing', '2026-12-31');
+insertSong.run(u, 'Amazing Grace', 'Newton', '{title: Amazing Grace}\n[G]sweet sound', null, '2024-01-01');
+insertSong.run(u, 'Grace Alone', 'Amazing Band', '{title: Grace Alone}\n[C]love', null, '2025-01-01');
+insertSong.run(u, 'Old Rugged Cross', 'x', '{title: Old Rugged Cross}\ntruly amazing to sing', null, '2026-12-31');
 
 const titles = (q) => Song.listPublic({ q }).map((r) => r.title);
 
@@ -25,8 +25,8 @@ test('title match ranks above artist match ranks above lyric-only match (not by 
 });
 
 // CJK ranking also applies on the short-query (<3 char) LIKE path
-insertSong.run(u, '喜樂', '某人', '{title: 喜樂}\n[G]a', '2024-01-01'); // title match
-insertSong.run(u, '平安夜', '某人', '{title: 平安夜}\n這是喜樂的歌 到永遠', '2026-12-31'); // lyric-only, newest
+insertSong.run(u, '喜樂', '某人', '{title: 喜樂}\n[G]a', null, '2024-01-01'); // title match
+insertSong.run(u, '平安夜', '某人', '{title: 平安夜}\n這是喜樂的歌 到永遠', null, '2026-12-31'); // lyric-only, newest
 
 test('short CJK query ranks title match above newer lyric-only match', () => {
   assert.deepEqual(titles('喜樂'), ['喜樂', '平安夜']);
@@ -34,11 +34,20 @@ test('short CJK query ranks title match above newer lyric-only match', () => {
 
 // reordered multi-word query: FTS matches both via AND, but ranking must still
 // recognize "grace amazing" as hitting the title "Amazing Grace" (word order independent)
-insertSong.run(u, 'Old Song', 'x', '{title: Old Song}\nthis is amazing, so much grace here', '2026-12-31'); // lyric-only, newest
+insertSong.run(u, 'Old Song', 'x', '{title: Old Song}\nthis is amazing, so much grace here', null, '2026-12-31'); // lyric-only, newest
 
 test('reordered multi-word query ranks title match above newer lyric-only match', () => {
   const results = titles('grace amazing');
   assert.equal(results[0], 'Amazing Grace');
   assert.ok(results.includes('Old Song'));
   assert.ok(results.indexOf('Amazing Grace') < results.indexOf('Old Song'));
+});
+
+insertSong.run(u, 'Spotlight Song', 'x', '{title: Spotlight Song}\n[G]plain', null, '2024-01-01');
+insertSong.run(u, 'Artist Song', 'Spotlight Artist', '{title: Artist Song}\n[G]plain', null, '2024-02-01');
+insertSong.run(u, 'Tagged Song', 'x', '{title: Tagged Song}\n[G]plain', 'Spotlight', '2024-03-01');
+insertSong.run(u, 'Lyrics Song', 'x', '{title: Lyrics Song}\n[G]spotlight words', null, '2026-01-01');
+
+test('tag-only match ranks below title and artist but above lyrics-only match', () => {
+  assert.deepEqual(titles('spotlight'), ['Spotlight Song', 'Artist Song', 'Tagged Song', 'Lyrics Song']);
 });

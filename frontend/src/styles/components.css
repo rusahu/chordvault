@@ -281,11 +281,13 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 .badge-owner { background: rgba(240,160,48,0.25); color: var(--accent2); }
 .badge-disabled { background: rgba(239,68,68,0.15); color: var(--danger); }
 .badge-bpm { background: rgba(122,155,181,0.12); color: var(--accent-alt); }
-.badge-tag { background: rgba(122,155,181,0.12); color: var(--accent-alt); font-size: 10px; text-transform: lowercase; }
+.badge-tag { background: rgba(122,155,181,0.12); color: var(--accent-alt); font-size: 10px; }
 .badge-private { background: var(--surface-alt, #2a2a35); color: var(--muted); font-size: 11px; }
 
 /* -- Tag Picker ---------------------------- */
-.tag-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag-picker { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tag-selected { display: flex; flex: 1 1 280px; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 38px; padding: 5px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+.tag-input { flex: 1 1 120px; min-width: 100px; border: 0 !important; padding: 4px 6px !important; background: transparent !important; color: var(--text) !important; caret-color: var(--text); box-shadow: none !important; }
 .tag-pill {
   padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border);
   background: var(--surface); color: var(--muted); font-size: 12px;
@@ -293,6 +295,16 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
 }
 .tag-pill:hover { border-color: var(--accent); }
 .tag-pill.active { background: rgba(240,160,48,0.15); color: var(--accent); border-color: var(--accent); }
+.library-tag-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -6px 0 18px; }
+.multi-tag-select { position: relative; min-width: 180px; }
+.multi-tag-trigger { width: 100%; min-height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; cursor: pointer; }
+.multi-tag-trigger.active { border-color: var(--accent); color: var(--accent); }
+.multi-tag-dropdown { position: absolute; z-index: 30; top: calc(100% + 5px); left: 0; width: max(100%, 220px); max-height: 280px; overflow-y: auto; padding: 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow-lg); }
+.multi-tag-option { display: flex !important; align-items: center; gap: 8px; padding: 7px 8px; margin: 0 !important; border-radius: 6px; color: var(--text) !important; font-size: 14px !important; font-weight: 400 !important; text-transform: none !important; letter-spacing: normal !important; cursor: pointer; }
+.multi-tag-option:hover { background: var(--hover); }
+.multi-tag-option input { width: auto; margin: 0; accent-color: var(--accent); }
+.multi-tag-clear { width: 100%; margin-top: 5px; padding: 7px 8px; border: 0; border-top: 1px solid var(--border); background: transparent; color: var(--accent); text-align: left; cursor: pointer; }
+.multi-tag-empty { padding: 8px; color: var(--muted); font-size: 13px; }
 
 /* -- Song Card Tags & BPM ---------------- */
 .song-card-tags { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
@@ -344,6 +356,7 @@ textarea { resize: vertical; min-height: 300px; font-family: 'JetBrains Mono', m
   margin-top: -12px;
 }
 .search-filters .language-filter { max-width: 220px; }
+.search-filters .multi-tag-select { max-width: 220px; flex: 1; }
 
 /* -- Toast -------------------------------- */
 #toast {
