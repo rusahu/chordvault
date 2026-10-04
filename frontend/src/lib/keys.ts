@@ -17,6 +17,10 @@ export const ENHARMONIC_MAP: Record<string, string> = {
   // root regex swallows the 'm' of maj7 and looks up 'Fbm'.
   'Fb': 'E',
   'Fbm': 'Em',
+  'E#': 'F',
+  'E#m': 'Fm',
+  'B#': 'C',
+  'B#m': 'Cm',
   'Dbm': 'C#m',
   'Gbm': 'F#m',
   'Abm': 'G#m',

@@ -313,18 +313,14 @@ export function prepareSong(content: string, semitones = 0, nashville = false): 
     const song = parseSongAuto(content);
     if (!song) return null;
 
-    const transposed = semitones !== 0 ? song.transpose(semitones) : song;
-
     // Fix accidentals after transposition to preserve sharp preference and prevent auto-correction
-    fixChordAccidentals(transposed);
+    const transposed = fixChordAccidentals(semitones !== 0 ? song.transpose(semitones) : song);
 
     const keyRaw = transposed.key || (transposed.getMetadataValue ? transposed.getMetadataValue('key') : null);
     const key = typeof keyRaw === 'string' ? keyRaw : keyRaw?.toString() || null;
 
     if (nashville && key && ChordSheetJS.Chord) {
-      const cloned = transposed.clone();
-      convertToNashville(cloned, key as string);
-      return cloned;
+      return convertToNashville(transposed, key);
     }
     return transposed;
   } catch {
@@ -342,26 +338,29 @@ export function renderChordPro(content: string, semitones = 0, nashville = false
   }
 }
 
-export function fixChordAccidentals(song: ChordSheetJS.Song): void {
-  song.mapChordLyricsPairs((pair) => {
-    const it = pair as unknown as { chords?: string };
-    if (it.chords) it.chords = normalizeChord(it.chords);
-    return pair;
+export function fixChordAccidentals(song: ChordSheetJS.Song): ChordSheetJS.Song {
+  return song.mapChordLyricsPairs((pair) => {
+    if (SECTION_LABEL_RE.test(pair.chords)) return pair;
+    const chords = normalizeChord(pair.chords);
+    const chord = ChordSheetJS.Chord.parse(chords);
+    if (!chord) return pair;
+    // Preserve the app's spelling when native formatters apply their key preference.
+    for (const note of [chord.root, chord.bass]) {
+      if (note) note.contextualSpelling = true;
+    }
+    return pair.set({ chords, chordObj: chord });
   });
 }
 
 export function convertToNashville(song: ChordSheetJS.Song, key: string): ChordSheetJS.Song {
-  song.mapChordLyricsPairs((pair) => {
-    const it = pair as unknown as { chords?: string };
-    const chords = it.chords?.trim();
+  return song.mapChordLyricsPairs((pair) => {
+    const chords = pair.chords.trim();
     if (!chords || SECTION_LABEL_RE.test(chords)) return pair;
     try {
-      const c = ChordSheetJS.Chord.parse(chords);
-      if (c) it.chords = c.toNumeric(key).toString();
+      return pair.changeChord((chord) => chord.toNumeric(key));
     } catch { /* skip */ }
     return pair;
   });
-  return song;
 }
 
 export function getSongKey(content: string, semitones = 0): string {

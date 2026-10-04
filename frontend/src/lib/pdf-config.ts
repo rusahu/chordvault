@@ -56,6 +56,7 @@ export function buildPdfConfig({
   });
 
   return {
+    normalizeChords: false,
     fonts: buildFonts(fontName, fontSize),
     layout: {
       header: { ...defaults.layout.header, content: restyle(header, fontName, fontSize) },
