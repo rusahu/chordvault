@@ -2,9 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ENHARMONIC_MAP as frontendMap, ALL_KEYS as frontendAllKeys, ALL_KEYS_MINOR as frontendAllKeysMinor } from '../keys';
 import backend from '../../../../lib/enharmonic.js';
 
-// The backend needs its own copy of the map for the one-time migration backfill.
-// Two copies of pure data can drift silently, so assert they are identical.
-// Adding an entry to one and not the other fails here immediately.
+// Both runtime adapters consume the shared data; the backend adds German keys.
 describe('enharmonic map parity', () => {
   it('backend and frontend maps are identical', () => {
     expect(backend.ENHARMONIC_MAP).toEqual(frontendMap);

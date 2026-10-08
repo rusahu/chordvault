@@ -28,6 +28,7 @@ module.exports = [
       'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
+  { files: ['shared/**/*.mjs'], languageOptions: { sourceType: 'module' } },
   {
     ignores: ['public/', 'frontend/', 'node_modules/', 'data/', 'scripts/', 'scratch/'],
   },
