@@ -1,7 +1,7 @@
 const express = require('express');
 const { requireAuth, optionalAuth } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
-const { parseId, validateSetlistInput, validateTargetKey, canonicalTargetKey, parsePaginationParams } = require('../lib/validation');
+const { validateListQuery, validateObjectBody, parseId, validateSetlistInput, validateTargetKey, canonicalTargetKey, parsePaginationParams } = require('../lib/validation');
 const Setlist = require('../lib/models/setlist');
 const Song = require('../lib/models/song');
 const { maskSetlistEntry } = require('../lib/songAccess');
@@ -17,8 +17,9 @@ function resolveSetlist(res, setlistId, userId) {
 
 function createSetlistsRouter() {
   const router = express.Router();
+  router.use(validateObjectBody);
 
-  router.get('/setlists', requireAuth, (req, res) => {
+  router.get('/setlists', validateListQuery, requireAuth, (req, res) => {
     const { q, date_from, date_to, page, limit } = req.query;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
     res.json(Setlist.listForUser(req.user.id, { q, dateFrom: date_from, dateTo: date_to, page: pageNum, limit: limitNum }));
@@ -33,7 +34,7 @@ function createSetlistsRouter() {
     res.json({ id: result.lastInsertRowid, name: name.trim() });
   });
 
-  router.get('/setlists/public', (req, res) => {
+  router.get('/setlists/public', validateListQuery, (req, res) => {
     const { q, date_from, date_to, page, limit } = req.query;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
     res.json(Setlist.listPublic({ q, dateFrom: date_from, dateTo: date_to, page: pageNum, limit: limitNum }));
@@ -116,6 +117,7 @@ function createSetlistsRouter() {
     if (nashville !== undefined && typeof nashville !== 'boolean' && nashville !== 0 && nashville !== 1) {
       return res.status(400).json({ error: 'Nashville must be a boolean' });
     }
+    if (content_override != null && typeof content_override !== 'string') return res.status(400).json({ error: 'Content override must be a string or null' });
     if (content_override !== undefined && content_override !== null && content_override.length > LIMITS.MAX_CONTENT) {
       return res.status(400).json({ error: 'Content override too large (max 100KB)' });
     }

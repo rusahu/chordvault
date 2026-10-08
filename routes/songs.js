@@ -2,7 +2,7 @@ const express = require('express');
 const yazl = require('yazl');
 const { requireAuth, requireAdmin, optionalAuth, isAdminRole, canManageSong } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
-const { parseId, validateSongInput, validateVisibility, validateLanguage, parsePaginationParams } = require('../lib/validation');
+const { validateListQuery, validateObjectBody, parseId, validateSongInput, validateVisibility, validateLanguage, parsePaginationParams } = require('../lib/validation');
 const { LANGUAGE_CODES } = require('../lib/languages');
 const { DEMO_MODE } = require('../lib/demo');
 const { makeUniqueNamer } = require('../lib/exportFilename');
@@ -51,15 +51,16 @@ function resolveCorrectionWithAuth(req, res) {
 
 function createSongsRouter({ withSkipGlobal, exportLimiter }) {
   const router = express.Router();
+  router.use(validateObjectBody);
 
-  router.get('/songs', requireAuth, (req, res) => {
+  router.get('/songs', validateListQuery, requireAuth, (req, res) => {
     const { q, language, page, limit } = req.query;
     const userId = req.user.id;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
     res.json(Song.listForUser(userId, { q, language, page: pageNum, limit: limitNum }));
   });
 
-  router.get('/songs/public', (req, res) => {
+  router.get('/songs/public', validateListQuery, (req, res) => {
     const { q, language, page, limit } = req.query;
     const userId = req.user ? req.user.id : 0;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
@@ -86,7 +87,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     zip.end();
   });
 
-  router.get('/users/:username/songs', (req, res) => {
+  router.get('/users/:username/songs', validateListQuery, (req, res) => {
     const user = User.findByUsername(req.params.username);
     if (!user) return res.status(404).json({ error: 'User not found' });
     const { page, limit } = req.query;
@@ -117,9 +118,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
 
   router.post('/songs', requireAuth, (req, res) => {
     const { content, format_detected, visibility } = req.body;
-    if (!content?.trim()) return res.status(400).json({ error: 'Content is required' });
-    if (content.length > LIMITS.MAX_CONTENT) return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
-    const chordError = validateSongInput({ content, requireChord: true });
+    const chordError = validateSongInput({ content, format_detected, requireContent: true, requireChord: true });
     if (chordError) return res.status(400).json({ error: chordError });
     const meta = extractMetadata(content);
     if (!meta.title) return res.status(400).json({ error: 'Title is required. Add {title: Song Name} to your content.' });
@@ -148,8 +147,9 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     const valid = [];
 
     songs.forEach((s, i) => {
-      if (!s.content?.trim()) { errors.push({ index: i, error: 'Content is required' }); return; }
-      if (s.content.length > LIMITS.MAX_CONTENT) { errors.push({ index: i, error: `Content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` }); return; }
+      const inputError = !s || typeof s !== 'object' || Array.isArray(s) ? 'Song must be an object'
+        : validateSongInput({ content: s.content, requireContent: true });
+      if (inputError) { errors.push({ index: i, error: inputError }); return; }
       const meta = extractMetadata(s.content);
       if (!meta.title) { errors.push({ index: i, error: 'Title is required. Add {title: Song Name} to content.' }); return; }
       if (meta.language && !LANGUAGE_CODES.has(meta.language)) { errors.push({ index: i, error: `Invalid language code: ${meta.language}` }); return; }
@@ -178,10 +178,9 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     const existing = Song.findById(id);
     if (!existing || !canManageSong(req.user, existing.user_id)) return res.status(404).json({ error: 'Song not found or not yours' });
     const { content, format_detected, visibility } = req.body;
-    const finalContent = content?.trim() || existing.content;
-    if (content && content.length > LIMITS.MAX_CONTENT) return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
-    const chordError = validateSongInput({ content, requireChord: true });
+    const chordError = validateSongInput({ content, format_detected, requireChord: true });
     if (chordError) return res.status(400).json({ error: chordError });
+    const finalContent = content?.trim() || existing.content;
     const meta = extractMetadata(finalContent);
     if (!meta.title) return res.status(400).json({ error: 'Title is required. Add {title: Song Name} to your content.' });
     if (meta.language) {

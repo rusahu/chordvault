@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const User = require('../lib/models/user');
 const { requireAuth } = require('../lib/auth');
 const { LIMITS, GEMINI_MODELS, isValidGeminiModel, resolveGeminiModel } = require('../lib/constants');
-const { validatePreferredLanguages, validateGeminiApiKey } = require('../lib/validation');
+const { validateObjectBody, validatePreferredLanguages, validateGeminiApiKey } = require('../lib/validation');
 const { LANGUAGE_CODES } = require('../lib/languages');
 const { AppError } = require('../lib/errors');
 const { parseDataUrl, stripFences, callGemini } = require('../lib/gemini');
@@ -131,6 +131,7 @@ function decryptApiKey(stored) {
 
 function createSettingsRouter() {
   const router = express.Router();
+  router.use(validateObjectBody);
 
   router.put('/settings/gemini-key', requireAuth, (req, res) => {
     const { api_key } = req.body;
@@ -180,8 +181,8 @@ function createSettingsRouter() {
   });
 
   router.put('/settings/languages', requireAuth, (req, res) => {
-    const { languages } = req.body;
-    const error = validatePreferredLanguages(languages || []);
+    const languages = req.body.languages ?? [];
+    const error = validatePreferredLanguages(languages);
     if (error) return res.status(400).json({ error });
     const value = languages.length > 0 ? languages.join(',') : null;
     User.updatePreferredLanguages(req.user.id, value);
@@ -267,8 +268,12 @@ function createSettingsRouter() {
   // Refinement endpoint — multi-turn conversation with image context
   router.post('/ocr/gemini/refine', requireAuth, express.json({ limit: LIMITS.MAX_BODY_JSON }), async (req, res) => {
     const { image, history, message, model: requestModel } = req.body;
-    if (!image || !message || !Array.isArray(history)) {
+    if (typeof image !== 'string' || !image || typeof message !== 'string' || !message || !Array.isArray(history)) {
       return res.status(400).json({ error: 'image, history, and message are required' });
+    }
+    if ((image.length * 3) / 4 > LIMITS.MAX_OCR_IMAGE) return res.status(400).json({ error: 'Image too large (max 18MB)' });
+    if (history.some(item => !item || !['user', 'model'].includes(item.role) || typeof item.text !== 'string')) {
+      return res.status(400).json({ error: 'History entries require a user/model role and string text' });
     }
     if (message.length > 2000) return res.status(400).json({ error: 'Message too long (max 2000 chars)' });
     if (history.length > 20) return res.status(400).json({ error: 'Conversation too long. Start a new extraction.' });
