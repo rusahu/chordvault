@@ -7,7 +7,6 @@ const { createSongsRouter } = require('../routes/songs');
 const { createSetlistsRouter } = require('../routes/setlists');
 const { createAdminRouter } = require('../routes/admin');
 const { createSettingsRouter } = require('../routes/settings');
-const limiters = require('../lib/rateLimiter');
 const admin = user('validation-admin','admin');
 setSetting('allow_registration','1');
 const content = '{title: 恩典 Grace}\n{x_language: zh}\n[C]恩典';
@@ -16,8 +15,8 @@ const sl = Number(db.prepare("INSERT INTO setlists (user_id,name) VALUES (?, 'Se
 const entry = Number(db.prepare('INSERT INTO setlist_songs (setlist_id,song_id,position) VALUES (?,?,0)').run(sl,id).lastInsertRowid);
 test.after(()=>db.close());
 const mount = app => {
-  app.use('/api/auth',createAuthRouter(limiters));
-  for(const factory of [createSongsRouter,createSetlistsRouter,createAdminRouter,createSettingsRouter]) app.use('/api',factory(limiters));
+  app.use('/api/auth',createAuthRouter());
+  for(const factory of [createSongsRouter,createSetlistsRouter,createAdminRouter,createSettingsRouter]) app.use('/api',factory());
 };
 
 test('malformed write fields return 400 without changing songs', async t => {

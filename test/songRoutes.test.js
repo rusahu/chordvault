@@ -3,7 +3,6 @@ const assert = require('node:assert/strict');
 const { db, user, serve } = require('./helpers/app');
 const { createSongsRouter } = require('../routes/songs');
 const { createSetlistsRouter } = require('../routes/setlists');
-const limiters = require('../lib/rateLimiter');
 const owner = user('song-owner');
 const other = user('song-other');
 const admin = user('song-admin', 'admin');
@@ -14,7 +13,7 @@ function song(visibility = 'public', status = 'active', parent = null, author = 
   return Number(db.prepare('INSERT INTO songs (user_id,title,content,visibility,status,parent_id) VALUES (?,?,?,?,?,?)').run(author, 'Grace', content, visibility, status, parent).lastInsertRowid);
 }
 const mount = app => {
-  app.use('/api', createSongsRouter(limiters));
+  app.use('/api', createSongsRouter());
   app.use('/api', createSetlistsRouter());
 };
 

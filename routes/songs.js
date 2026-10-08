@@ -49,7 +49,7 @@ function resolveCorrectionWithAuth(req, res) {
   return { correction, original, originalId };
 }
 
-function createSongsRouter({ withSkipGlobal, exportLimiter }) {
+function createSongsRouter() {
   const router = express.Router();
   router.use(validateObjectBody);
 
@@ -67,7 +67,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     res.json(Song.listPublic({ q, language, userId, page: pageNum, limit: limitNum }));
   });
 
-  router.get('/songs/export', withSkipGlobal(exportLimiter), requireAuth, (req, res) => {
+  router.get('/songs/export', requireAuth, (req, res) => {
     const isAdmin = isAdminRole(req.user.role);
     const date = new Date().toISOString().slice(0, 10);
     const zip = new yazl.ZipFile();

@@ -25,7 +25,7 @@ async function verifyTurnstile(token) {
   return data.success === true;
 }
 
-function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
+function createAuthRouter() {
   const router = express.Router();
   router.use(validateObjectBody);
 
@@ -35,7 +35,7 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     res.json({ allowRegistration: isRegistrationAllowed() || userCount === 0, invitesEnabled: hasInvites, turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || null, demoMode: DEMO_MODE });
   });
 
-  router.post('/register', withSkipGlobal(registerLimiter), async (req, res) => {
+  router.post('/register', async (req, res) => {
     const userCount = User.count().count;
     if (DEMO_MODE && userCount > 0) {
       return res.status(403).json({ error: 'Disabled in demo mode' });
@@ -64,7 +64,7 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     }
   });
 
-  router.post('/login', withSkipGlobal(authLimiter), async (req, res) => {
+  router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     if (typeof username !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'Username and password required' });
     const user = User.findByUsername(username.trim());
@@ -78,7 +78,7 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     res.json({ token, id: user.id, username: user.username, role: user.role });
   });
 
-  router.post('/redeem-invite', blockInDemo, withSkipGlobal(registerLimiter), async (req, res) => {
+  router.post('/redeem-invite', blockInDemo, async (req, res) => {
     const { code, username, password, turnstile_token } = req.body;
     if (!(await verifyTurnstile(turnstile_token))) {
       return res.status(400).json({ error: 'Bot verification failed. Please try again.' });
