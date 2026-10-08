@@ -1,7 +1,5 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { readFileSync } = require('node:fs');
-const { resolve } = require('node:path');
 const languages = require('../lib/languages');
 
 test('exports only the code set', () => {
@@ -29,11 +27,9 @@ test('every code is a bare two-letter lowercase string', () => {
   }
 });
 
-test('code list matches the frontend registry', () => {
-  const path = resolve(__dirname, '../frontend/src/lib/languages.ts');
-  const matches = readFileSync(path, 'utf8').match(/code: '([a-z]{2})'/g) || [];
-  const frontend = matches.map((m) => m.slice(-3, -1));
-  assert.equal(frontend.length, 94, 'frontend registry did not yield 94 entries');
-  assert.equal(new Set(frontend).size, frontend.length, 'frontend registry has duplicate codes');
-  assert.deepEqual([...new Set(frontend)].sort(), [...languages.LANGUAGE_CODES].sort());
+test('registry has unique codes and names for every supported language', () => {
+  const registry = require('../shared/languages.json');
+  assert.equal(registry.length, languages.LANGUAGE_CODES.size);
+  assert.deepEqual(new Set(registry.map(language => language.code)), languages.LANGUAGE_CODES);
+  for (const language of registry) assert.ok(language.name.length > 0);
 });

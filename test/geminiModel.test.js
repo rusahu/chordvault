@@ -1,17 +1,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { readFileSync } = require('node:fs');
-const { join } = require('node:path');
 const { GEMINI_MODELS, DEFAULT_GEMINI_MODEL, isValidGeminiModel, resolveGeminiModel } = require('../lib/constants');
 
 test('default model is one of the listed models', () => {
   assert.ok(isValidGeminiModel(DEFAULT_GEMINI_MODEL));
 });
 
-test('frontend initial selection matches the backend default', () => {
-  const frontend = readFileSync(join(__dirname, '../frontend/src/lib/constants.ts'), 'utf8');
-  const initialModel = frontend.match(/export const DEFAULT_GEMINI_MODEL = '([^']+)'/);
-  assert.equal(initialModel?.[1], DEFAULT_GEMINI_MODEL);
+test('backend uses the shared public model default', () => {
+  assert.equal(DEFAULT_GEMINI_MODEL, require('../shared/public-constants.json').DEFAULT_GEMINI_MODEL);
 });
 
 test('model ids are unique', () => {

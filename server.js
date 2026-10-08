@@ -31,27 +31,17 @@ app.use(helmet({
   }
 }));
 
-const {
-  apiRateLimiter,
-  withSkipGlobal,
-  authLimiter,
-  registerLimiter,
-  exportLimiter,
-} = require('./lib/rateLimiter');
+const { createApiRateLimiter } = require('./lib/rateLimiter');
 
 app.set('trust proxy', 1);
 
 app.use(express.json({ limit: LIMITS.MAX_BODY_JSON }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/api/', apiRateLimiter);
+app.use('/api', createApiRateLimiter());
 
-app.use('/api/auth', createAuthRouter({
-  withSkipGlobal,
-  authLimiter,
-  registerLimiter,
-}));
-app.use('/api', createSongsRouter({ withSkipGlobal, exportLimiter }));
+app.use('/api/auth', createAuthRouter());
+app.use('/api', createSongsRouter());
 app.use('/api', createSetlistsRouter());
 app.use('/api', createAdminRouter());
 app.use('/api', createSettingsRouter());

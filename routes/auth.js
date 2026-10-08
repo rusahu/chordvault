@@ -5,7 +5,7 @@ const { isRegistrationAllowed } = require('../lib/db');
 const User = require('../lib/models/user');
 const Invite = require('../lib/models/invite');
 const { requireAuth, hashPassword } = require('../lib/auth');
-const { validateUserCredentials } = require('../lib/validation');
+const { validateObjectBody, validateUserCredentials } = require('../lib/validation');
 const { ROLES, LIMITS } = require('../lib/constants');
 const { handleDbError } = require('../lib/errors');
 const { DEMO_MODE, blockInDemo } = require('../lib/demo');
@@ -25,8 +25,9 @@ async function verifyTurnstile(token) {
   return data.success === true;
 }
 
-function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
+function createAuthRouter() {
   const router = express.Router();
+  router.use(validateObjectBody);
 
   router.get('/config', (req, res) => {
     const userCount = User.count().count;
@@ -34,7 +35,7 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     res.json({ allowRegistration: isRegistrationAllowed() || userCount === 0, invitesEnabled: hasInvites, turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || null, demoMode: DEMO_MODE });
   });
 
-  router.post('/register', withSkipGlobal(registerLimiter), async (req, res) => {
+  router.post('/register', async (req, res) => {
     const userCount = User.count().count;
     if (DEMO_MODE && userCount > 0) {
       return res.status(403).json({ error: 'Disabled in demo mode' });
@@ -63,9 +64,10 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     }
   });
 
-  router.post('/login', withSkipGlobal(authLimiter), async (req, res) => {
+  router.post('/login', async (req, res) => {
     const { username, password } = req.body;
-    const user = User.findByUsername(username?.trim());
+    if (typeof username !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'Username and password required' });
+    const user = User.findByUsername(username.trim());
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
@@ -76,12 +78,12 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
     res.json({ token, id: user.id, username: user.username, role: user.role });
   });
 
-  router.post('/redeem-invite', blockInDemo, withSkipGlobal(registerLimiter), async (req, res) => {
+  router.post('/redeem-invite', blockInDemo, async (req, res) => {
     const { code, username, password, turnstile_token } = req.body;
     if (!(await verifyTurnstile(turnstile_token))) {
       return res.status(400).json({ error: 'Bot verification failed. Please try again.' });
     }
-    if (!code?.trim()) return res.status(400).json({ error: 'Invite code is required' });
+    if (typeof code !== 'string' || !code.trim()) return res.status(400).json({ error: 'Invite code is required' });
     const credentialsErr = validateUserCredentials(username, password);
     if (credentialsErr) return res.status(400).json({ error: credentialsErr });
 
@@ -101,7 +103,7 @@ function createAuthRouter({ withSkipGlobal, authLimiter, registerLimiter }) {
 
   router.put('/password', blockInDemo, requireAuth, async (req, res) => {
     const { current_password, new_password } = req.body;
-    if (!current_password || !new_password) return res.status(400).json({ error: 'Current password and new password are required' });
+    if (typeof current_password !== 'string' || typeof new_password !== 'string' || !current_password || !new_password) return res.status(400).json({ error: 'Current password and new password are required' });
     if (new_password.length < LIMITS.PASSWORD_MIN) return res.status(400).json({ error: `New password must be at least ${LIMITS.PASSWORD_MIN} characters` });
     const user = User.getFullById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });

@@ -1,6 +1,6 @@
 {
   "name": "chordvault",
-  "version": "1.26.7",
+  "version": "1.26.8",
   "description": "Self-hosted chord sheet manager with transpose",
   "author": "Rudy Samuel",
   "license": "AGPL-3.0-or-later",
@@ -17,8 +17,8 @@
     "dev": "concurrently \"NODE_ENV=development node server.js\" \"cd frontend && npm run dev\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"*.js\" \"lib/**/*.js\" \"routes/**/*.js\"",
-    "format:check": "prettier --check \"*.js\" \"lib/**/*.js\" \"routes/**/*.js\"",
+    "format": "prettier --write \"*.js\" \"lib/**/*.js\" \"routes/**/*.js\" \"shared/**/*.{mjs,json}\"",
+    "format:check": "prettier --check \"*.js\" \"lib/**/*.js\" \"routes/**/*.js\" \"shared/**/*.{mjs,json}\"",
     "test": "node --test test/*.test.js",
     "prepare": "husky || true"
   },
@@ -28,6 +28,7 @@
     "chordsheetjs": "^18.0.0",
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.1",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "opencc-js": "^1.4.2",
@@ -47,6 +48,7 @@
     "*.js": "eslint",
     "lib/**/*.js": "eslint",
     "routes/**/*.js": "eslint",
-    "frontend/src/**/*.{ts,tsx}": "cd frontend && npx eslint"
+    "frontend/src/**/*.{ts,tsx}": "cd frontend && npx eslint",
+    "shared/**/*.mjs": "eslint"
   }
 }

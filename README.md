@@ -94,7 +94,7 @@
 - **Node.js + Express backend:** modular API with robust validation and rate limiting
 - **CodeMirror 6 editor:** ChordPro syntax highlighting, bracket matching, dark/light theme, live preview pane
 - **Single-file database:** SQLite via better-sqlite3 with WAL mode, no external DB server
-- **CI/CD:** GitHub Actions runs lint, typecheck, build, and smoke test on every push/PR
+- **CI/CD:** GitHub Actions checks lint, types, unit tests, browser smoke tests, and Docker build/startup on PRs targeting main and pushes to main
 - **Lightweight:** minimal CPU/RAM, runs on a Raspberry Pi
 
 ## Quick Start
@@ -169,11 +169,12 @@ npm run dev   # Starts backend + Vite dev server with hot reload
 **Run checks:**
 
 ```bash
-npm run lint                 # Lint backend
-cd frontend && npm run lint  # Lint frontend
-cd frontend && npm run test  # Run frontend unit tests (Vitest)
-npm run format               # Format backend with Prettier
-cd frontend && npm run build # Build frontend
+npm run lint                    # Lint backend and shared modules
+npm test                        # Run backend tests
+npm --prefix frontend run lint  # Lint frontend
+npm --prefix frontend test      # Run frontend unit tests (Vitest)
+npm run format                  # Format backend and shared files
+npm --prefix frontend run build # Typecheck and build frontend
 node test/smoke.js           # Playwright smoke test (requires running server)
 ```
 
@@ -207,10 +208,11 @@ chords.example.com {
 ```
 server.js       Express entrypoint
 lib/            Backend modules (db, auth, validation, constants, errors)
+shared/         Browser-safe key definitions, languages and public limits
 routes/         API route handlers
 frontend/       React + TypeScript SPA (Vite)
 public/         Built frontend assets
-test/           Smoke test (Playwright)
+test/           Backend tests and browser/container smoke checks
 scripts/        Dev tooling (seed data, screenshots)
 docs/           Contributor guide, screenshots
 ```
@@ -405,7 +407,7 @@ A live format badge in the editor shows which format was detected. The editor it
 
 ### Rate Limiting
 
-All `/api/` routes are protected by a global rate limiter. New routes are covered automatically.
+All `/api/` routes are covered by IP-based rate limiting using express-rate-limit. New routes receive the general limits automatically.
 
 | Scope | Limit | Window |
 |-------|-------|--------|
@@ -414,22 +416,26 @@ All `/api/` routes are protected by a global rate limiter. New routes are covere
 | Unauthenticated reads (sustained) | 60 requests | 1 minute |
 | Unauthenticated reads (burst) | 10 requests | 5 seconds |
 | Login | 15 requests | 15 minutes |
-| Register / redeem invite | 5 requests | 1 hour |
+| Register / redeem invite (combined) | 5 requests | 1 hour |
+| Song ZIP export | 5 requests | 1 minute |
 
-Unauthenticated reads must pass both the burst and sustained limiters. Auth endpoints override the global limiter with their own stricter limits.
+Public reads must pass both the burst and sustained limits. Only valid tokens for enabled users receive the authenticated allowance. Login, registration/invite redemption and export have dedicated limits and do not consume the general quotas.
+
+Counters reset at the end of each client window and on server restart. They are held in memory per server process; IPv6 addresses share a quota within the library's default /56 subnet. Rate limiting is bypassed in development and test mode.
 
 ### Input Validation
 
-All validators centralized in `validation.js`, all limits defined in `constants.js`:
+Server validators live in `lib/validation.js`. Public limits are shared with the frontend; server-only limits remain in `lib/constants.js`:
 
-- All route params parsed via `parseId()` (rejects NaN)
+- IDs must be positive safe integers; malformed values are rejected
 - Username length: 3 to 50 characters
 - Content size: 100KB max on create, update, version, and correction
 - Setlist name: max 200 characters
 - Setlist reorder array capped at 1000 entries
-- Transpose range: -12 to +12
+- Target keys must be valid supported key names
 - BPM: 1 to 300
-- Date format: YYYY-MM-DD
+- Dates must be real calendar dates in YYYY-MM-DD format
+- Invalid page/limit values return HTTP 400
 
 ### XSS Protection
 
@@ -438,7 +444,8 @@ All validators centralized in `validation.js`, all limits defined in `constants.
 
 ### Authorization
 
-- Song versioning requires ownership or admin role
+- Editing or deleting a song requires ownership or an admin role
+- Signed-in users can create versions of public songs; private songs remain restricted
 - Version history filtered by status (pending corrections hidden from public)
 - Community corrections require owner or admin review to approve/reject
 

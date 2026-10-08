@@ -5,7 +5,7 @@ const User = require('../lib/models/user');
 const Song = require('../lib/models/song');
 const Invite = require('../lib/models/invite');
 const { requireAuth, requireAdmin, hashPassword } = require('../lib/auth');
-const { parseId, validateUserCredentials } = require('../lib/validation');
+const { validateObjectBody, parseId, validateUserCredentials } = require('../lib/validation');
 const { handleDbError } = require('../lib/errors');
 const { ROLES, LIMITS } = require('../lib/constants');
 const { blockInDemo } = require('../lib/demo');
@@ -26,6 +26,7 @@ function resolveAdminTarget(req, res) {
 
 function createAdminRouter() {
   const router = express.Router();
+  router.use(validateObjectBody);
 
   router.get('/admin/stats', requireAuth, requireAdmin, (req, res) => {
     const userCount = User.count().count;
@@ -73,7 +74,7 @@ function createAdminRouter() {
     if (!resolved) return;
 
     const { password } = req.body;
-    if (!password || password.length < LIMITS.PASSWORD_MIN) {
+    if (typeof password !== 'string' || password.length < LIMITS.PASSWORD_MIN) {
       return res.status(400).json({ error: `Password must be at least ${LIMITS.PASSWORD_MIN} characters` });
     }
 
