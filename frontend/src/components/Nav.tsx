@@ -1,3 +1,4 @@
+import { useOffline } from '../context/OfflineContext';
 import { ActionIcon, Button, Group, Menu, Text, UnstyledButton, useComputedColorScheme, useMantineColorScheme, useMatches } from '@mantine/core';
 import { IconMenu2, IconMoon, IconSun } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +10,7 @@ interface NavProps {
 }
 
 export function Nav({ view, navigate }: NavProps) {
+  const { readOnly } = useOffline();
   const { user, isAdmin, logout } = useAuth();
   const theme = useComputedColorScheme('dark');
   const { toggleColorScheme } = useMantineColorScheme();
@@ -25,14 +27,14 @@ export function Nav({ view, navigate }: NavProps) {
         <ActionIcon visibleFrom={user ? 'xs' : undefined} onClick={() => toggleColorScheme()} title="Toggle theme" aria-label="Toggle theme">{theme === 'light' ? <IconMoon size={20} aria-hidden /> : <IconSun size={20} aria-hidden />}</ActionIcon>
         <Button variant={view === 'browse' ? 'default' : 'subtle'} onClick={() => navigate('browse')}>Songs</Button>
         <Button variant={setlistsActive ? 'default' : 'subtle'} onClick={() => navigate(user ? 'setlists' : 'public-setlists')}>Setlists</Button>
-        {isAdmin && <Button visibleFrom="xs" variant={view === 'admin' ? 'default' : 'subtle'} onClick={() => navigate('admin')}>Admin</Button>}
-        {!user ? <Button variant={view === 'auth' ? 'default' : 'subtle'} onClick={() => navigate('auth')}>Sign in</Button> : (
+        {isAdmin && <Button disabled={readOnly} visibleFrom="xs" variant={view === 'admin' ? 'default' : 'subtle'} onClick={() => navigate('admin')}>Admin</Button>}
+        {!user ? <Button disabled={readOnly} variant={view === 'auth' ? 'default' : 'subtle'} onClick={() => navigate('auth')}>Sign in</Button> : (
           <Menu position="bottom-end" shadow="sm">
             <Menu.Target><ActionIcon id="nav-menu-btn" title="Menu" aria-label="Account menu"><IconMenu2 size={20} aria-hidden /></ActionIcon></Menu.Target>
             <Menu.Dropdown>
               <Menu.Item onClick={() => navigate('my-songs')}>My Songs</Menu.Item>
               <Menu.Item onClick={() => navigate('settings')}>Settings</Menu.Item>
-              {phone && isAdmin && <Menu.Item onClick={() => navigate('admin')}>Admin</Menu.Item>}
+              {phone && isAdmin && <Menu.Item disabled={readOnly} onClick={() => navigate('admin')}>Admin</Menu.Item>}
               {phone && (
                 <Menu.Item leftSection={theme === 'light' ? <IconMoon size={16} aria-hidden /> : <IconSun size={16} aria-hidden />} onClick={() => toggleColorScheme()}>
                   {theme === 'light' ? 'Dark theme' : 'Light theme'}

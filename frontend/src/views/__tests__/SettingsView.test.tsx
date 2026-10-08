@@ -3,6 +3,7 @@ import { SettingsView } from '../SettingsView';
 const { call } = vi.hoisted(() => ({ call: vi.fn() }));
 vi.mock('../../hooks/useApi', () => ({ useApi: () => call }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: null, isAdmin: false }) }));
+vi.mock('../../context/I18nContext', () => ({ useI18n: () => ({ t: (key: string, fallback?: string) => fallback || key }) }));
 vi.mock('../../context/DemoContext', () => ({ useDemo: () => ({ demoMode: false }) }));
 vi.mock('../../components/GeminiKeySettings', () => ({ GeminiKeySettings: () => null }));
 beforeEach(() => { vi.clearAllMocks(); call.mockImplementation((_method: string, path: string) => Promise.resolve(path.endsWith('/languages') ? { languages: [] } : path.endsWith('/ocr-model') ? { model: 'model', models: [] } : { prompt: null, defaultPrompt: '' })); });

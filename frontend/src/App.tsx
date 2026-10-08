@@ -1,4 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from './context/I18nContext';
+import { usePlaybackLayout } from './hooks/usePlaybackLayout';
+import { Alert, Badge } from '@mantine/core';
+import { useOffline } from './context/OfflineContext';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWindowEvent } from '@mantine/hooks';
 import { useAuth } from './context/AuthContext';
 import { useDemo } from './context/DemoContext';
@@ -19,7 +23,7 @@ import { AdminView } from './views/AdminView';
 import { SettingsView } from './views/SettingsView';
 import { AboutView } from './views/AboutView';
 import { api } from './lib/api';
-import type { AuthConfig, Setlist } from './types';
+import type { AuthConfig } from './types';
 
 interface Route {
   view: string;
@@ -63,7 +67,10 @@ function parseHash(): Route {
 
 export function App() {
   const { user } = useAuth();
+  const { readOnly } = useOffline();
   const { setDemoMode } = useDemo();
+  const locked = useRef(readOnly);
+  useEffect(() => { locked.current = readOnly; }, [readOnly]);
   const listIdentity = user?.id ?? 'guest';
   const [route, setRoute] = useState<Route>(() => parseHash());
   const [animClass, setAnimClass] = useState('');
@@ -88,6 +95,7 @@ export function App() {
   });
 
   const navigate = useCallback((view: string, params: Record<string, string> = {}) => {
+    if ((navigator.onLine === false || locked.current) && ['song-edit', 'correction', 'admin', 'auth'].includes(view)) return;
     // Trigger animation
     setAnimClass('');
     requestAnimationFrame(() => {
@@ -141,14 +149,6 @@ export function App() {
           />
         ) : <SetlistsView key={listIdentity} navigate={navigate} />;
       case 'setlist-play': {
-        if (params._setlist) {
-          // Local setlist play with pre-loaded data
-          try {
-            const sl = JSON.parse(params._setlist) as Setlist;
-            const initialIdx = params.index ? parseInt(params.index) : undefined;
-            return <SetlistPlayView key={sl.id} setlistId={sl.id} isLocal initialSetlist={sl} initialIndex={initialIdx} navigate={navigate} />;
-          } catch { /* fall through */ }
-        }
         const initialIdx = params.index ? parseInt(params.index) : undefined;
         return params.id ? (
           <SetlistPlayView
@@ -175,9 +175,20 @@ export function App() {
     <>
       <DemoBanner />
       {route.view !== 'setlist-play' && <Nav view={route.view} navigate={navigate} />}
-      <main id="app" className={animClass}>
+      <main key={listIdentity} id="app" className={animClass}>
+        {readOnly && <OfflineStatus playback={route.view === 'setlist-play'} />}
         {renderView()}
       </main>
     </>
   );
+}
+
+function OfflineStatus({ playback }: { playback: boolean }) {
+  const { state, usingDownload } = useOffline();
+  const { t } = useI18n();
+  const layout = usePlaybackLayout();
+  if (playback) return <Badge pos="fixed" bottom={layout === 'desktop' ? 12 : 90} right={12} style={{ zIndex: 61, pointerEvents: 'none' }} role="status">{t('offline.playbackStatus', 'Offline library · viewing only')}</Badge>;
+  return <Alert py="xs" mb="sm" role="status" title={usingDownload ? t('offline.downloaded', 'Downloaded library') : t('offline.disconnected', 'Offline')}>
+    {t('offline.viewing', 'Viewing only.')} {state?.downloadedAt ? `${t('offline.updated', 'Last downloaded')} ${new Date(state.downloadedAt).toLocaleString()}.` : t('offline.onlyDownloaded', 'Only downloaded songs are available.')} {t('offline.connectToEdit', 'Connect to make changes.')}
+  </Alert>;
 }

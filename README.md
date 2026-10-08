@@ -15,7 +15,7 @@
 **For self-hosters.** Ridiculously lightweight.
 - Your entire library lives in a single SQLite file. No database server, no config, just one file you can back up or move.
 - Chord parsing, transposition, and Nashville numbers all run in the browser via ChordSheetJS. The server just does light reads and writes.
-- Zero background workers, minimal CPU and RAM. Runs happily on a Raspberry Pi, an old laptop, or whatever you have lying around.
+- Zero server background workers, minimal CPU and RAM. Runs happily on a Raspberry Pi, an old laptop, or whatever you have lying around.
 - One Docker command to deploy. Your data stays on your hardware.
 
 **For worship leaders & admins.** Keep your team organized.
@@ -30,6 +30,7 @@
 - Transpose on the fly, switch to Nashville numbers, link YouTube videos for reference.
 - Swipe through setlists during rehearsal with one hand. Side taps, swipe gestures, or arrow keys.
 - Adjust font size, hide distractions, go fullscreen. Whatever helps you focus on the music.
+- Download your library once and read songs or play saved setlists without an internet connection.
 
 ![ChordVault: setlist playback](docs/screenshots/setlist-play.png)
 
@@ -55,6 +56,14 @@
 | ![Browse songs](docs/screenshots/browse.png) | ![Setlists page](docs/screenshots/setlists.png) | ![Song editor with live preview](docs/screenshots/song-editor.png) |
 
 </details>
+
+## Offline playback
+
+In **Settings**, turn on **Keep my library offline** and wait for the song count and **Last downloaded** time. This saves public songs, your private songs, all their accessible versions and your own saved setlists on that device. Installing ChordVault from your browser or adding it to your home screen is optional.
+
+You can browse, search, transpose, play setlists and export PDFs offline. Editing, saving and importing need a connection. Downloads refresh while the app is open and online, with automatic refresh paused during playback or unsaved editing. Use **Refresh now** before a rehearsal if you want to check for changes immediately.
+
+Offline access needs HTTPS (or localhost). The app and fonts take about 22 MB before song data. Signing out or turning the option off removes the downloaded library; clearing browser data can remove it too. Check the download status before relying on it, and refresh occasionally so deleted or newly private songs are reflected. An app update waits until all ChordVault tabs and app windows are closed.
 
 ## Features
 

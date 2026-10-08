@@ -1,3 +1,4 @@
+import { useOffline } from '../context/OfflineContext';
 import { ActionIcon, Button, Group, Menu, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft, IconChevronDown, IconTrash } from '@tabler/icons-react';
 
@@ -13,6 +14,7 @@ interface EditorActionBarProps {
 }
 
 export function EditorActionBar({ title, dirty, onLeave, saveLabel, onSave, onSaveAsVersion, onDelete, t }: EditorActionBarProps) {
+  const { readOnly } = useOffline();
   const hasMenu = !!(onSaveAsVersion || onDelete);
   return (
     <Group component="header" className="editor-action-bar" wrap="nowrap" gap="xs" pos="sticky" top={0} px="sm" py="xs" mb="lg" bg="var(--cv-band)" style={{ zIndex: 50, borderRadius: 14 }}>
@@ -25,11 +27,11 @@ export function EditorActionBar({ title, dirty, onLeave, saveLabel, onSave, onSa
       </Stack>
       <Button variant="default" visibleFrom="xs" onClick={onLeave}>{t('songEdit.cancel')}</Button>
       <Group gap={1} wrap="nowrap">
-        <Button variant="filled" onClick={onSave} styles={hasMenu ? { root: { borderStartEndRadius: 0, borderEndEndRadius: 0 } } : undefined}>{saveLabel}</Button>
+        <Button disabled={readOnly} variant="filled" onClick={onSave} styles={hasMenu ? { root: { borderStartEndRadius: 0, borderEndEndRadius: 0 } } : undefined}>{saveLabel}</Button>
         {hasMenu && (
           <Menu position="bottom-end" shadow="md">
             <Menu.Target>
-              <ActionIcon variant="filled" size="input-sm" aria-label={t('songEdit.moreActions')} title={t('songEdit.moreActions')} styles={{ root: { borderStartStartRadius: 0, borderEndStartRadius: 0 } }}>
+              <ActionIcon disabled={readOnly} variant="filled" size="input-sm" aria-label={t('songEdit.moreActions')} title={t('songEdit.moreActions')} styles={{ root: { borderStartStartRadius: 0, borderEndStartRadius: 0 } }}>
                 <IconChevronDown size={18} aria-hidden />
               </ActionIcon>
             </Menu.Target>

@@ -5,6 +5,7 @@ COPY frontend/package*.json frontend/.npmrc ./
 RUN npm ci
 COPY frontend/ ./
 COPY shared/ /app/shared/
+COPY public/locales/ /app/public/locales/
 RUN npm run build
 
 # Stage 2: Build backend native deps

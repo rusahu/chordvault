@@ -8,6 +8,7 @@ const { createSongsRouter } = require('./routes/songs');
 const { createSetlistsRouter } = require('./routes/setlists');
 const { createAdminRouter } = require('./routes/admin');
 const { createSettingsRouter } = require('./routes/settings');
+const { createOfflineRouter } = require('./routes/offline');
 const { errorHandler } = require('./lib/errors');
 const { LIMITS } = require('./lib/constants');
 
@@ -45,6 +46,7 @@ app.use('/api', createSongsRouter());
 app.use('/api', createSetlistsRouter());
 app.use('/api', createAdminRouter());
 app.use('/api', createSettingsRouter());
+app.use('/api', createOfflineRouter());
 
 app.use(errorHandler);
 

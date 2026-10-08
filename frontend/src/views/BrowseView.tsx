@@ -1,12 +1,12 @@
+import { Alert, ActionIcon, Button, NativeSelect, SimpleGrid, Box, Title, Text, Group } from '@mantine/core';
+import { useLibraryRead } from '../hooks/useLibraryRead';
+import { useOffline } from '../context/OfflineContext';
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { ActionIcon, Button, NativeSelect, SimpleGrid, Box, Title, Text, Group } from '@mantine/core';
 import { IconAdjustmentsHorizontal, IconPlus, IconSearch } from '@tabler/icons-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
-import { showStatusNotification as toast } from '../lib/notifications';
 import { SongCard } from '../components/SongCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
@@ -19,7 +19,8 @@ interface BrowseViewProps {
 }
 
 export function BrowseView({ navigate }: BrowseViewProps) {
-  const api = useApi();
+  const { querySongs } = useLibraryRead();
+  const { readOnly } = useOffline();
   const { user } = useAuth();
   const { t } = useI18n();
   const [songs, setSongs] = useState<SongListItem[]>([]);
@@ -29,6 +30,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   const [langFilter, setLangFilter] = useState(savedLangFilter);
   const [savedShowFilters, saveShowFilters] = useSearchSessionValue('cv_browse_show_filters', 'false');
   const showFilters = savedShowFilters === 'true';
+  const [loadError, setLoadError] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [savedPage, savePage] = useSearchSessionValue('cv_browse_page', '1');
   const [page, setPage] = useState(() => searchPage(savedPage));
@@ -41,23 +43,9 @@ export function BrowseView({ navigate }: BrowseViewProps) {
   }, []);
 
   const load = useCallback(async (q = '', lang = '', targetPage = 1) => {
+    setLoadError('');
     try {
-      let url = '/api/songs/public';
-      const params: string[] = [];
-      if (q) params.push(`q=${encodeURIComponent(q)}`);
-      if (lang) params.push(`language=${encodeURIComponent(lang)}`);
-      params.push(`page=${targetPage}`);
-      params.push(`limit=20`);
-      url += '?' + params.join('&');
-
-      interface PaginatedSongsResponse {
-        songs: SongListItem[];
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
-      }
-      const data = await api<PaginatedSongsResponse>('GET', url);
+      const data = await querySongs({ q, language: lang, page: targetPage });
       if (!active.current) return;
       setSongs(data.songs);
       setPage(data.page);
@@ -67,8 +55,8 @@ export function BrowseView({ navigate }: BrowseViewProps) {
       saveQuery(q);
       saveLangFilter(lang);
       savePage(String(data.page));
-    } catch (e) { if (active.current) toast((e as Error).message, 'error'); }
-  }, [api, saveQuery, saveLangFilter, savePage]);
+    } catch (e) { if (active.current) { setLoadError((e as Error).message); setSongs([]); } }
+  }, [querySongs, saveQuery, saveLangFilter, savePage]);
 
   useEffect(() => {
     load(query, langFilter, page);
@@ -87,10 +75,11 @@ export function BrowseView({ navigate }: BrowseViewProps) {
     window.scrollTo(0, 0);
   };
 
-  const showHero = !user && !query && !langFilter && loaded && songs.length === 0 && page === 1;
+  const showHero = !user && !query && !langFilter && !loadError && loaded && songs.length === 0 && page === 1;
 
   return (
     <>
+      {loadError && <Alert color="red" mb="sm" role="alert">{loadError}</Alert>}
       {showHero ? (
         <Box ta="center" px="md" pt={48} pb={36} mb="xs">
           <Title order={1} size={42} c="var(--cv-brand)" mb="xs">&#9833; ChordVault</Title>
@@ -120,7 +109,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
               <IconAdjustmentsHorizontal size={18} aria-hidden />
             </ActionIcon>
             {user && (
-              <Button size="sm" w={{ base: '100%', xs: 'auto' }} leftSection={<IconPlus size={16} aria-hidden />} onClick={() => navigate('song-edit')}>New Song</Button>
+              <Button size="sm" w={{ base: '100%', xs: 'auto' }} leftSection={<IconPlus size={16} aria-hidden />} disabled={readOnly} onClick={() => navigate('song-edit')}>New Song</Button>
             )}
           </SearchRow>
           {showFilters && (
@@ -138,7 +127,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
             </div>
           )}
           <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
-            {loaded && songs.length === 0 ? (
+            {!loadError && loaded && songs.length === 0 ? (
               <EmptyState icon={<IconSearch size={56} aria-hidden />} text={t('songs.noPublicSongs')} />
             ) : (
               songs.map((s) => (
@@ -147,7 +136,7 @@ export function BrowseView({ navigate }: BrowseViewProps) {
                   song={s}
                   isOwner={user?.username === s.username}
                   onClick={() => navigate('song-view', { id: String(s.id) })}
-                  onEdit={() => navigate('song-edit', { id: String(s.id) })}
+                  onEdit={readOnly ? undefined : () => navigate('song-edit', { id: String(s.id) })}
                 />
               ))
             )}

@@ -148,5 +148,24 @@
   "setlist.browseSetlists": "Setlists",
   "setlist.share": "Share",
   "setlist.linkCopied": "Link copied to clipboard",
-  "nav.mySetlists": "My Sets"
+  "nav.mySetlists": "My Sets",
+
+  "offline.title": "Offline library",
+  "offline.enable": "Keep my library offline",
+  "offline.description": "Download public songs, your private songs and your saved setlists for viewing. Stored on this device. Removed when you sign out.",
+  "offline.downloading": "Downloading library...",
+  "offline.songs": "songs",
+  "offline.setlists": "setlists",
+  "offline.updated": "Last downloaded",
+  "offline.preparing": "Preparing the app and fonts for offline use...",
+  "offline.previous": "Your previous download is still available.",
+  "offline.refresh": "Refresh now",
+  "offline.playbackStatus": "Offline library · viewing only",
+  "offline.downloaded": "Downloaded library",
+  "offline.disconnected": "Offline",
+  "offline.viewing": "Viewing only.",
+  "offline.onlyDownloaded": "Only downloaded songs are available.",
+  "offline.connectToEdit": "Connect to make changes.",
+  "offline.updateReady": "Update ready. Close all ChordVault windows and reopen to apply after your session.",
+  "offline.noDownload": "No completed download on this device. Connect and refresh your library."
 }

@@ -1,11 +1,11 @@
+import { Alert, Tabs, Button, TextInput, ActionIcon, SimpleGrid, Group } from '@mantine/core';
+import { useOffline } from '../context/OfflineContext';
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { Tabs, Button, TextInput, ActionIcon, SimpleGrid, Group } from '@mantine/core';
 import { IconCalendar, IconSearch } from '@tabler/icons-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useI18n } from '../context/I18nContext';
-import { showStatusNotification as toast } from '../lib/notifications';
 import { SetlistCard } from '../components/SetlistCard';
 import { EmptyState } from '../components/EmptyState';
 import { Pagination } from '../components/Pagination';
@@ -18,9 +18,11 @@ interface PublicSetlistsViewProps {
 }
 
 export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
+  const { readOnly } = useOffline();
   const apiCall = useApi();
   const { t } = useI18n();
   const [setlists, setSetlists] = useState<SetlistListItem[]>([]);
+  const [loadError, setLoadError] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [savedQuery, saveQuery] = useSearchSessionValue('cv_publicsetlists_query');
   const [query, setQuery] = useState(savedQuery);
@@ -41,6 +43,7 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
   }, []);
 
   const load = useCallback(async (q = '', from = '', to = '', targetPage = 1) => {
+    setLoadError('');
     const params: string[] = [];
     if (q) params.push(`q=${encodeURIComponent(q)}`);
     if (from) params.push(`date_from=${encodeURIComponent(from)}`);
@@ -67,7 +70,7 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
       saveDateFrom(from);
       saveDateTo(to);
       savePage(String(data.page));
-    } catch (e) { if (active.current) toast((e as Error).message, 'error'); }
+    } catch (e) { if (active.current) { setLoadError((e as Error).message); setSetlists([]); } }
   }, [apiCall, saveQuery, saveDateFrom, saveDateTo, savePage]);
 
   useEffect(() => {
@@ -87,10 +90,13 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
     window.scrollTo(0, 0);
   };
 
-  const showSearch = !loaded || setlists.length > 0 || page > 1;
+  const showSearch = !!loadError || !!query || !!dateFrom || !!dateTo || !loaded || setlists.length > 0 || page > 1;
+
+  if (readOnly) return <Alert>Other people’s setlists are available online. Open My Setlists to use your download.<Button mt="sm" display="block" onClick={() => navigate('setlists')}>My Setlists</Button></Alert>;
 
   return (
     <>
+      {loadError && <Alert color="red" mb="sm" role="alert">{loadError}</Alert>}
       <Group justify="space-between" mb="lg">
         <PageTitle className="view-title">{t('setlist.browseSetlists')}</PageTitle>
       </Group>
@@ -124,7 +130,7 @@ export function PublicSetlistsView({ navigate }: PublicSetlistsViewProps) {
           )}
         </>
       )}
-      {loaded && setlists.length === 0 ? (
+      {!loadError && loaded && setlists.length === 0 ? (
         <EmptyState icon={<IconSearch size={56} aria-hidden />} text={t('setlist.noPublicSetlists')} />
       ) : (
         <>

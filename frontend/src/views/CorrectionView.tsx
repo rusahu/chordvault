@@ -1,3 +1,4 @@
+import { useOffline, useOfflineActivity } from '../context/OfflineContext';
 import { Button, useComputedColorScheme, Group, Title, Text, Paper } from '@mantine/core';
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -13,6 +14,8 @@ interface CorrectionViewProps {
 
 export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
   const apiCall = useApi();
+  const { readOnly } = useOffline();
+  useOfflineActivity(true);
   const theme = useComputedColorScheme('dark');
   const [content, setContent] = useState('');
 
@@ -23,6 +26,7 @@ export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
   }, [songId, apiCall, navigate]);
 
   const submit = async () => {
+    if (readOnly) return;
     const trimmed = content.trim();
     if (!trimmed) { toast('Content is required', 'error'); return; }
     if (trimmed.length > 100000) { toast('Content too large', 'error'); return; }
@@ -41,7 +45,7 @@ export function CorrectionView({ songId, navigate }: CorrectionViewProps) {
       <Group mb="lg">
         <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-view', { id: String(songId) })}>&#8592; Cancel</Button>
         <Title order={2} size="h3" flex="1 1 160px">Submit Correction</Title>
-        <Button size="xs" className="btn btn-sm" onClick={submit}>Submit</Button>
+        <Button size="xs" className="btn btn-sm" disabled={readOnly} onClick={submit}>Submit</Button>
       </Group>
       <Text size="sm" c="dimmed" mb="sm">
         Edit the chords below. Your correction will be reviewed by the song owner before being applied.

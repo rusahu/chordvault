@@ -1,3 +1,5 @@
+import { OfflineLibrarySettings } from '../components/OfflineLibrarySettings';
+import { useOffline } from '../context/OfflineContext';
 import { Anchor, Box, Group, Text, Select, Paper, Pill, Button, NativeSelect, PasswordInput, Stack, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
@@ -13,6 +15,7 @@ import { MAX_PREFERRED_LANGUAGES, MAX_OCR_PROMPT, DEFAULT_GEMINI_MODEL } from '.
 import { PageTitle } from '../components/PageTitle';
 
 export function SettingsView() {
+  const { readOnly } = useOffline();
   const apiCall = useApi();
   const { demoMode } = useDemo();
   const { user, isAdmin } = useAuth();
@@ -149,6 +152,8 @@ export function SettingsView() {
   return (
     <>
       <Group justify="space-between" mb="lg"><PageTitle className="view-title">Settings</PageTitle></Group>
+      <OfflineLibrarySettings />
+      <Box component="fieldset" disabled={readOnly} bd={0} p={0} m={0} miw={0} mt="lg">
       <div className="settings-grid">
         <Paper component="section" withBorder radius="lg" p="lg" bg="var(--cv-raise)" className="settings-section">
           <Title order={3} fz={16} mb={4}>Change Password</Title>
@@ -260,6 +265,7 @@ export function SettingsView() {
           </Stack>
         </Paper>
       </div>
+      </Box>
     </>
   );
 }

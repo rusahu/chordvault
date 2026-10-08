@@ -1,3 +1,5 @@
+import { useLibraryRead } from './useLibraryRead';
+import { useOffline, useOfflineActivity } from '../context/OfflineContext';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useWindowEvent } from '@mantine/hooks';
 import { useApi } from './useApi';
@@ -52,8 +54,12 @@ export function useSetlistPlayer({
   onNavigate,
 }: UseSetlistPlayerOptions) {
   const apiCall = useApi();
+  const { getSong, getSetlist } = useLibraryRead();
+  const { readOnly } = useOffline();
+  useOfflineActivity(true);
   const { user } = useAuth();
 
+  const [loadError, setLoadError] = useState('');
   const [setlist, setSetlist] = useState<Setlist | null>(initialSetlist || null);
   const [index, setIndex] = useState(initialIndex || 0);
 
@@ -78,7 +84,7 @@ export function useSetlistPlayer({
             navigate('setlists');
             return;
           }
-          enrichLocalSetlistSongs(sl.entries, apiCall)
+          enrichLocalSetlistSongs(sl.entries, getSong)
             .then((entries) => {
 
               const enriched: Setlist = {
@@ -110,16 +116,16 @@ export function useSetlistPlayer({
         let sl: Setlist;
         if (user) {
           try {
-            sl = await apiCall<Setlist>('GET', `/api/setlists/${setlistId}`);
+            sl = await getSetlist(Number(setlistId));
           } catch (err) {
             if (err instanceof ApiError && (err.status === 404 || err.status === 403)) {
-              sl = await apiCall<Setlist>('GET', `/api/setlists/public/${setlistId}`);
+              sl = await getSetlist(Number(setlistId), true);
             } else {
               throw err;
             }
           }
         } else {
-          sl = await apiCall<Setlist>('GET', `/api/setlists/public/${setlistId}`);
+          sl = await getSetlist(Number(setlistId), true);
         }
 
         // Merge local overrides
@@ -129,13 +135,12 @@ export function useSetlistPlayer({
         setSetlist(sl);
         setSavedTargetKeys(merged.targetKeys);
       } catch (e) {
-        toast((e as Error).message, 'error');
-        navigate(user ? 'setlists' : 'browse');
+        setLoadError((e as Error).message);
       }
     };
 
     loadSetlist();
-  }, [setlistId, apiCall, isLocal, initialSetlist, navigate, user]);
+  }, [setlistId, getSong, getSetlist, isLocal, initialSetlist, navigate, user]);
 
   const entry: SetlistEntry | null = setlist?.entries[index] || null;
   const total = setlist?.entries.length || 0;
@@ -149,7 +154,7 @@ export function useSetlistPlayer({
    * Saves the current key setting to the server (only for owners).
    */
   const saveOnline = useCallback(async (silent = false) => {
-    if (!setlist || !entry || !user || setlist.user_id !== user.id) return;
+    if (readOnly || !setlist || !entry || !user || setlist.user_id !== user.id) return;
     try {
       await apiCall('PUT', `/api/setlists/${setlist.id}/entries/${entry.entry_id}`, {
         target_key: entry.target_key,
@@ -162,13 +167,13 @@ export function useSetlistPlayer({
     } catch (e) {
       if (!silent) toast((e as Error).message, 'error');
     }
-  }, [setlist, entry, apiCall, user]);
+  }, [setlist, entry, apiCall, user, readOnly]);
 
   /**
    * Saves the current key setting locally in the browser.
    */
   const saveLocal = useCallback((silent = false) => {
-    if (!setlist || !entry) return;
+    if (readOnly || !setlist || !entry) return;
     saveSetlistOverride(setlist.id, entry.entry_id, {
       target_key: entry.target_key,
     });
@@ -177,7 +182,7 @@ export function useSetlistPlayer({
       [String(entry.entry_id)]: entry.target_key
     }));
     if (!silent) toast('Key saved locally', 'success');
-  }, [setlist, entry]);
+  }, [setlist, entry, readOnly]);
 
   const goTo = useCallback((newIdx: number) => {
     if (!setlist) return;
@@ -236,5 +241,5 @@ export function useSetlistPlayer({
     if (setlist) { navigate('setlist-edit', { id: String(setlist.id) }); }
   }, [setlist, navigate]);
 
-  return { setlist, entry, index, total, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal };
+  return { loadError, setlist, entry, index, total, goTo, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal };
 }
