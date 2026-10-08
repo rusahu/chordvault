@@ -84,3 +84,34 @@ test('valid Chinese content, null updates, entry resets and leap-day dates still
   assert.equal((await request('/api/setlists',{...admin,method:'POST',body:{name:'Leap',event_date:'2024-02-29'}})).status,200);
   assert.equal((await request(`/api/setlists/${sl}/entries/${entry}`,{...admin,method:'PUT',body:{content_override:null,target_key:null}})).status,200);
 });
+
+test('malformed JSON types return a sanitized 400 rather than a server error', async t => {
+  t.mock.method(console, 'error', () => {});
+  const request = await serve(t, mount);
+  for (const body of [null, false, 'not an object']) {
+    const response = await request('/api/auth/login', { method: 'POST', body });
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: 'Invalid JSON request body' });
+  }
+});
+
+test('non-string language entries cannot throw during error construction', async t => {
+  t.mock.method(console, 'error', () => {});
+  const request = await serve(t, mount);
+  for (const code of [{ toString: null }, {}, [], null, 7]) {
+    const response = await request('/api/settings/languages', { ...admin, method: 'PUT', body: { languages: [code] } });
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: 'Language codes must be strings' });
+  }
+});
+
+test('protected lists authenticate before validating query parameters', async t => {
+  const disabled = user('validation-disabled');
+  db.prepare('UPDATE users SET disabled = 1 WHERE id = ?').run(disabled.id);
+  const request = await serve(t, mount);
+  for (const path of ['/api/songs?q=a&q=b', '/api/setlists?q=a&q=b']) {
+    assert.equal((await request(path)).status, 401);
+    assert.equal((await request(path, disabled)).status, 403);
+    assert.equal((await request(path, admin)).status, 400);
+  }
+});

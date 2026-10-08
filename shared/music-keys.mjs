@@ -29,4 +29,3 @@ export const ENHARMONIC_MAP = {
 export function normalizeKey(k) {
   return ENHARMONIC_MAP[k] || k;
 }
-

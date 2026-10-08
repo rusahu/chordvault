@@ -53,7 +53,7 @@ function createSongsRouter() {
   const router = express.Router();
   router.use(validateObjectBody);
 
-  router.get('/songs', validateListQuery, requireAuth, (req, res) => {
+  router.get('/songs', requireAuth, validateListQuery, (req, res) => {
     const { q, language, page, limit } = req.query;
     const userId = req.user.id;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);

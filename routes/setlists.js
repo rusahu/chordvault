@@ -19,7 +19,7 @@ function createSetlistsRouter() {
   const router = express.Router();
   router.use(validateObjectBody);
 
-  router.get('/setlists', validateListQuery, requireAuth, (req, res) => {
+  router.get('/setlists', requireAuth, validateListQuery, (req, res) => {
     const { q, date_from, date_to, page, limit } = req.query;
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
     res.json(Setlist.listForUser(req.user.id, { q, dateFrom: date_from, dateTo: date_to, page: pageNum, limit: limitNum }));
