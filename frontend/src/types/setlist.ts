@@ -13,6 +13,7 @@ export interface SetlistEntry {
   youtube_url: string | null;
   language: string;
   is_private_placeholder?: boolean;
+  not_downloaded?: boolean;
   visibility?: string;
   // Per-song overrides (runtime only)
   _num?: number | null;

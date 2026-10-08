@@ -9,6 +9,8 @@ import { I18nProvider } from './context/I18nContext';
 import { DemoProvider } from './context/DemoContext';
 import { SetlistNameModal } from './components/SetlistNameModal';
 import { ResetPasswordModal } from './components/ResetPasswordModal';
+import { OfflineProvider } from './context/OfflineContext';
+import { OfflinePwa } from './components/OfflinePwa';
 import { App } from './App';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
@@ -26,7 +28,10 @@ createRoot(document.getElementById('root')!).render(
             <I18nProvider>
               <ModalsProvider modals={{ setlistName: SetlistNameModal, resetPassword: ResetPasswordModal }}>
                 <Notifications position="bottom-center" autoClose={3000} limit={1} />
-                <App />
+                <OfflineProvider>
+                  <OfflinePwa />
+                  <App />
+                </OfflineProvider>
               </ModalsProvider>
             </I18nProvider>
         </MantineProvider>

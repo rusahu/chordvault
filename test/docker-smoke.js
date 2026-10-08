@@ -36,6 +36,15 @@ async function check(demo) {
     const asset = await fetch(new URL(script[1], base), { signal: AbortSignal.timeout(5000) });
     assert.equal(asset.status, 200);
     assert.match(asset.headers.get('content-type'), /javascript/);
+    for (const [url, mime] of [['/manifest.webmanifest', /json/], ['/sw.js', /javascript/], ['/locales/en.json', /json/], ['/icon-192.png', /image\/png/]]) {
+      const response = await fetch(`${base}${url}`, { signal: AbortSignal.timeout(5000) });
+      assert.equal(response.status, 200, `missing offline asset ${url}`);
+      assert.match(response.headers.get('content-type'), mime);
+    }
+    const worker = await (await fetch(`${base}/sw.js`)).text();
+    const font = worker.match(/url:"([^"]+\.ttf)"/);
+    assert.ok(font, 'PDF font missing from offline manifest');
+    assert.equal((await fetch(new URL(font[1], base), { signal: AbortSignal.timeout(5000) })).status, 200);
     if (demo) {
       const login = await fetch(`${base}/api/auth/login`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },

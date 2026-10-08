@@ -8,6 +8,10 @@ test-results/
 public/assets/
 public/fonts/
 public/index.html
+public/sw.js
+public/workbox-*.js
+public/manifest.webmanifest
+public/icon-*.png
 
 # Logs
 *.log

@@ -1,6 +1,8 @@
+import { Alert, Tabs, Button, TextInput, ActionIcon, SimpleGrid, Group } from '@mantine/core';
+import { useLibraryRead } from '../hooks/useLibraryRead';
+import { useOffline } from '../context/OfflineContext';
 import { SearchField } from '../components/SearchField';
 import { SearchRow } from '../components/SearchRow';
-import { Tabs, Button, TextInput, ActionIcon, SimpleGrid, Group } from '@mantine/core';
 import { IconCalendar, IconPlus, IconMusic } from '@tabler/icons-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
@@ -24,11 +26,14 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
   const apiCall = useApi();
   const { user } = useAuth();
   const { t } = useI18n();
+  const { readOnly } = useOffline();
+  const { querySetlists } = useLibraryRead();
   const ls = useLocalSetlists();
 
   const activeTab = user ? 'cloud' : 'local';
 
   const [setlists, setSetlists] = useState<SetlistListItem[]>([]);
+  const [loadError, setLoadError] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState('');
@@ -52,23 +57,10 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
   }, []);
 
   const load = useCallback(async (q = '', from = '', to = '', targetPage = 1) => {
+    setLoadError('');
     if (!user) return;
-    const params: string[] = [];
-    if (q) params.push(`q=${encodeURIComponent(q)}`);
-    if (from) params.push(`date_from=${encodeURIComponent(from)}`);
-    if (to) params.push(`date_to=${encodeURIComponent(to)}`);
-    params.push(`page=${targetPage}`);
-    params.push(`limit=20`);
-    const qs = params.length > 0 ? `?${params.join('&')}` : '';
     try {
-      interface PaginatedSetlistsResponse {
-        setlists: SetlistListItem[];
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
-      }
-      const data = await apiCall<PaginatedSetlistsResponse>('GET', `/api/setlists${qs}`);
+      const data = await querySetlists({ q, dateFrom: from, dateTo: to, page: targetPage });
       if (!active.current) return;
       setSetlists(data.setlists);
       setPage(data.page);
@@ -79,8 +71,8 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
       saveDateFrom(from);
       saveDateTo(to);
       savePage(String(data.page));
-    } catch (e) { if (active.current) toast((e as Error).message, 'error'); }
-  }, [apiCall, user, saveQuery, saveDateFrom, saveDateTo, savePage]);
+    } catch (e) { if (active.current) { setLoadError((e as Error).message); setSetlists([]); } }
+  }, [querySetlists, user, saveQuery, saveDateFrom, saveDateTo, savePage]);
 
   useEffect(() => {
     if (activeTab === 'cloud') {
@@ -94,6 +86,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
   useEffect(() => { if (showNew && nameRef.current) nameRef.current.focus(); }, [showNew]);
 
   const create = async () => {
+    if (readOnly) return;
     if (!newName.trim()) { toast(t('setlist.nameRequired'), 'error'); return; }
     if (newName.length > 200) { toast('Name too long', 'error'); return; }
 
@@ -139,9 +132,10 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
 
   return (
     <>
+      {loadError && <Alert color="red" mb="sm" role="alert">{loadError}</Alert>}
       <Group justify="space-between" mb="lg">
         <PageTitle className="view-title">{t('setlist.title')}</PageTitle>
-        <Button size="xs" className="btn btn-sm" leftSection={<IconPlus size={14} aria-hidden />} onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</Button>
+        <Button disabled={readOnly} size="xs" className="btn btn-sm" leftSection={<IconPlus size={14} aria-hidden />} onClick={() => setShowNew(true)}>{t('setlist.newSetlist')}</Button>
       </Group>
       <Tabs variant="pills" value="mine" onChange={(tab) => navigate(tab === 'public' ? 'public-setlists' : 'setlists')} className="setlist-tabs">
         <Tabs.List grow><Tabs.Tab value="mine">My Setlists</Tabs.Tab><Tabs.Tab value="public">Public Setlists</Tabs.Tab></Tabs.List>
@@ -201,7 +195,7 @@ export function SetlistsView({ navigate }: SetlistsViewProps) {
         </SearchRow>
       )}
       <SimpleGrid className="song-grid" minColWidth="min(100%, 320px)" autoFlow="auto-fill" spacing={12}>
-        {loaded && (
+        {!loadError && loaded && (
           activeTab === 'cloud' ? (
             setlists.length === 0 ? (
               <EmptyState icon={<IconMusic size={56} aria-hidden />} text={t('setlist.noSetlists')} />

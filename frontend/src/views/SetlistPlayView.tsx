@@ -1,4 +1,5 @@
-import { Box, Button, Text, Textarea } from '@mantine/core';
+import { Alert, Button, Box, Text, Textarea } from '@mantine/core';
+import { useOffline } from '../context/OfflineContext';
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
@@ -37,6 +38,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const { readOnly } = useOffline();
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [exportingPdf, setExportingPdf] = useState(false);
@@ -48,7 +50,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
   const twoColState = useTwoCol();
   const layout = usePlaybackLayout();
 
-  const { setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
+  const { loadError, setlist, entry, index, total, prev, next, exit, updateEntry, isModified, saveOnline, saveLocal } = useSetlistPlayer({
     setlistId,
     isLocal: _isLocal,
     initialSetlist,
@@ -135,10 +137,10 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
 
   // Inline editor
   const openEditor = useCallback(() => {
-    if (!entry || setlist?.isLocal) return;
+    if (readOnly || !entry || setlist?.isLocal) return;
     setEditContent(entry.content_override || entry.content);
     setEditing(true);
-  }, [entry, setlist]);
+  }, [entry, setlist, readOnly]);
 
   const saveEditorToSetlist = async () => {
     if (!setlist || !entry) return;
@@ -217,6 +219,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     window.scrollTo(0, 0);
   };
 
+  if (loadError) return <Alert title="Setlist unavailable" color="red">{loadError}<Button mt="sm" display="block" onClick={() => navigate('setlists')}>Back to setlists</Button></Alert>;
   if (!setlist) return <Loading />;
   if (!entry) return <EmptyState text={t('setlist.noSongsYet')} />;
 
@@ -234,8 +237,8 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
     onReset: resetEntryLayout,
     onPickKey: pickKey,
     onAutoFit: doFit,
-    onSaveOnline: isOwner ? () => saveOnline(false) : undefined,
-    onSaveLocal: () => saveLocal(false),
+    onSaveOnline: !readOnly && isOwner ? () => saveOnline(false) : undefined,
+    onSaveLocal: readOnly ? undefined : () => saveLocal(false),
     onExportPdf: handleExportAllPdf,
     settingsPanel: (
       <SettingsPanel
@@ -290,7 +293,7 @@ export function SetlistPlayView({ setlistId, isLocal: _isLocal, initialSetlist, 
         <>
           {entry?.is_private_placeholder ? (
             <Box mt={40}>
-              <EmptyState icon={<Text span fz={56} aria-hidden>🔒</Text>} text={<>This song is private<Text span display="block" size="sm" mt="xs">The song owner has marked it as private.</Text></>} />
+              <EmptyState icon={<Text span fz={56} aria-hidden>🔒</Text>} text={entry.not_downloaded ? "This song is not downloaded. Connect and refresh your library." : <>This song is private<Text span display="block" size="sm" mt="xs">The song owner has marked it as private.</Text></>} />
             </Box>
           ) : (
             <ChordSheet

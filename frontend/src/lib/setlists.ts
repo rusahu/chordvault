@@ -33,7 +33,7 @@ export function formatLocalEntry(e: LocalSetlistEntry, idx: number): SetlistEntr
  * Used when initializing playback or editing views requiring full song details.
  */
 export function enrichLocalEntry(e: LocalSetlistEntry, song: Song | null, idx: number): SetlistEntry | null {
-  if (!song) return null;
+  if (!song) return { ...formatLocalEntry(e, idx), title: `${e.title} (not downloaded)`, is_private_placeholder: true, not_downloaded: true };
   return {
     song_id: song.id,
     entry_id: `local_${idx}`,
@@ -62,13 +62,13 @@ export function enrichLocalEntry(e: LocalSetlistEntry, song: Song | null, idx: n
  */
 export async function enrichLocalSetlistSongs(
   entries: LocalSetlistEntry[],
-  apiCall: <T>(method: string, path: string) => Promise<T>
+  getSong: (id: number) => Promise<Song>
 ): Promise<SetlistEntry[]> {
   const uniqueSongIds = Array.from(new Set(entries.map((e) => e.song_id)));
   const cache: Record<number, Song | null> = {};
 
   const fetches = uniqueSongIds.map((id) =>
-    apiCall<Song>('GET', `/api/songs/${id}`)
+    getSong(id)
       .then((song) => {
         cache[id] = song;
       })

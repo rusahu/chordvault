@@ -1,3 +1,4 @@
+import { useOffline, useOfflineActivity } from '../context/OfflineContext';
 import { useDisclosure } from '@mantine/hooks';
 import { Badge, Tabs, Switch, Button, TextInput, useComputedColorScheme, SimpleGrid, Stack, Group, Text, Box, Input } from '@mantine/core';
 import { modals } from '@mantine/modals';
@@ -23,6 +24,7 @@ interface SongEditViewProps {
 
 export function SongEditView({ songId, navigate }: SongEditViewProps) {
   const apiCall = useApi();
+  const { readOnly } = useOffline();
   const { user } = useAuth();
   const { t } = useI18n();
   const [song, setSong] = useState<Song | null>(null);
@@ -148,6 +150,7 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
   };
 
   const dirty = state.content !== saved.content || visibility !== saved.visibility;
+  useOfflineActivity(dirty);
   const title = songId ? (isOwner ? t('songEdit.editSong') : t('songEdit.createVersion')) : t('songEdit.newSong');
 
   return (
@@ -186,7 +189,7 @@ modals.openConfirmModal({ children: t('songEdit.confirmDelete'), labels: { confi
           </Group>
           {user && (
             <Box mb="xs">
-              <Button variant="default" size="xs" className="btn btn-sm btn-ghost" onClick={ocr.open}>&#128247; Import from image or PDF</Button>
+              <Button variant="default" size="xs" className="btn btn-sm btn-ghost" disabled={readOnly} onClick={ocr.open}>&#128247; Import from image or PDF</Button>
             </Box>
           )}
           <Tabs value={editorTab} onChange={(value) => { if (value === 'preview') { setEditorTab('preview'); setForceRender(n => n + 1); } else setEditorTab('edit'); }} keepMounted keepMountedMode="display-none">

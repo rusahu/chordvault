@@ -1,5 +1,7 @@
+import { useLibraryRead } from '../hooks/useLibraryRead';
+import { useOffline } from '../context/OfflineContext';
 import { useDisclosure } from '@mantine/hooks';
-import { Badge, Paper, Button, NativeSelect, Group, Box, Text } from '@mantine/core';
+import { Alert, Badge, Paper, Button, NativeSelect, Group, Box, Text } from '@mantine/core';
 import { IconLock } from '@tabler/icons-react';
 import { modals } from '@mantine/modals';
 import { useState, useEffect, useMemo } from 'react';
@@ -27,8 +29,11 @@ interface SongViewProps {
 
 export function SongView({ songId, navigate }: SongViewProps) {
   const apiCall = useApi();
+  const { getSong, getVersions } = useLibraryRead();
+  const { readOnly } = useOffline();
   const { user } = useAuth();
   const { t } = useI18n();
+  const [loadError, setLoadError] = useState('');
   const [song, setSong] = useState<Song | null>(null);
   const [versions, setVersions] = useState<SongVersion[]>([]);
   const [corrections, setCorrections] = useState<Correction[]>([]);
@@ -37,17 +42,18 @@ export function SongView({ songId, navigate }: SongViewProps) {
 
   useEffect(() => {
     setSong(null);
-    apiCall<Song>('GET', `/api/songs/${songId}`)
+    setLoadError('');
+    getSong(songId)
       .then((data) => {
         setSong(data);
         location.hash = `#song/${songId}`;
       })
-      .catch((e) => { toast(e.message, 'error'); navigate(user ? 'my-songs' : 'browse'); });
-  }, [songId, apiCall, navigate, user]);
+      .catch((e) => setLoadError(e.message));
+  }, [songId, getSong, navigate, user]);
 
   useEffect(() => {
     if (!song) return;
-    apiCall<SongVersion[]>('GET', `/api/songs/${songId}/versions`)
+    getVersions(songId)
       .then((v) => { if (v.length > 1) setVersions(v); })
       .catch(() => {});
     if (user && user.username === song.username) {
@@ -55,7 +61,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
         .then(setCorrections)
         .catch(() => {});
     }
-  }, [song, songId, apiCall, user]);
+  }, [song, songId, getVersions, apiCall, user]);
 
   const content = song?.content || '';
   const chord = useChordRenderer(content);
@@ -125,7 +131,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
       await apiCall('PUT', `/api/corrections/${id}/approve`);
       toast('Correction approved', 'success');
       setSong(null);
-      const data = await apiCall<Song>('GET', `/api/songs/${songId}`);
+      const data = await getSong(songId);
       setSong(data);
     } catch (e) { toast((e as Error).message, 'error'); }
 
@@ -143,6 +149,7 @@ export function SongView({ songId, navigate }: SongViewProps) {
 } });
 };
 
+  if (loadError) return <Alert title="Song unavailable" color="red">{loadError}<Button mt="sm" display="block" onClick={() => navigate('browse')}>Back to songs</Button></Alert>;
   if (!song) return <Loading />;
 
   return (
@@ -154,21 +161,21 @@ export function SongView({ songId, navigate }: SongViewProps) {
           </Button>
           <Group gap="xs">
             {isOwner && (
-              <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
+              <Button disabled={readOnly} variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
                 &#9998; {t('songView.edit')}
               </Button>
             )}
             {user && !isOwner && song.visibility !== 'private' && (
               <>
-                <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
+                <Button disabled={readOnly} variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('song-edit', { id: String(song.id) })}>
                   &#43; Create Version
                 </Button>
-                <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={() => navigate('correction', { id: String(song.id) })}>
+                <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={readOnly} onClick={() => navigate('correction', { id: String(song.id) })}>
                   &#9998; Correction
                 </Button>
               </>
             )}
-            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" onClick={addToSetlist.open}>
+            <Button variant="default" size="xs" className="btn btn-ghost btn-sm" disabled={readOnly} onClick={addToSetlist.open}>
               &#43; {t('songView.addToSetlist')}
             </Button>
           </Group>
@@ -240,8 +247,8 @@ export function SongView({ songId, navigate }: SongViewProps) {
               <Group justify="space-between" gap={8} mb={12} c="dimmed" fz={13}>
                 <span>@{c.username} &middot; {new Date(c.created_at).toLocaleDateString()}</span>
                 <Group gap={8}>
-                  <Button size="xs" className="btn btn-sm" onClick={() => approveCorrection(c.id)}>Approve</Button>
-                  <Button color="red" size="xs" className="btn btn-danger btn-sm" onClick={() => rejectCorrection(c.id)}>Reject</Button>
+                  <Button size="xs" className="btn btn-sm" disabled={readOnly} onClick={() => approveCorrection(c.id)}>Approve</Button>
+                  <Button color="red" size="xs" className="btn btn-danger btn-sm" disabled={readOnly} onClick={() => rejectCorrection(c.id)}>Reject</Button>
                 </Group>
               </Group>
               <div className="correction-preview" dangerouslySetInnerHTML={{ __html: renderChordPro(c.content, 0, false) }} />

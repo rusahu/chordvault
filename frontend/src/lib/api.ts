@@ -10,12 +10,14 @@ export async function api<T = unknown>(
   method: string,
   path: string,
   body?: unknown,
-  token?: string | null
+  token?: string | null,
+  signal?: AbortSignal
 ): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(path, {
     method,
+    signal: signal ?? (method === 'GET' ? AbortSignal.timeout(8000) : undefined),
     headers,
     body: body ? JSON.stringify(body) : undefined,
   });

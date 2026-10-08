@@ -53,6 +53,9 @@ jobs:
       - name: Build frontend
         run: cd frontend && npm run build
 
+      - name: Verify offline build assets
+        run: node test/offline-build.js
+
   docker-build:
     runs-on: ubuntu-latest
     needs: lint-and-build
@@ -118,5 +121,6 @@ jobs:
           done
           [ "$ready" = true ] || exit 1
           node test/smoke.js
+          node test/offline-smoke.js
         env:
           JWT_SECRET: ci-test-secret

@@ -41,7 +41,7 @@ for (const { View, prefix, path } of cases) {
       api.mockRejectedValueOnce(new Error('Search failed'));
       fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'failed' } });
       fireEvent.click(screen.getByRole('button', { name: 'songs.search' }));
-      await waitFor(() => expect(toast).toHaveBeenCalledWith('Search failed', 'error'));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Search failed');
       expect(sessionStorage.getItem(`${prefix}_query`)).toBe('恩典 Grace');
       fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Holy' } });
       fireEvent.click(screen.getByRole('button', { name: 'songs.search' }));
@@ -96,7 +96,7 @@ for (const { View, prefix, path } of cases.filter(c => c.prefix.includes('setlis
     api.mockRejectedValueOnce(new Error('Date search failed'));
     fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-09-01' } });
     if (prefix === 'cv_setlists') fireEvent.click(screen.getByRole('button', { name: 'songs.search' }));
-    await waitFor(() => expect(toast).toHaveBeenCalledWith('Date search failed', 'error'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Date search failed');
     expect(sessionStorage.getItem(`${prefix}_date_from`)).toBe('2026-10-01');
   });
 }
@@ -109,4 +109,16 @@ it('preserves raw language and immediate filter visibility', async () => {
   expect(sessionStorage.getItem('cv_browse_show_filters')).toBe('true');
   fireEvent.change(screen.getByRole('combobox'), { target: { value: 'en' } });
   await waitFor(() => expect(sessionStorage.getItem('cv_browse_lang')).toBe('en'));
+});
+
+it('rechecks the stored account on focus without replacing an unchanged user', async () => {
+  let current: ReturnType<typeof useAuth>['user'] = null;
+  function Probe() { current = useAuth().user; return <span>{current?.username || 'signed out'}</span>; }
+  render(<AuthProvider><Probe /></AuthProvider>);
+  const before = current;
+  fireEvent.focus(window);
+  expect(current).toBe(before);
+  localStorage.removeItem('cv_user');
+  fireEvent.focus(window);
+  expect(await screen.findByText('signed out')).toBeInTheDocument();
 });
