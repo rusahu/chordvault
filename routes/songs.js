@@ -1,6 +1,6 @@
 const express = require('express');
 const yazl = require('yazl');
-const { requireAuth, requireAdmin, optionalAuth, isAdminRole } = require('../lib/auth');
+const { requireAuth, requireAdmin, optionalAuth, isAdminRole, canManageSong } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
 const { parseId, validateSongInput, validateVisibility, validateLanguage, parsePaginationParams } = require('../lib/validation');
 const { LANGUAGE_CODES } = require('../lib/languages');
@@ -8,6 +8,7 @@ const { DEMO_MODE } = require('../lib/demo');
 const { makeUniqueNamer } = require('../lib/exportFilename');
 const Song = require('../lib/models/song');
 const User = require('../lib/models/user');
+const { canViewSongVisibility } = require('../lib/songAccess');
 
 function extractDirective(content, name) {
   const re = new RegExp(`\\{${name}:\\s*([^}]*)\\}`, 'i');
@@ -107,13 +108,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
         return res.status(404).json({ error: 'Song not found' });
       }
     }
-    if (song.visibility === VISIBILITY.PRIVATE) {
-      const isOwner = req.user && req.user.id === song.user_id;
-      const isAdmin = req.user && isAdminRole(req.user.role);
-      if (!isOwner && !isAdmin) {
-        return res.status(404).json({ error: 'Song not found' });
-      }
-    }
+    if (!canViewSongVisibility(req.user, song)) return res.status(404).json({ error: 'Song not found' });
     // Include version_count for single song view
     const userId = req.user ? req.user.id : 0;
     const versionCount = Song.getVersionCount(song.parent_id, song.id, userId);
@@ -181,7 +176,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
     const existing = Song.findById(id);
-    if (!existing) return res.status(404).json({ error: 'Song not found or not yours' });
+    if (!existing || !canManageSong(req.user, existing.user_id)) return res.status(404).json({ error: 'Song not found or not yours' });
     const { content, format_detected, visibility } = req.body;
     const finalContent = content?.trim() || existing.content;
     if (content && content.length > LIMITS.MAX_CONTENT) return res.status(400).json({ error: `Song content too large (max ${LIMITS.MAX_CONTENT / 1000}KB)` });
@@ -237,13 +232,7 @@ function createSongsRouter({ withSkipGlobal, exportLimiter }) {
     if (!id) return res.status(400).json({ error: 'Invalid song ID' });
     const song = Song.findById(id);
     if (!song || song.status !== STATUS.ACTIVE) return res.status(404).json({ error: 'Song not found' });
-    if (song.visibility === VISIBILITY.PRIVATE) {
-      const isOwner = req.user && req.user.id === song.user_id;
-      const isAdmin = req.user && isAdminRole(req.user.role);
-      if (!isOwner && !isAdmin) {
-        return res.status(404).json({ error: 'Song not found' });
-      }
-    }
+    if (!canViewSongVisibility(req.user, song)) return res.status(404).json({ error: 'Song not found' });
     const rootId = song.parent_id || song.id;
     const userId = req.user ? req.user.id : 0;
     const versions = Song.getVersions(rootId, userId);

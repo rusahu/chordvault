@@ -1,9 +1,10 @@
 const express = require('express');
-const { requireAuth, optionalAuth, isAdminRole } = require('../lib/auth');
+const { requireAuth, optionalAuth } = require('../lib/auth');
 const { STATUS, VISIBILITY, LIMITS } = require('../lib/constants');
 const { parseId, validateSetlistInput, validateTargetKey, canonicalTargetKey, parsePaginationParams } = require('../lib/validation');
 const Setlist = require('../lib/models/setlist');
 const Song = require('../lib/models/song');
+const { maskSetlistEntry } = require('../lib/songAccess');
 
 function resolveSetlist(res, setlistId, userId) {
   const setlist = Setlist.findById(setlistId, userId);
@@ -44,20 +45,7 @@ function createSetlistsRouter() {
     const setlist = Setlist.findPublicById(id);
     if (!setlist) return res.status(404).json({ error: 'Setlist not found' });
     const entries = Setlist.getEntries(id);
-    const userId = req.user ? req.user.id : 0;
-    const safeEntries = entries.map((e) => {
-      if (e.visibility === VISIBILITY.PRIVATE && e.song_user_id !== userId && !(req.user && isAdminRole(req.user.role))) {
-        return {
-          entry_id: e.entry_id, song_id: e.song_id, position: e.position,
-          target_key: null, nashville: 0, content_override: null,
-          title: '[Private Song]', artist: '', content: '', key: '',
-          youtube_url: null, bpm: null, tags: null, language: '',
-          username: '', is_private_placeholder: true,
-        };
-      }
-      const { song_user_id: _, ...safe } = e;
-      return safe;
-    });
+    const safeEntries = entries.map(entry => maskSetlistEntry(entry, req.user));
     res.json({ ...setlist, entries: safeEntries });
   });
 
@@ -67,19 +55,7 @@ function createSetlistsRouter() {
     const setlist = resolveSetlist(res, id, req.user.id);
     if (!setlist) return;
     const entries = Setlist.getEntries(id);
-    const safeEntries = entries.map((e) => {
-      if (e.visibility === VISIBILITY.PRIVATE && e.song_user_id !== req.user.id && !isAdminRole(req.user.role)) {
-        return {
-          entry_id: e.entry_id, song_id: e.song_id, position: e.position,
-          target_key: null, nashville: 0, content_override: null,
-          title: '[Private Song]', artist: '', content: '', key: '',
-          youtube_url: null, bpm: null, tags: null, language: '',
-          username: '', is_private_placeholder: true,
-        };
-      }
-      const { song_user_id: _, ...safe } = e;
-      return safe;
-    });
+    const safeEntries = entries.map(entry => maskSetlistEntry(entry, req.user));
     res.json({ ...setlist, entries: safeEntries });
   });
 
